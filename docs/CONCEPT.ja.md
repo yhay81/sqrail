@@ -21,7 +21,8 @@ name=file束縛 -> DuckDB -> JSONL標準出力または単一出力ファイル
    配布物に含めるのはDuckDBだけです。エージェントへbackend選択を見せません。
 
 2. **SQLを独自言語へ変えない**
-   独自DSLを追加せず、固定したバージョンのDuckDB SQLを使います。
+   独自DSLを追加せず、固定したバージョンのDuckDB SQLを使います。受け付けるのは
+   一つのread-onlyな`SELECT`、`VALUES`、`WITH`だけです。
 
 3. **全インターフェースを短い説明へ収める**
    `sqrail --agent-help`は規範的かつ完全な説明です。
@@ -35,7 +36,8 @@ name=file束縛 -> DuckDB -> JSONL標準出力または単一出力ファイル
 
 6. **入力はread-only、出力は明示的**
    `-t`の入力は一時viewとして公開します。既存出力は上書きせず拒否し、
-   query成功後のrenameによってのみ出力を確定します。
+   query成功後に同一directory内のhard linkを排他的に作ることでのみ出力を
+   確定します。
 
 7. **資源制約も公開契約に含める**
    メモリ、並列数、spill先をコマンドごとに指定できます。
@@ -53,6 +55,7 @@ name=file束縛 -> DuckDB -> JSONL標準出力または単一出力ファイル
 - 自然言語による質問
 - 対話型database shell
 - 永続databaseの管理
+- 敵対的コードやfilesystemに対するsandbox
 - backendの自動切替
 - 全DuckDB extensionの同梱
 

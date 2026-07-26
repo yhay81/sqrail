@@ -1,4 +1,7 @@
 /build/
+/build-*/
 /out/
 /.cache/
+/benchmark-data*/
+/benchmark-results*/
 .DS_Store

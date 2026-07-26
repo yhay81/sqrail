@@ -23,7 +23,8 @@ name=file bindings -> DuckDB -> JSONL stdout or one output file
    A release contains DuckDB only. Backend selection is not exposed to agents.
 
 2. **SQL remains SQL**
-   sqrail does not add a query DSL. Queries use the pinned DuckDB dialect.
+   sqrail does not add a query DSL. Queries use the pinned DuckDB dialect and
+   are restricted to one read-only `SELECT`, `VALUES`, or `WITH` statement.
 
 3. **The complete interface must fit in a small prompt**
    `sqrail --agent-help` is normative, complete, and intentionally short.
@@ -37,8 +38,8 @@ name=file bindings -> DuckDB -> JSONL stdout or one output file
 
 6. **Inputs are read-only and outputs are explicit**
    Files bound with `-t` are exposed as temporary views. Existing outputs are
-   rejected rather than silently replaced. File output is committed by rename
-   only after the query succeeds.
+   rejected rather than silently replaced. A completed private file is
+   committed with an atomic no-replace hard link only after the query succeeds.
 
 7. **Resource use is part of the public contract**
    Memory, parallelism, and spill location can be stated at invocation time.
@@ -58,6 +59,7 @@ name=file bindings -> DuckDB -> JSONL stdout or one output file
 - offering an interactive database shell
 - managing persistent databases
 - hiding SQL errors from the caller
+- acting as a hostile-code or filesystem sandbox
 - automatically switching between query engines
 - supporting every DuckDB extension
 
@@ -100,5 +102,5 @@ that cannot be solved through schema, query planning, or DuckDB configuration.
 - no full-result materialization in the frontend
 - no accidental output replacement
 - reproducible performance reports under fixed memory budgets
-- a single dependency-free release executable
+- one release executable with no language runtime or non-system shared library
 - a compressed release size comparable to the upstream DuckDB CLI

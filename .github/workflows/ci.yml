@@ -2,7 +2,13 @@ name: ci
 
 on:
   push:
+    branches:
+      - main
   pull_request:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -11,16 +17,37 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-22.04, macos-15]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Lint shell
+        if: runner.os == 'Linux'
+        run: shellcheck tests/*.sh benchmarks/*.sh
       - name: Configure
-        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+        run: >-
+          cmake -S . -B build
+          -DCMAKE_BUILD_TYPE=Release
+          -DSQRAIL_WARNINGS_AS_ERRORS=ON
       - name: Build
         run: cmake --build build --target sqrail --parallel 2
       - name: Test
         run: ctest --test-dir build --output-on-failure
+      - name: Install
+        run: |
+          cmake --install build --prefix install --component sqrail
+          install/bin/sqrail --version
+          test -f install/share/doc/sqrail/THIRD_PARTY_NOTICES.md
+          test -f install/share/doc/sqrail/licenses/duckdb-third-party/zstd/LICENSE
+          test "$(find install -type f \( -name '*.a' -o -name '*.h' -o -name '*.hpp' \) | wc -l)" -eq 0
+      - name: Verify Linux runtime
+        if: runner.os == 'Linux'
+        run: |
+          ldd build/sqrail
+          if ldd build/sqrail | grep -E 'libstdc\+\+|libgcc_s'; then
+            echo "C++ runtime is dynamically linked" >&2
+            exit 1
+          fi
       - name: Size
         run: |
           ls -lh build/sqrail

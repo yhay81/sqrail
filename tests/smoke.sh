@@ -5,13 +5,38 @@ sqrail_bin=${1:?sqrail binary path is required}
 test_dir=$(mktemp -d)
 trap 'rm -rf "$test_dir"' EXIT
 
+expect_error() {
+  expected_status=$1
+  expected_code=$2
+  error_file=$3
+  shift 3
+
+  set +e
+  "$@" >"$test_dir/unexpected-stdout" 2>"$error_file"
+  actual_status=$?
+  set -e
+
+  if [ "$actual_status" -ne "$expected_status" ]; then
+    echo "expected exit $expected_status, got $actual_status: $*" >&2
+    cat "$error_file" >&2
+    exit 1
+  fi
+  test ! -s "$test_dir/unexpected-stdout"
+  grep -q "\"code\":\"$expected_code\"" "$error_file"
+}
+
 printf 'drug_id,name,amount\n1,alpha,10\n2,beta,20\n1,alpha,15\n' > "$test_dir/sales.csv"
 printf 'drug_id\tstatus\n1\tactive\n2\tinactive\n' > "$test_dir/status.tsv"
 printf '{"drug_id":1,"phase":2}\n{"drug_id":2,"phase":3}\n' > "$test_dir/trials.jsonl"
+cp "$test_dir/sales.csv" "$test_dir/odd ' sales.csv"
+gzip -c "$test_dir/sales.csv" > "$test_dir/sales.csv.gz"
 
 schema=$("$sqrail_bin" schema "$test_dir/sales.csv")
 printf '%s\n' "$schema" | grep -q '"name":"drug_id"'
 printf '%s\n' "$schema" | grep -q '"name":"amount"'
+
+multi_schema=$("$sqrail_bin" schema "$test_dir/sales.csv.gz" "$test_dir/odd ' sales.csv")
+test "$(printf '%s\n' "$multi_schema" | wc -l | tr -d ' ')" = "2"
 
 result=$("$sqrail_bin" run --memory 256MB --threads 1 \
   -t sales="$test_dir/sales.csv" \
@@ -20,6 +45,17 @@ result=$("$sqrail_bin" run --memory 256MB --threads 1 \
 expected='{"drug_id":1,"total":25}
 {"drug_id":2,"total":20}'
 test "$result" = "$expected"
+
+stdin_result=$(printf 'SELECT count(*) AS rows FROM sales;\n' |
+  "$sqrail_bin" run -t sales="$test_dir/sales.csv.gz" -)
+test "$stdin_result" = '{"rows":3}'
+
+values_result=$("$sqrail_bin" run \
+  'WITH input(value) AS (VALUES (1), (2)) SELECT sum(value) AS total FROM input')
+test "$values_result" = '{"total":3}'
+
+comment_result=$("$sqrail_bin" run 'SELECT 7 AS value; -- trailing comment')
+test "$comment_result" = '{"value":7}'
 
 joined=$("$sqrail_bin" run \
   -t status="$test_dir/status.tsv" \
@@ -35,20 +71,87 @@ test "$joined" = '{"matched":2}'
 parquet_schema=$("$sqrail_bin" schema "$test_dir/result.parquet")
 printf '%s\n' "$parquet_schema" | grep -q '"name":"amount"'
 
-if "$sqrail_bin" run -t sales="$test_dir/sales.csv" -o "$test_dir/result.parquet" \
-  'SELECT * FROM sales' 2>"$test_dir/error.json"; then
-  echo "expected existing output to be rejected" >&2
-  exit 1
-fi
-grep -q '"code":"OUTPUT_EXISTS"' "$test_dir/error.json"
+gzip_output="$test_dir/result.csv.gz"
+"$sqrail_bin" run -t sales="$test_dir/sales.csv" -o "$gzip_output" \
+  'SELECT * FROM sales ORDER BY drug_id, amount'
+gzip -t "$gzip_output"
+test "$(gzip -dc "$gzip_output" | wc -l | tr -d ' ')" = "4"
+"$sqrail_bin" schema "$gzip_output" | grep -q '"name":"amount"'
 
-if "$sqrail_bin" run -t sales="$test_dir/sales.csv" -o "$test_dir/failed.csv" \
-  'SELECT missing_column FROM sales' 2>"$test_dir/query-error.json"; then
-  echo "expected invalid SQL to fail" >&2
-  exit 1
-fi
+zstd_output="$test_dir/result.csv.zst"
+"$sqrail_bin" run -t sales="$test_dir/sales.csv" -o "$zstd_output" \
+  'SELECT * FROM sales'
+test "$("$sqrail_bin" run -t compressed="$zstd_output" \
+  'SELECT count(*) AS rows FROM compressed')" = '{"rows":3}'
+
+json_output="$test_dir/result.jsonl.gz"
+"$sqrail_bin" run -t sales="$test_dir/sales.csv" -o "$json_output" \
+  'SELECT drug_id, amount FROM sales'
+test "$("$sqrail_bin" run -t compressed="$json_output" \
+  'SELECT sum(amount) AS total FROM compressed')" = '{"total":45}'
+
+spill_result=$("$sqrail_bin" run --spill "$test_dir/spill/nested" 'SELECT 1 AS value')
+test "$spill_result" = '{"value":1}'
+test -d "$test_dir/spill/nested"
+
+expect_error 5 OUTPUT_EXISTS "$test_dir/error.json" \
+  "$sqrail_bin" run -t sales="$test_dir/sales.csv" -o "$test_dir/result.parquet" \
+  'SELECT * FROM sales'
+
+expect_error 4 QUERY_FAILED "$test_dir/query-error.json" \
+  "$sqrail_bin" run -t sales="$test_dir/sales.csv" -o "$test_dir/failed.csv" \
+  'SELECT missing_column FROM sales'
 test ! -e "$test_dir/failed.csv"
 test "$(find "$test_dir" -name 'failed.csv.sqrail-tmp-*' | wc -l | tr -d ' ')" = "0"
-grep -q '"code":"QUERY_FAILED"' "$test_dir/query-error.json"
 
-"$sqrail_bin" --agent-help | grep -q 'SQL is DuckDB SQL'
+expect_error 4 MULTIPLE_STATEMENTS "$test_dir/multiple.json" \
+  "$sqrail_bin" run 'SELECT 1; SELECT 2'
+expect_error 4 READ_ONLY_QUERY "$test_dir/read-only.json" \
+  "$sqrail_bin" run 'CREATE TABLE forbidden(i INTEGER)'
+expect_error 2 DUPLICATE_TABLE "$test_dir/duplicate-table.json" \
+  "$sqrail_bin" run -t Sales="$test_dir/sales.csv" -t sales="$test_dir/sales.csv" \
+  'SELECT * FROM sales'
+expect_error 2 DUPLICATE_OPTION "$test_dir/duplicate-option.json" \
+  "$sqrail_bin" run --threads 1 --threads 2 'SELECT 1'
+expect_error 2 INVALID_THREADS "$test_dir/threads.json" \
+  "$sqrail_bin" run --threads 999999999999999999999999 'SELECT 1'
+expect_error 2 INVALID_MEMORY "$test_dir/memory.json" \
+  "$sqrail_bin" run --memory 0MB 'SELECT 1'
+
+printf 'not really bzip2\n' > "$test_dir/data.csv.bz2"
+expect_error 3 UNSUPPORTED_COMPRESSION "$test_dir/compression.json" \
+  "$sqrail_bin" schema "$test_dir/data.csv.bz2"
+
+gzip -c "$test_dir/result.parquet" > "$test_dir/result.parquet.gz"
+expect_error 3 UNSUPPORTED_COMPRESSION "$test_dir/parquet-compression.json" \
+  "$sqrail_bin" schema "$test_dir/result.parquet.gz"
+
+# Two processes targeting the same absent path must never both succeed or
+# replace one another. The atomic hard-link commit makes exactly one winner.
+set +e
+"$sqrail_bin" run -o "$test_dir/race.parquet" \
+  'SELECT i FROM range(1000000) AS rows(i)' 2>"$test_dir/race-1.json" &
+race_pid_1=$!
+"$sqrail_bin" run -o "$test_dir/race.parquet" \
+  'SELECT i FROM range(1000000) AS rows(i)' 2>"$test_dir/race-2.json" &
+race_pid_2=$!
+wait "$race_pid_1"
+race_status_1=$?
+wait "$race_pid_2"
+race_status_2=$?
+set -e
+
+if ! { [ "$race_status_1" -eq 0 ] && [ "$race_status_2" -eq 5 ]; } &&
+   ! { [ "$race_status_1" -eq 5 ] && [ "$race_status_2" -eq 0 ]; }; then
+  echo "expected one race winner and one exit 5; got $race_status_1/$race_status_2" >&2
+  exit 1
+fi
+test -f "$test_dir/race.parquet"
+test "$(find "$test_dir" -name 'race.parquet.sqrail-tmp-*' | wc -l | tr -d ' ')" = "0"
+test "$("$sqrail_bin" run -t race="$test_dir/race.parquet" \
+  'SELECT count(*) AS rows FROM race')" = '{"rows":1000000}'
+
+agent_help=$("$sqrail_bin" --agent-help)
+printf '%s\n' "$agent_help" | grep -q 'SQL is one SELECT'
+test "$(printf '%s\n' "$agent_help" | wc -w | tr -d ' ')" -le 130
+"$sqrail_bin" --version | grep -q '^sqrail 0.1.0 (DuckDB v1.5.5)$'
