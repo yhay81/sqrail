@@ -14,28 +14,56 @@ permissions:
   contents: read
 
 jobs:
+  workflow-analysis:
+    name: GitHub Actions static analysis
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install Actionlint
+        env:
+          ACTIONLINT_VERSION: v1.7.12
+        run: |
+          mkdir -p "$RUNNER_TEMP/actionlint"
+          GOBIN="$RUNNER_TEMP/actionlint" \
+            go install "github.com/rhysd/actionlint/cmd/actionlint@${ACTIONLINT_VERSION}"
+      - name: Validate workflow syntax
+        run: |
+          "$RUNNER_TEMP/actionlint/actionlint"
+      - name: Audit workflow security
+        uses: zizmorcore/zizmor-action@6fc4b006235f201fdab3722e17240ab420d580e5 # v0.6.1
+        with:
+          version: 1.28.0
+          persona: pedantic
+          advanced-security: false
+          annotations: true
+
   build:
+    name: Build and test (${{ matrix.os }})
+    timeout-minutes: 45
     strategy:
+      fail-fast: false
       matrix:
-        os: [ubuntu-22.04, macos-15]
+        os: [ubuntu-24.04, macos-15]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Lint shell
         if: runner.os == 'Linux'
         run: shellcheck tests/*.sh benchmarks/*.sh
       - name: Configure
-        run: >-
-          cmake -S . -B build
-          -DCMAKE_BUILD_TYPE=Release
-          -DSQRAIL_WARNINGS_AS_ERRORS=ON
+        run: cmake --preset release
       - name: Build
-        run: cmake --build build --target sqrail --parallel 2
+        run: cmake --build --preset release
       - name: Test
-        run: ctest --test-dir build --output-on-failure
+        run: ctest --preset release
       - name: Install
         run: |
-          cmake --install build --prefix install --component sqrail
+          cmake --install out/build/release --prefix install --component sqrail
           install/bin/sqrail --version
           test -f install/share/doc/sqrail/THIRD_PARTY_NOTICES.md
           test -f install/share/doc/sqrail/licenses/duckdb-third-party/zstd/LICENSE
@@ -43,13 +71,73 @@ jobs:
       - name: Verify Linux runtime
         if: runner.os == 'Linux'
         run: |
-          ldd build/sqrail
-          if ldd build/sqrail | grep -E 'libstdc\+\+|libgcc_s'; then
+          ldd out/build/release/sqrail
+          if ldd out/build/release/sqrail | grep -E 'libstdc\+\+|libgcc_s'; then
             echo "C++ runtime is dynamically linked" >&2
             exit 1
           fi
       - name: Size
         run: |
-          ls -lh build/sqrail
-          gzip -c -9 build/sqrail > build/sqrail.gz
-          ls -lh build/sqrail.gz
+          ls -lh out/build/release/sqrail
+          gzip -c -9 out/build/release/sqrail > out/build/release/sqrail.gz
+          ls -lh out/build/release/sqrail.gz
+
+  static-analysis:
+    name: Clang static analysis
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Format
+        run: clang-format-18 --dry-run --Werror src/*.cpp src/*.hpp tests/*.cpp fuzz/*.cpp
+      - name: Configure
+        env:
+          CC: clang-18
+          CXX: clang++-18
+        run: cmake --preset strict
+      - name: Clang-Tidy build
+        run: cmake --build --preset strict
+      - name: Test
+        run: ctest --preset strict
+
+  sanitizers:
+    name: ASan and UBSan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Configure
+        env:
+          CC: clang-18
+          CXX: clang++-18
+        run: cmake --preset sanitize
+      - name: Build
+        run: cmake --build --preset sanitize
+      - name: ASan and UBSan tests
+        run: ctest --preset sanitize
+
+  fuzz:
+    name: Coverage-guided fuzz smoke
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Configure
+        env:
+          CC: clang-18
+          CXX: clang++-18
+        run: cmake --preset fuzz
+      - name: Build
+        run: cmake --build --preset fuzz
+      - name: Fuzz strict JSON boundary
+        run: >-
+          out/build/fuzz/sqrail-strict-json-fuzz
+          -dict=fuzz/strict_json.dict
+          -max_total_time=30
+          -timeout=5

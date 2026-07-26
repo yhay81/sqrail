@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="sqrail is a small, safe CLI for agents that write SQL over local CSV, JSON, and Parquet files.">
+    <meta name="theme-color" content="#0b0c0c">
+    <meta property="og:title" content="sqrail — SQL in, files out.">
+    <meta property="og:description" content="One read-only query. Predictable files. Bounded resources. Machine-readable results.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://yhay81.github.io/sqrail/">
+    <title>sqrail — SQL in, files out.</title>
+    <link rel="icon" href="icon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="styles.css">
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="nav">
+      <a class="wordmark" href="#" aria-label="sqrail home">
+        <span class="wordmark-mark" aria-hidden="true"></span>
+        sqrail
+      </a>
+      <nav aria-label="Primary">
+        <a href="#proof">Proof</a>
+        <a href="https://github.com/yhay81/sqrail">GitHub</a>
+        <a class="nav-install" href="#install">Install</a>
+      </nav>
+    </header>
+
+    <main id="main">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <p class="eyebrow"><span>v0.2.0</span> Agent-native data CLI</p>
+          <h1 id="hero-title">SQL in.<br><em>Files out.</em></h1>
+          <p class="lede">
+            A small, non-interactive command for agents that already write SQL.
+            Read CSV, JSON, and Parquet with a narrow, predictable contract.
+          </p>
+          <div class="hero-actions">
+            <a class="button button-primary" href="#install">Install with Homebrew</a>
+            <a class="button button-quiet" href="https://github.com/yhay81/sqrail">View source <span aria-hidden="true">↗</span></a>
+          </div>
+        </div>
+
+        <div class="terminal-wrap" aria-label="sqrail command example">
+          <div class="rail rail-a" aria-hidden="true"></div>
+          <div class="rail rail-b" aria-hidden="true"></div>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span class="terminal-title">sqrail / one query</span>
+              <span class="terminal-status"><i></i> read only</span>
+            </div>
+            <pre><code><span class="prompt">$</span> <span data-stage="1">sqrail run \</span>
+  <span data-stage="2">-t trials=trials.parquet \</span>
+  <span data-stage="3">--memory 512MB --threads 2 \</span>
+  <span data-stage="4">'SELECT phase, count(*) AS n
+   FROM trials
+   GROUP BY phase
+   ORDER BY phase'</span>
+
+<span class="result" data-stage="5">{"phase":1,"n":8231}
+{"phase":2,"n":4817}
+{"phase":3,"n":1092}</span></code></pre>
+            <div class="terminal-foot">
+              <span>JSONL stdout</span>
+              <span>exit 0</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="hero-index" aria-hidden="true">01</div>
+      </section>
+
+      <section class="manifesto reveal" aria-labelledby="manifesto-title">
+        <p class="section-label">Thirty-second contract</p>
+        <h2 id="manifesto-title">No prompt layer.<br>No daemon.<br><span>Just the rail.</span></h2>
+        <p>
+          The model supplies SQL. sqrail supplies canonical file binding,
+          streamed execution, atomic output, bounded resources, and strict JSON
+          diagnostics. One executable; no language runtime.
+        </p>
+      </section>
+
+      <section class="contract reveal" aria-label="Command contract">
+        <div class="contract-heading">
+          <p class="section-label">Complete interface</p>
+          <h2>Small enough to learn once.</h2>
+          <p>The full agent-facing contract fits in one terminal screen.</p>
+        </div>
+        <div class="code-panel">
+          <button class="copy-button" type="button" data-copy-target="contract-code">Copy</button>
+          <pre id="contract-code"><code>sqrail schema FILE...
+sqrail check [-t NAME=PATH]... [--timeout 30s] SQL
+sqrail run [-t NAME=PATH]... [-o FILE] [--memory 1GB]
+           [--threads 2] [--spill DIR] SQL
+
+# Learn everything an agent needs:
+sqrail --agent-help</code></pre>
+        </div>
+      </section>
+
+      <section class="proof reveal" id="proof" aria-labelledby="proof-title">
+        <div class="proof-intro">
+          <p class="section-label">Measured, not imagined</p>
+          <h2 id="proof-title">DuckDB-class execution.<br>A tighter surface.</h2>
+          <p>
+            sqrail embeds DuckDB v1.5.5. It does not claim a faster engine; it
+            removes layers around one carefully constrained local query.
+          </p>
+        </div>
+        <dl class="metrics">
+          <div>
+            <dt>10M</dt>
+            <dd>Parquet rows fully sorted out of core</dd>
+          </div>
+          <div>
+            <dt>128 <small>MiB</small></dt>
+            <dd>DuckDB memory limit in the committed harness</dd>
+          </div>
+          <div>
+            <dt>2.123 <small>s</small></dt>
+            <dd>Observed harness time on Apple M2 Pro</dd>
+          </div>
+        </dl>
+        <a class="text-link" href="https://github.com/yhay81/sqrail/blob/main/docs/BASELINE.md">Read the reproducible baseline <span aria-hidden="true">→</span></a>
+      </section>
+
+      <section class="safety reveal" aria-labelledby="safety-title">
+        <div class="safety-visual" aria-hidden="true">
+          <span class="file file-a">trials.parquet</span>
+          <span class="file file-b">agents.csv</span>
+          <span class="lock">SQL</span>
+          <span class="file file-c">result.parquet</span>
+        </div>
+        <div class="safety-copy">
+          <p class="section-label">Constrained by default</p>
+          <h2 id="safety-title">Give SQL only the files it needs.</h2>
+          <p>
+            Exact inputs are allowlisted. Extension loading and arbitrary
+            external access are disabled. Output is private until an atomic,
+            no-overwrite commit succeeds.
+          </p>
+          <ul>
+            <li>One read-only SELECT, VALUES, or WITH query</li>
+            <li>Strict JSONL rows and JSON diagnostics</li>
+            <li>Memory, thread, timeout, and private spill controls</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="install reveal" id="install" aria-labelledby="install-title">
+        <p class="section-label">Ready for the next command</p>
+        <h2 id="install-title">Put sqrail on the path.</h2>
+        <div class="install-command">
+          <code id="install-code"><span>$</span> brew install yhay81/tap/sqrail</code>
+          <button class="copy-button copy-button-large" type="button" data-copy-target="install-code">Copy</button>
+        </div>
+        <p>
+          macOS and Linux · Apple Silicon, Arm64, and x86-64 · MIT licensed
+        </p>
+      </section>
+    </main>
+
+    <footer>
+      <a class="wordmark" href="#">
+        <span class="wordmark-mark" aria-hidden="true"></span>
+        sqrail
+      </a>
+      <p>One query at a time.</p>
+      <div>
+        <a href="https://github.com/yhay81/sqrail">Source</a>
+        <a href="https://github.com/yhay81/sqrail/releases">Releases</a>
+        <a href="https://github.com/yhay81/sqrail/blob/main/docs/CONTRACT.md">Contract</a>
+      </div>
+    </footer>
+  </body>
+</html>

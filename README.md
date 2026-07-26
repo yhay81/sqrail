@@ -26,6 +26,10 @@ SQL
 
 ## Install
 
+```sh
+brew install yhay81/tap/sqrail
+```
+
 Prebuilt archives for Linux and macOS on x86-64 and Arm64 are published on the
 [Releases](https://github.com/yhay81/sqrail/releases) page. Each release includes
 `SHA256SUMS` and GitHub build-provenance attestations.
@@ -38,12 +42,14 @@ glibc 2.35 or newer and statically include the C++ runtime.
 
 ```text
 sqrail schema FILE...
-sqrail run [-t NAME=FILE]... [-o FILE] [--memory SIZE] [--threads N]
-           [--spill DIR] [SQL|-]
+sqrail check [-t NAME=PATH]... [--memory SIZE] [--threads N] [--timeout DURATION] [SQL|-]
+sqrail run [-t NAME=PATH]... [-o FILE] [--memory SIZE] [--threads N]
+           [--spill DIR [--max-spill SIZE]] [--timeout DURATION] [SQL|-]
 ```
 
-- `schema` returns one JSON object per input file.
-- `-t NAME=FILE` binds a read-only file to a SQL table name.
+- `schema` returns one JSON object per input path.
+- `check` validates SQL and returns its JSON physical plan without execution.
+- `-t NAME=PATH` binds a file, glob, or partitioned Parquet directory.
 - `-` reads SQL from stdin and avoids shell-quoting large queries.
 - SQL must parse as exactly one `SELECT`, `VALUES`, or `WITH` query.
 - Without `-o`, rows are streamed as JSONL to stdout.
@@ -71,7 +77,7 @@ sqrail --agent-help
 | CSV, `.csv.gz`, `.csv.zst` | CSV, `.csv.gz`, `.csv.zst` |
 | TSV, `.tsv.gz`, `.tsv.zst` | TSV, `.tsv.gz`, `.tsv.zst` |
 | JSON, JSONL, NDJSON, optionally `.gz`/`.zst` | JSON, JSONL, NDJSON, optionally `.gz`/`.zst` |
-| Parquet | Parquet |
+| Parquet file, glob, or partitioned directory | Parquet |
 
 Externally compressed Parquet and bzip2/xz streams are deliberately rejected.
 
@@ -79,24 +85,27 @@ Externally compressed Parquet and bzip2/xz streams are deliberately rejected.
 
 Requirements:
 
-- CMake 3.22+
-- a C++17 compiler
+- CMake 3.25+
+- Ninja
+- a C++20 compiler
 - Git or network access during the first configure
+- Python 3 for the smoke-test JSON assertions
 
 DuckDB v1.5.5 is fetched at an immutable commit during configure. Only one query
 engine is linked into the resulting executable.
 
 ```sh
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-cmake --build build --target sqrail --parallel
-ctest --test-dir build --output-on-failure
+cmake --workflow --preset dev
+cmake --workflow --preset release
 ```
 
-Then:
+The repository also supplies `strict`, `sanitize`, `fuzz`, `native`,
+`pgo-generate`, and `pgo-use` presets. The pinned Ubuntu 24.04/LLVM 18
+development container runs the developer workflow on creation. Then:
 
 ```sh
-./build/sqrail schema data.csv
-./build/sqrail run -t data=data.csv 'SELECT count(*) AS rows FROM data'
+./out/build/release/sqrail schema data.csv
+./out/build/release/sqrail run -t data=data.csv 'SELECT count(*) AS rows FROM data'
 ```
 
 ## Resource controls
@@ -106,28 +115,37 @@ sqrail run \
   --memory 1GB \
   --threads 2 \
   --spill /fast-nvme/sqrail-spill \
-  -t data=large.parquet \
+  --max-spill 100GB \
+  --timeout 10m \
+  -t data='warehouse/**/*.parquet' \
   -o result.parquet \
   - < query.sql
 ```
 
 `--memory` configures DuckDB's memory limit. It is not an operating-system hard
 RSS limit. sqrail disables insertion-order preservation by default so unordered
-file transformations can use less memory.
+file transformations can use less memory. A unique, owner-only workspace is
+created beneath `--spill` for each process and removed after the database
+closes; sibling files are never exposed to SQL. `--max-spill` caps temporary
+storage, and `--timeout` interrupts DuckDB planning or execution after the
+deadline.
 
 ## Safety boundary
 
-sqrail prevents SQL write statements and accidental output replacement. It is
-not a sandbox: a permitted DuckDB `SELECT` can still invoke file-reading
-functions. Run it with the same filesystem permissions and trust boundary as
-the agent that supplies the SQL.
+sqrail rejects write statements, disables DuckDB external access and extension
+loading, locks the configuration, and allowlists only bound inputs, the private
+output temporary path, and the private workspace created beneath an explicit
+spill root. This blocks SQL from reading arbitrary local paths, including
+existing siblings under the spill root. It is still process-level defense in
+depth, not an operating-system sandbox; use an OS sandbox for hostile SQL or
+malformed data.
 
 ## Performance
 
 The committed harness builds sqrail and the DuckDB CLI from the same source
 revision, checks logical output equivalence, and records time and peak RSS. See
 [Benchmark policy](docs/BENCHMARKS.md), [harness](benchmarks/README.md), and the
-[v0.1.0 baseline](docs/BASELINE.md).
+[measured baseline](docs/BASELINE.md).
 
 The objective is DuckDB-class execution without a second runtime and with a
 smaller, deterministic agent-facing contract—not a claim that the embedded

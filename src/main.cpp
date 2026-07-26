@@ -1,19 +1,26 @@
 #include "duckdb.hpp"
+#include "duckdb/common/file_open_flags.hpp"
+#include "duckdb/common/file_system.hpp"
+#include "json.hpp"
 
 #include <algorithm>
+#include <atomic>
 #include <cctype>
 #include <charconv>
 #include <chrono>
+#include <condition_variable>
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <mutex>
 #include <random>
 #include <regex>
 #include <sstream>
 #include <stdexcept>
 #include <string>
 #include <system_error>
+#include <thread>
 #include <unordered_set>
 #include <vector>
 
@@ -38,7 +45,8 @@ struct SqrailError final : std::runtime_error {
 
 struct TableBinding {
 	std::string name;
-	fs::path path;
+	std::string source;
+	std::vector<fs::path> paths;
 };
 
 struct RunOptions {
@@ -47,6 +55,8 @@ struct RunOptions {
 	fs::path output;
 	fs::path spill_directory;
 	std::string memory_limit;
+	std::string max_spill;
+	std::chrono::milliseconds timeout {0};
 	uint64_t threads = 0;
 	bool has_output = false;
 };
@@ -55,43 +65,6 @@ struct FileType {
 	std::string extension;
 	std::string compression;
 };
-
-std::string JsonEscape(const std::string &input) {
-	std::ostringstream out;
-	for (const unsigned char byte : input) {
-		switch (byte) {
-		case '"':
-			out << "\\\"";
-			break;
-		case '\\':
-			out << "\\\\";
-			break;
-		case '\b':
-			out << "\\b";
-			break;
-		case '\f':
-			out << "\\f";
-			break;
-		case '\n':
-			out << "\\n";
-			break;
-		case '\r':
-			out << "\\r";
-			break;
-		case '\t':
-			out << "\\t";
-			break;
-		default:
-			if (byte < 0x20) {
-				constexpr char hex[] = "0123456789abcdef";
-				out << "\\u00" << hex[(byte >> 4U) & 0x0FU] << hex[byte & 0x0FU];
-			} else {
-				out << static_cast<char>(byte);
-			}
-		}
-	}
-	return out.str();
-}
 
 std::string SqlString(const std::string &input) {
 	std::string escaped;
@@ -153,29 +126,48 @@ FileType DetectFileType(const fs::path &path, int exit_code, const std::string &
 	return {extension, compression};
 }
 
-std::string ReaderExpression(const fs::path &path) {
-	const std::string quoted = SqlString(path.string());
-	const auto type = DetectFileType(path, EXIT_INPUT, "UNSUPPORTED_FORMAT");
+std::string SqlPathList(const std::vector<fs::path> &paths) {
+	std::string result = "[";
+	for (std::size_t index = 0; index < paths.size(); ++index) {
+		if (index != 0) {
+			result.push_back(',');
+		}
+		result += SqlString(paths[index].string());
+	}
+	result.push_back(']');
+	return result;
+}
+
+std::string SqlPathArgument(const std::vector<fs::path> &paths) {
+	return paths.size() == 1 ? SqlString(paths.front().string()) : SqlPathList(paths);
+}
+
+std::string ReaderExpression(const std::vector<fs::path> &paths) {
+	if (paths.empty()) {
+		throw SqrailError(EXIT_INPUT, "EMPTY_DATASET", "input dataset has no files");
+	}
+	const std::string argument = SqlPathArgument(paths);
+	const auto type = DetectFileType(paths.front(), EXIT_INPUT, "UNSUPPORTED_FORMAT");
 
 	if (type.extension == ".parquet") {
 		if (!type.compression.empty()) {
 			throw SqrailError(EXIT_INPUT, "UNSUPPORTED_COMPRESSION",
-			                  "externally compressed Parquet is not supported: " + path.string());
+			                  "externally compressed Parquet is not supported: " + paths.front().string());
 		}
-		return "read_parquet(" + quoted + ")";
+		return "read_parquet(" + argument + ")";
 	}
 	if (type.extension == ".json" || type.extension == ".jsonl" || type.extension == ".ndjson") {
-		return "read_json_auto(" + quoted + ")";
+		return "read_json_auto(" + argument + ")";
 	}
 	if (type.extension == ".tsv" || type.extension == ".tab") {
-		return "read_csv_auto(" + quoted + ", delim='	')";
+		return "read_csv_auto(" + argument + ", delim='	')";
 	}
 	if (type.extension == ".csv") {
-		return "read_csv_auto(" + quoted + ")";
+		return "read_csv_auto(" + argument + ")";
 	}
 
 	throw SqrailError(EXIT_INPUT, "UNSUPPORTED_FORMAT",
-	                  "unsupported input format: " + path.string() +
+	                  "unsupported input format: " + paths.front().string() +
 	                      " (expected csv, tsv, json, jsonl, ndjson, or parquet)");
 }
 
@@ -210,6 +202,20 @@ std::string CopyOptionsFor(const fs::path &path) {
 	return options;
 }
 
+bool IsJsonOutput(const FileType &type) {
+	return type.extension == ".json" || type.extension == ".jsonl" || type.extension == ".ndjson";
+}
+
+duckdb::FileCompressionType CompressionTypeFor(const FileType &type) {
+	if (type.compression == "GZIP") {
+		return duckdb::FileCompressionType::GZIP;
+	}
+	if (type.compression == "ZSTD") {
+		return duckdb::FileCompressionType::ZSTD;
+	}
+	return duckdb::FileCompressionType::UNCOMPRESSED;
+}
+
 fs::path ExistingInput(const std::string &raw_path) {
 	std::error_code error;
 	fs::path path = fs::absolute(fs::path(raw_path), error);
@@ -219,10 +225,74 @@ fs::path ExistingInput(const std::string &raw_path) {
 	return fs::weakly_canonical(path);
 }
 
+void ValidateInputSet(const std::vector<fs::path> &paths, const std::string &source) {
+	if (paths.empty()) {
+		throw SqrailError(EXIT_INPUT, "EMPTY_DATASET", "input dataset matched no files: " + source);
+	}
+	const auto expected = DetectFileType(paths.front(), EXIT_INPUT, "UNSUPPORTED_FORMAT");
+	for (const auto &path : paths) {
+		const auto actual = DetectFileType(path, EXIT_INPUT, "UNSUPPORTED_FORMAT");
+		if (actual.extension != expected.extension) {
+			throw SqrailError(EXIT_INPUT, "MIXED_DATASET", "input dataset contains different file formats: " + source);
+		}
+		if (actual.extension == ".parquet" && !actual.compression.empty()) {
+			throw SqrailError(EXIT_INPUT, "UNSUPPORTED_COMPRESSION",
+			                  "externally compressed Parquet is not supported: " + path.string());
+		}
+	}
+}
+
+std::vector<fs::path> ResolveInputSet(duckdb::DuckDB &database, const std::string &source) {
+	std::error_code error;
+	const fs::path absolute = fs::absolute(fs::path(source), error).lexically_normal();
+	if (error) {
+		throw SqrailError(EXIT_INPUT, "INPUT_NOT_FOUND", "cannot resolve input path: " + source);
+	}
+
+	std::vector<fs::path> paths;
+	if (!duckdb::FileSystem::HasGlob(absolute.string())) {
+		if (fs::is_directory(absolute, error)) {
+			const auto options = fs::directory_options::none;
+			fs::recursive_directory_iterator iterator(absolute, options, error);
+			const fs::recursive_directory_iterator end;
+			while (!error && iterator != end) {
+				std::error_code entry_error;
+				if (iterator->is_regular_file(entry_error) &&
+				    EndsWith(Lower(iterator->path().filename().string()), ".parquet")) {
+					paths.push_back(ExistingInput(iterator->path().string()));
+				}
+				iterator.increment(error);
+			}
+			if (error) {
+				throw SqrailError(EXIT_INPUT, "DATASET_SCAN_FAILED",
+				                  "cannot enumerate Parquet dataset: " + source + ": " + error.message());
+			}
+		} else {
+			paths.push_back(ExistingInput(source));
+		}
+	} else {
+		try {
+			auto matches = database.instance->GetFileSystem().GlobFiles(absolute.string());
+			paths.reserve(matches.size());
+			for (const auto &match : matches) {
+				paths.push_back(ExistingInput(match.path));
+			}
+		} catch (const std::exception &exception) {
+			throw SqrailError(EXIT_INPUT, "DATASET_GLOB_FAILED",
+			                  "cannot expand input dataset: " + source + ": " + exception.what());
+		}
+	}
+
+	std::sort(paths.begin(), paths.end());
+	paths.erase(std::unique(paths.begin(), paths.end()), paths.end());
+	ValidateInputSet(paths, source);
+	return paths;
+}
+
 TableBinding ParseBinding(const std::string &raw) {
 	const auto separator = raw.find('=');
 	if (separator == std::string::npos || separator == 0 || separator + 1 >= raw.size()) {
-		throw SqrailError(EXIT_USAGE, "INVALID_TABLE", "table binding must be NAME=FILE: " + raw);
+		throw SqrailError(EXIT_USAGE, "INVALID_TABLE", "table binding must be NAME=PATH: " + raw);
 	}
 
 	const std::string name = raw.substr(0, separator);
@@ -230,7 +300,7 @@ TableBinding ParseBinding(const std::string &raw) {
 	if (!std::regex_match(name, identifier)) {
 		throw SqrailError(EXIT_USAGE, "INVALID_TABLE_NAME", "table name must match [A-Za-z_][A-Za-z0-9_]*: " + name);
 	}
-	return {name, ExistingInput(raw.substr(separator + 1))};
+	return {name, raw.substr(separator + 1), {}};
 }
 
 std::string ReadStdin() {
@@ -267,21 +337,44 @@ uint64_t ParseThreads(const std::string &raw) {
 	return value;
 }
 
-std::string ParseMemory(const std::string &raw) {
+std::string ParseSize(const std::string &raw, const std::string &option, const std::string &code) {
 	static const std::regex size_pattern("^[0-9]+([.][0-9]+)?(B|KB|MB|GB|TB|KiB|MiB|GiB|TiB)$", std::regex::icase);
 	if (!std::regex_match(raw, size_pattern)) {
-		throw SqrailError(EXIT_USAGE, "INVALID_MEMORY", "--memory must be a size such as 512MB or 2GB");
+		throw SqrailError(EXIT_USAGE, code, option + " must be a size such as 512MB or 2GB");
 	}
 	try {
 		if (std::stod(raw) <= 0) {
-			throw SqrailError(EXIT_USAGE, "INVALID_MEMORY", "--memory must be greater than zero");
+			throw SqrailError(EXIT_USAGE, code, option + " must be greater than zero");
 		}
 	} catch (const std::invalid_argument &) {
-		throw SqrailError(EXIT_USAGE, "INVALID_MEMORY", "--memory must be a size such as 512MB or 2GB");
+		throw SqrailError(EXIT_USAGE, code, option + " must be a size such as 512MB or 2GB");
 	} catch (const std::out_of_range &) {
-		throw SqrailError(EXIT_USAGE, "INVALID_MEMORY", "--memory value is too large");
+		throw SqrailError(EXIT_USAGE, code, option + " value is too large");
 	}
 	return raw;
+}
+
+std::chrono::milliseconds ParseTimeout(const std::string &raw) {
+	static const std::regex duration_pattern("^([0-9]+([.][0-9]+)?)(ms|s|m)$", std::regex::icase);
+	std::smatch match;
+	if (!std::regex_match(raw, match, duration_pattern)) {
+		throw SqrailError(EXIT_USAGE, "INVALID_TIMEOUT", "--timeout must be a duration such as 250ms, 30s, or 2m");
+	}
+
+	double value = 0;
+	try {
+		value = std::stod(match[1].str());
+	} catch (const std::exception &) {
+		throw SqrailError(EXIT_USAGE, "INVALID_TIMEOUT", "--timeout must be a finite positive duration");
+	}
+	const std::string unit = Lower(match[3].str());
+	const double multiplier = unit == "ms" ? 1.0 : (unit == "s" ? 1000.0 : 60000.0);
+	const double milliseconds = value * multiplier;
+	constexpr double maximum = 7.0 * 24.0 * 60.0 * 60.0 * 1000.0;
+	if (milliseconds < 1.0 || milliseconds > maximum) {
+		throw SqrailError(EXIT_USAGE, "INVALID_TIMEOUT", "--timeout must be between 1ms and 7 days");
+	}
+	return std::chrono::milliseconds(static_cast<int64_t>(milliseconds));
 }
 
 std::string RequireValue(int &index, int argc, char **argv, const std::string &option) {
@@ -292,13 +385,15 @@ std::string RequireValue(int &index, int argc, char **argv, const std::string &o
 	return argv[index];
 }
 
-RunOptions ParseRun(int argc, char **argv) {
+RunOptions ParseRun(int argc, char **argv, const bool check_only) {
 	RunOptions options;
 	std::vector<std::string> positional;
 	std::unordered_set<std::string> table_names;
 	bool has_memory = false;
+	bool has_max_spill = false;
 	bool has_threads = false;
 	bool has_spill = false;
+	bool has_timeout = false;
 
 	for (int index = 2; index < argc; ++index) {
 		const std::string argument = argv[index];
@@ -309,6 +404,9 @@ RunOptions ParseRun(int argc, char **argv) {
 			}
 			options.tables.push_back(std::move(table));
 		} else if (argument == "-o" || argument == "--output") {
+			if (check_only) {
+				throw SqrailError(EXIT_USAGE, "CHECK_OUTPUT", "check does not accept --output");
+			}
 			if (options.has_output) {
 				throw SqrailError(EXIT_USAGE, "DUPLICATE_OPTION", "--output may only be specified once");
 			}
@@ -318,7 +416,7 @@ RunOptions ParseRun(int argc, char **argv) {
 			if (has_memory) {
 				throw SqrailError(EXIT_USAGE, "DUPLICATE_OPTION", "--memory may only be specified once");
 			}
-			options.memory_limit = ParseMemory(RequireValue(index, argc, argv, argument));
+			options.memory_limit = ParseSize(RequireValue(index, argc, argv, argument), "--memory", "INVALID_MEMORY");
 			has_memory = true;
 		} else if (argument == "--threads") {
 			if (has_threads) {
@@ -327,25 +425,48 @@ RunOptions ParseRun(int argc, char **argv) {
 			options.threads = ParseThreads(RequireValue(index, argc, argv, argument));
 			has_threads = true;
 		} else if (argument == "--spill") {
+			if (check_only) {
+				throw SqrailError(EXIT_USAGE, "CHECK_SPILL", "check does not accept --spill");
+			}
 			if (has_spill) {
 				throw SqrailError(EXIT_USAGE, "DUPLICATE_OPTION", "--spill may only be specified once");
 			}
 			options.spill_directory = fs::absolute(RequireValue(index, argc, argv, argument));
 			has_spill = true;
-		} else if (argument == "-") {
+		} else if (argument == "--max-spill") {
+			if (check_only) {
+				throw SqrailError(EXIT_USAGE, "CHECK_SPILL", "check does not accept --max-spill");
+			}
+			if (has_max_spill) {
+				throw SqrailError(EXIT_USAGE, "DUPLICATE_OPTION", "--max-spill may only be specified once");
+			}
+			options.max_spill =
+			    ParseSize(RequireValue(index, argc, argv, argument), "--max-spill", "INVALID_MAX_SPILL");
+			has_max_spill = true;
+		} else if (argument == "--timeout") {
+			if (has_timeout) {
+				throw SqrailError(EXIT_USAGE, "DUPLICATE_OPTION", "--timeout may only be specified once");
+			}
+			options.timeout = ParseTimeout(RequireValue(index, argc, argv, argument));
+			has_timeout = true;
+		} else if (argument.empty() || argument == "-" || argument.front() != '-') {
 			positional.push_back(argument);
-		} else if (!argument.empty() && argument.front() == '-') {
-			throw SqrailError(EXIT_USAGE, "UNKNOWN_OPTION", "unknown option: " + argument);
 		} else {
-			positional.push_back(argument);
+			throw SqrailError(EXIT_USAGE, "UNKNOWN_OPTION", "unknown option: " + argument);
 		}
 	}
 
 	if (positional.size() != 1) {
-		throw SqrailError(EXIT_USAGE, "SQL_ARGUMENT", "run expects exactly one SQL argument or '-' for stdin");
+		throw SqrailError(EXIT_USAGE, "SQL_ARGUMENT",
+		                  std::string(check_only ? "check" : "run") +
+		                      " expects exactly one SQL argument or '-' for stdin");
 	}
 	options.sql = positional.front() == "-" ? ReadStdin() : positional.front();
 	options.sql = NormalizeQuery(std::move(options.sql));
+
+	if (has_max_spill && !has_spill) {
+		throw SqrailError(EXIT_USAGE, "MAX_SPILL_REQUIRES_SPILL", "--max-spill requires --spill DIR");
+	}
 
 	if (options.has_output) {
 		std::error_code error;
@@ -361,6 +482,76 @@ RunOptions ParseRun(int argc, char **argv) {
 	return options;
 }
 
+std::string UniqueToken() {
+	std::random_device random;
+	const auto timestamp = std::chrono::steady_clock::now().time_since_epoch().count();
+	return std::to_string(timestamp) + "-" + std::to_string(static_cast<uint64_t>(random()));
+}
+
+class SpillWorkspace final {
+public:
+	explicit SpillWorkspace(const fs::path &requested_root) {
+		if (requested_root.empty()) {
+			return;
+		}
+
+		std::error_code error;
+		fs::create_directories(requested_root, error);
+		if (error || !fs::is_directory(requested_root, error)) {
+			throw SqrailError(EXIT_OUTPUT, "SPILL_DIRECTORY",
+			                  "cannot create spill directory: " + requested_root.string());
+		}
+		const auto root = fs::weakly_canonical(requested_root, error);
+		if (error) {
+			throw SqrailError(EXIT_OUTPUT, "SPILL_DIRECTORY",
+			                  "cannot resolve spill directory: " + requested_root.string());
+		}
+
+		for (int attempt = 0; attempt < 32; ++attempt) {
+			auto candidate = root / (".sqrail-spill-" + UniqueToken());
+			error.clear();
+			if (!fs::create_directory(candidate, error)) {
+				if (error && error != std::errc::file_exists) {
+					throw SqrailError(EXIT_OUTPUT, "SPILL_DIRECTORY",
+					                  "cannot create private spill directory: " + root.string() + ": " +
+					                      error.message());
+				}
+				continue;
+			}
+
+			fs::permissions(candidate, fs::perms::owner_all, fs::perm_options::replace, error);
+			if (error) {
+				const auto message = error.message();
+				std::error_code ignored;
+				fs::remove_all(candidate, ignored);
+				throw SqrailError(EXIT_OUTPUT, "SPILL_DIRECTORY",
+				                  "cannot protect private spill directory: " + candidate.string() + ": " + message);
+			}
+			path = std::move(candidate);
+			return;
+		}
+		throw SqrailError(EXIT_OUTPUT, "SPILL_DIRECTORY",
+		                  "cannot allocate a unique private spill directory under: " + root.string());
+	}
+
+	SpillWorkspace(const SpillWorkspace &) = delete;
+	SpillWorkspace &operator=(const SpillWorkspace &) = delete;
+
+	~SpillWorkspace() {
+		if (!path.empty()) {
+			std::error_code ignored;
+			fs::remove_all(path, ignored);
+		}
+	}
+
+	[[nodiscard]] const fs::path &Path() const {
+		return path;
+	}
+
+private:
+	fs::path path;
+};
+
 void CheckResult(const duckdb::unique_ptr<duckdb::MaterializedQueryResult> &result,
                  const std::string &code = "QUERY_FAILED") {
 	if (result->HasError()) {
@@ -374,9 +565,10 @@ void CheckResult(const duckdb::unique_ptr<duckdb::QueryResult> &result, const st
 	}
 }
 
-void Configure(duckdb::Connection &connection, const RunOptions &options) {
+void Configure(duckdb::Connection &connection, const RunOptions &options, const std::vector<fs::path> &allowed_paths) {
 	CheckResult(connection.Query("SET autoinstall_known_extensions = false"));
 	CheckResult(connection.Query("SET autoload_known_extensions = false"));
+	CheckResult(connection.Query("SET allow_community_extensions = false"));
 	CheckResult(connection.Query("SET preserve_insertion_order = false"));
 
 	if (!options.memory_limit.empty()) {
@@ -393,13 +585,72 @@ void Configure(duckdb::Connection &connection, const RunOptions &options) {
 			                  "cannot create spill directory: " + options.spill_directory.string());
 		}
 		CheckResult(connection.Query("SET temp_directory = " + SqlString(options.spill_directory.string())));
+		if (!options.max_spill.empty()) {
+			CheckResult(connection.Query("SET max_temp_directory_size = " + SqlString(options.max_spill)));
+		}
+		const std::vector<fs::path> allowed_directories {fs::weakly_canonical(options.spill_directory)};
+		CheckResult(connection.Query("SET allowed_directories = " + SqlPathList(allowed_directories)));
+	} else {
+		CheckResult(connection.Query("SET temp_directory = ''"));
 	}
+
+	CheckResult(connection.Query("SET allowed_paths = " + SqlPathList(allowed_paths)));
+	CheckResult(connection.Query("SET enable_external_access = false"));
+	CheckResult(connection.Query("SET lock_configuration = true"));
 }
+
+class QueryDeadline final {
+public:
+	QueryDeadline(duckdb::Connection &connection_p, const std::chrono::milliseconds timeout)
+	    : connection(connection_p) {
+		if (timeout.count() > 0) {
+			worker = std::thread([this, timeout]() {
+				std::unique_lock<std::mutex> lock(mutex);
+				if (condition.wait_for(lock, timeout, [this]() { return complete; })) {
+					return;
+				}
+				timed_out.store(true);
+				lock.unlock();
+				connection.Interrupt();
+			});
+		}
+	}
+
+	QueryDeadline(const QueryDeadline &) = delete;
+	QueryDeadline &operator=(const QueryDeadline &) = delete;
+
+	~QueryDeadline() {
+		Stop();
+	}
+
+	void Stop() {
+		{
+			std::lock_guard<std::mutex> lock(mutex);
+			complete = true;
+		}
+		condition.notify_one();
+		if (worker.joinable()) {
+			worker.join();
+		}
+	}
+
+	[[nodiscard]] bool TimedOut() const {
+		return timed_out.load();
+	}
+
+private:
+	duckdb::Connection &connection;
+	std::atomic<bool> timed_out {false};
+	std::condition_variable condition;
+	std::mutex mutex;
+	std::thread worker;
+	bool complete = false;
+};
 
 void BindTables(duckdb::Connection &connection, const std::vector<TableBinding> &tables) {
 	for (const auto &table : tables) {
 		const std::string sql = "CREATE OR REPLACE TEMP VIEW " + SqlIdentifier(table.name) + " AS SELECT * FROM " +
-		                        ReaderExpression(table.path);
+		                        ReaderExpression(table.paths);
 		CheckResult(connection.Query(sql), "TABLE_BIND_FAILED");
 	}
 }
@@ -422,10 +673,8 @@ std::string ValidateSelectQuery(duckdb::Connection &connection, const std::strin
 }
 
 fs::path TemporaryOutputPath(const fs::path &output) {
-	std::random_device random;
-	const auto timestamp = std::chrono::steady_clock::now().time_since_epoch().count();
 	fs::path temporary = output;
-	temporary += ".sqrail-tmp-" + std::to_string(timestamp) + "-" + std::to_string(static_cast<uint64_t>(random()));
+	temporary += ".sqrail-tmp-" + UniqueToken();
 	return temporary;
 }
 
@@ -447,52 +696,167 @@ void CommitOutput(const fs::path &temporary, const fs::path &output) {
 	fs::remove(temporary, error);
 }
 
-int Run(int argc, char **argv) {
-	RunOptions options = ParseRun(argc, argv);
-	duckdb::DuckDB database(nullptr);
-	duckdb::Connection connection(database);
-	Configure(connection, options);
-	BindTables(connection, options.tables);
-	options.sql = ValidateSelectQuery(connection, options.sql);
-
-	if (options.has_output) {
-		const fs::path temporary_output = TemporaryOutputPath(options.output);
-		const std::string copy_sql = "COPY (" + options.sql + ") TO " + SqlString(temporary_output.string()) + " (" +
-		                             CopyOptionsFor(options.output) + ")";
-		try {
-			CheckResult(connection.Query(copy_sql));
-			CommitOutput(temporary_output, options.output);
-		} catch (...) {
-			std::error_code ignored;
-			fs::remove(temporary_output, ignored);
-			throw;
-		}
-		return 0;
-	}
-
-	// DuckDB exposes a whole result row as a STRUCT when its relation alias is
-	// selected. to_json therefore gives us correct typed JSON without collecting
-	// the result or maintaining a second serializer in sqrail.
-	const std::string stream_sql = "SELECT to_json(__sqrail_row) FROM (" + options.sql + ") AS __sqrail_row";
+template <class WRITE>
+uint64_t StreamJson(duckdb::Connection &connection, const std::string &sql, const bool array, WRITE &&write) {
+	const std::string stream_sql = "SELECT to_json(__sqrail_row) FROM (" + sql + ") AS __sqrail_row";
 	auto result = connection.SendQuery(stream_sql);
 	CheckResult(result);
 
+	constexpr std::size_t buffer_capacity = std::size_t {1024} * 1024U;
+	std::string buffer;
+	buffer.reserve(buffer_capacity);
+	uint64_t rows = 0;
+
+	const auto flush = [&]() {
+		if (!buffer.empty()) {
+			write(buffer.data(), buffer.size());
+			buffer.clear();
+		}
+	};
+	const auto append = [&](const std::string &value) {
+		if (buffer.size() + value.size() > buffer_capacity) {
+			flush();
+		}
+		if (value.size() > buffer_capacity) {
+			write(value.data(), value.size());
+		} else {
+			buffer.append(value);
+		}
+	};
+
+	if (array) {
+		buffer.push_back('[');
+	}
 	while (true) {
 		auto chunk = result->Fetch();
 		if (!chunk) {
 			break;
 		}
 		for (duckdb::idx_t row = 0; row < chunk->size(); ++row) {
-			const auto value = chunk->GetValue(0, row);
-			if (value.IsNull()) {
-				std::cout << "null\n";
-			} else {
-				std::cout << value.GetValue<std::string>() << '\n';
+			if (array && rows != 0) {
+				buffer.push_back(',');
 			}
+			const auto value = chunk->GetValue(0, row);
+			append(value.IsNull() ? "null" : sqrail::StrictJson(value.GetValue<std::string>()));
+			if (!array) {
+				buffer.push_back('\n');
+			}
+			++rows;
 		}
 	}
 	if (result->HasError()) {
 		throw SqrailError(EXIT_QUERY, "QUERY_FAILED", result->GetError());
+	}
+	if (array) {
+		buffer += "]\n";
+	}
+	flush();
+	return rows;
+}
+
+uint64_t WriteJsonFile(duckdb::DuckDB &database, duckdb::Connection &connection, const std::string &sql,
+                       const fs::path &temporary, const FileType &type) {
+	auto flags = duckdb::FileFlags::FILE_FLAGS_WRITE | duckdb::FileFlags::FILE_FLAGS_FILE_CREATE |
+	             duckdb::FileFlags::FILE_FLAGS_EXCLUSIVE_CREATE | duckdb::FileFlags::FILE_FLAGS_PRIVATE |
+	             duckdb::FileOpenFlags(CompressionTypeFor(type));
+	auto &file_system = database.instance->GetFileSystem();
+	auto handle = file_system.OpenFile(temporary.string(), flags);
+	const auto write = [&](const char *data, const std::size_t size) {
+		handle->Write(const_cast<char *>(data), size);
+	};
+	const auto rows = StreamJson(connection, sql, type.extension == ".json", write);
+	handle->Close();
+	return rows;
+}
+
+int Execute(int argc, char **argv, const bool check_only) {
+	RunOptions options = ParseRun(argc, argv, check_only);
+	SpillWorkspace spill_workspace(options.spill_directory);
+	options.spill_directory = spill_workspace.Path();
+	duckdb::DuckDB database(nullptr);
+	duckdb::Connection connection(database);
+
+	std::vector<fs::path> allowed_paths;
+	for (auto &table : options.tables) {
+		table.paths = ResolveInputSet(database, table.source);
+		allowed_paths.insert(allowed_paths.end(), table.paths.begin(), table.paths.end());
+	}
+	const fs::path temporary_output = options.has_output ? TemporaryOutputPath(options.output) : fs::path();
+	if (options.has_output) {
+		allowed_paths.push_back(temporary_output);
+	}
+	Configure(connection, options, allowed_paths);
+	QueryDeadline deadline(connection, options.timeout);
+	try {
+		BindTables(connection, options.tables);
+		options.sql = ValidateSelectQuery(connection, options.sql);
+
+		if (check_only) {
+			auto result = connection.Query("EXPLAIN (FORMAT JSON) " + options.sql);
+			CheckResult(result, "PLAN_FAILED");
+			std::string plan;
+			while (true) {
+				auto chunk = result->Fetch();
+				if (!chunk) {
+					break;
+				}
+				for (duckdb::idx_t row = 0; row < chunk->size(); ++row) {
+					const auto column = chunk->ColumnCount() - 1;
+					plan = chunk->GetValue(column, row).ToString();
+				}
+			}
+			deadline.Stop();
+			if (deadline.TimedOut()) {
+				throw SqrailError(EXIT_QUERY, "QUERY_TIMEOUT", "query planning exceeded --timeout");
+			}
+			if (plan.empty()) {
+				throw SqrailError(EXIT_QUERY, "PLAN_FAILED", "DuckDB returned an empty physical plan");
+			}
+			std::cout << "{\"ok\":true,\"plan\":" << sqrail::StrictJson(plan) << "}\n";
+			return 0;
+		}
+
+		if (options.has_output) {
+			const auto type = DetectFileType(options.output, EXIT_OUTPUT, "UNSUPPORTED_OUTPUT");
+			if (IsJsonOutput(type)) {
+				WriteJsonFile(database, connection, options.sql, temporary_output, type);
+			} else {
+				const std::string copy_sql = "COPY (" + options.sql + ") TO " + SqlString(temporary_output.string()) +
+				                             " (" + CopyOptionsFor(options.output) + ")";
+				CheckResult(connection.Query(copy_sql));
+			}
+			deadline.Stop();
+			if (deadline.TimedOut()) {
+				throw SqrailError(EXIT_QUERY, "QUERY_TIMEOUT", "query exceeded --timeout");
+			}
+			CommitOutput(temporary_output, options.output);
+			return 0;
+		}
+
+		// A whole result row is a STRUCT, so DuckDB performs typed JSON conversion.
+		// sqrail applies the strict RFC 8259 boundary and batches writes to reduce
+		// iostream overhead without collecting the full result.
+		const auto write = [](const char *data, const std::size_t size) {
+			std::cout.write(data, static_cast<std::streamsize>(size));
+			if (!std::cout) {
+				throw SqrailError(EXIT_OUTPUT, "STDOUT_WRITE", "cannot write query result to stdout");
+			}
+		};
+		StreamJson(connection, options.sql, false, write);
+		deadline.Stop();
+		if (deadline.TimedOut()) {
+			throw SqrailError(EXIT_QUERY, "QUERY_TIMEOUT", "query exceeded --timeout");
+		}
+	} catch (...) {
+		deadline.Stop();
+		if (options.has_output) {
+			std::error_code ignored;
+			fs::remove(temporary_output, ignored);
+		}
+		if (deadline.TimedOut()) {
+			throw SqrailError(EXIT_QUERY, "QUERY_TIMEOUT", "query exceeded --timeout");
+		}
+		throw;
 	}
 	return 0;
 }
@@ -504,20 +868,34 @@ int Schema(int argc, char **argv) {
 
 	duckdb::DuckDB database(nullptr);
 	duckdb::Connection connection(database);
-	RunOptions defaults;
-	Configure(connection, defaults);
-
+	struct SchemaInput {
+		std::string source;
+		std::vector<fs::path> paths;
+	};
+	std::vector<SchemaInput> inputs;
+	std::vector<fs::path> allowed_paths;
+	inputs.reserve(static_cast<std::size_t>(argc - 2));
 	for (int index = 2; index < argc; ++index) {
-		const fs::path path = ExistingInput(argv[index]);
-		const std::string view_name = "__sqrail_schema_" + std::to_string(index - 2);
+		const auto source = fs::absolute(fs::path(argv[index])).lexically_normal().string();
+		auto paths = ResolveInputSet(database, source);
+		allowed_paths.insert(allowed_paths.end(), paths.begin(), paths.end());
+		inputs.push_back({source, std::move(paths)});
+	}
+	RunOptions defaults;
+	Configure(connection, defaults, allowed_paths);
+
+	for (std::size_t index = 0; index < inputs.size(); ++index) {
+		const auto &input = inputs[index];
+		const std::string view_name = "__sqrail_schema_" + std::to_string(index);
 		const std::string bind_sql =
-		    "CREATE TEMP VIEW " + SqlIdentifier(view_name) + " AS SELECT * FROM " + ReaderExpression(path);
+		    "CREATE TEMP VIEW " + SqlIdentifier(view_name) + " AS SELECT * FROM " + ReaderExpression(input.paths);
 		CheckResult(connection.Query(bind_sql), "SCHEMA_INFERENCE_FAILED");
 
 		auto result = connection.Query("DESCRIBE SELECT * FROM " + SqlIdentifier(view_name));
 		CheckResult(result, "SCHEMA_INFERENCE_FAILED");
 
-		std::cout << "{\"file\":\"" << JsonEscape(path.string()) << "\",\"columns\":[";
+		std::cout << "{\"file\":\"" << sqrail::JsonEscape(input.source) << "\",\"files\":" << input.paths.size()
+		          << ",\"columns\":[";
 		bool first = true;
 		while (true) {
 			auto chunk = result->Fetch();
@@ -532,7 +910,7 @@ int Schema(int argc, char **argv) {
 				const auto name = chunk->GetValue(0, row).ToString();
 				const auto type = chunk->GetValue(1, row).ToString();
 				const auto nullable = chunk->GetValue(2, row).ToString();
-				std::cout << "{\"name\":\"" << JsonEscape(name) << "\",\"type\":\"" << JsonEscape(type)
+				std::cout << "{\"name\":\"" << sqrail::JsonEscape(name) << "\",\"type\":\"" << sqrail::JsonEscape(type)
 				          << "\",\"nullable\":" << (nullable == "YES" ? "true" : "false") << '}';
 			}
 		}
@@ -542,18 +920,20 @@ int Schema(int argc, char **argv) {
 }
 
 void PrintAgentHelp() {
-	std::cout << "sqrail executes one read-only DuckDB query over CSV, TSV, JSON, and Parquet files.\n"
+	std::cout << "sqrail runs read-only SQL over CSV, TSV, JSON, and Parquet.\n"
 	          << "\n"
 	          << "sqrail schema FILE...\n"
-	          << "sqrail run [-t NAME=FILE]... [-o FILE] [--memory SIZE] [--threads N]\n"
-	          << "           [--spill DIR] [SQL|-]\n"
+	          << "sqrail check [-t NAME=PATH]... [--memory SIZE] [--threads N] [--timeout DURATION] [SQL|-]\n"
+	          << "sqrail run [-t NAME=PATH]... [-o FILE] [--memory SIZE] [--threads N]\n"
+	          << "           [--spill DIR [--max-spill SIZE]] [--timeout DURATION] [SQL|-]\n"
 	          << "sqrail --version\n"
 	          << "\n"
-	          << "-t binds a read-only file to a SQL table name. '-' reads SQL from stdin.\n"
+	          << "-t binds a read-only file, Parquet directory, or glob. '-' reads SQL from stdin.\n"
+	          << "check validates SQL and emits its JSON physical plan without executing it.\n"
 	          << "Without -o, rows are JSONL on stdout. With -o, format follows the extension.\n"
-	          << "Text files may use .gz or .zst. Outputs are atomic and never overwritten.\n"
+	          << "Text files may use .gz or .zst. Outputs are atomic, never overwritten.\n"
 	          << "SQL is one SELECT, VALUES, or WITH query. Row order is undefined without ORDER BY.\n"
-	          << "Diagnostics are one JSON object on stderr.\n"
+	          << "Errors are one JSON object on stderr.\n"
 	          << "Exit codes: 0 success, 2 usage, 3 input, 4 SQL, 5 output, 70 internal.\n";
 }
 
@@ -567,8 +947,8 @@ void PrintHumanHelp() {
 }
 
 void PrintError(const std::string &code, const std::string &message) {
-	std::cerr << "{\"ok\":false,\"code\":\"" << JsonEscape(code) << "\",\"message\":\"" << JsonEscape(message)
-	          << "\"}\n";
+	std::cerr << "{\"ok\":false,\"code\":\"" << sqrail::JsonEscape(code) << "\",\"message\":\""
+	          << sqrail::JsonEscape(message) << "\"}\n";
 }
 
 } // namespace
@@ -597,7 +977,10 @@ int main(int argc, char **argv) {
 			return Schema(argc, argv);
 		}
 		if (command == "run") {
-			return Run(argc, argv);
+			return Execute(argc, argv, false);
+		}
+		if (command == "check") {
+			return Execute(argc, argv, true);
 		}
 
 		throw SqrailError(EXIT_USAGE, "UNKNOWN_COMMAND", "unknown command: " + command);

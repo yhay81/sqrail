@@ -1,0 +1,256 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 25,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/out/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": true,
+        "SQRAIL_BUILD_TESTS": true,
+        "SQRAIL_WARNINGS_AS_ERRORS": true
+      }
+    },
+    {
+      "name": "dev",
+      "displayName": "Developer debug build",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "SQRAIL_ENABLE_HARDENING": true
+      }
+    },
+    {
+      "name": "release",
+      "displayName": "Portable hardened release",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "SQRAIL_ENABLE_HARDENING": true,
+        "SQRAIL_ENABLE_IPO": true
+      }
+    },
+    {
+      "name": "strict",
+      "displayName": "Clang static analysis",
+      "inherits": "dev",
+      "environment": {
+        "CC": "clang",
+        "CXX": "clang++"
+      },
+      "cacheVariables": {
+        "SQRAIL_ENABLE_CLANG_TIDY": true,
+        "SQRAIL_STATIC_CPP_RUNTIME": false
+      }
+    },
+    {
+      "name": "sanitize",
+      "displayName": "ASan and UBSan",
+      "inherits": "base",
+      "environment": {
+        "CC": "clang",
+        "CXX": "clang++"
+      },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "SQRAIL_ENABLE_SANITIZERS": true,
+        "SQRAIL_STATIC_CPP_RUNTIME": false
+      }
+    },
+    {
+      "name": "fuzz",
+      "displayName": "Coverage-guided fuzzing",
+      "inherits": "base",
+      "environment": {
+        "CC": "clang",
+        "CXX": "clang++"
+      },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "SQRAIL_BUILD_FUZZERS": true,
+        "SQRAIL_BUILD_TESTS": false,
+        "SQRAIL_STATIC_CPP_RUNTIME": false
+      }
+    },
+    {
+      "name": "native",
+      "displayName": "Host-tuned benchmark build",
+      "inherits": "release",
+      "cacheVariables": {
+        "SQRAIL_NATIVE_ARCH": true
+      }
+    },
+    {
+      "name": "pgo-generate",
+      "displayName": "Instrumented PGO training build",
+      "inherits": "release",
+      "environment": {
+        "CC": "clang",
+        "CXX": "clang++"
+      },
+      "cacheVariables": {
+        "SQRAIL_ENABLE_IPO": false,
+        "SQRAIL_PGO_MODE": "GENERATE",
+        "SQRAIL_STATIC_CPP_RUNTIME": false
+      }
+    },
+    {
+      "name": "pgo-use",
+      "displayName": "Profile-guided optimized build",
+      "inherits": "release",
+      "environment": {
+        "CC": "clang",
+        "CXX": "clang++"
+      },
+      "cacheVariables": {
+        "SQRAIL_PGO_MODE": "USE",
+        "SQRAIL_PGO_PROFILE": "${sourceDir}/out/build/pgo-generate/pgo/sqrail.profdata",
+        "SQRAIL_STATIC_CPP_RUNTIME": false
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "dev",
+      "configurePreset": "dev",
+      "targets": ["sqrail", "sqrail-json-test"],
+      "jobs": 2
+    },
+    {
+      "name": "release",
+      "configurePreset": "release",
+      "targets": ["sqrail", "sqrail-json-test"],
+      "jobs": 2
+    },
+    {
+      "name": "strict",
+      "configurePreset": "strict",
+      "targets": ["sqrail-static-analysis", "sqrail-json-test"],
+      "jobs": 2
+    },
+    {
+      "name": "sanitize",
+      "configurePreset": "sanitize",
+      "targets": ["sqrail", "sqrail-json-test"],
+      "jobs": 2
+    },
+    {
+      "name": "fuzz",
+      "configurePreset": "fuzz",
+      "targets": ["sqrail-strict-json-fuzz"],
+      "jobs": 2
+    },
+    {
+      "name": "native",
+      "configurePreset": "native",
+      "targets": ["sqrail"],
+      "jobs": 2
+    },
+    {
+      "name": "pgo-generate",
+      "configurePreset": "pgo-generate",
+      "targets": ["sqrail"],
+      "jobs": 2
+    },
+    {
+      "name": "pgo-use",
+      "configurePreset": "pgo-use",
+      "targets": ["sqrail", "sqrail-json-test"],
+      "jobs": 2
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "dev",
+      "configurePreset": "dev",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "release",
+      "configurePreset": "release",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "strict",
+      "configurePreset": "strict",
+      "output": {
+        "outputOnFailure": true
+      },
+      "filter": {
+        "include": {
+          "name": "sqrail-json-unit"
+        }
+      }
+    },
+    {
+      "name": "sanitize",
+      "configurePreset": "sanitize",
+      "output": {
+        "outputOnFailure": true
+      },
+      "environment": {
+        "ASAN_OPTIONS": "detect_leaks=1:strict_string_checks=1:check_initialization_order=1",
+        "UBSAN_OPTIONS": "print_stacktrace=1:halt_on_error=1"
+      }
+    },
+    {
+      "name": "pgo-use",
+      "configurePreset": "pgo-use",
+      "output": {
+        "outputOnFailure": true
+      }
+    }
+  ],
+  "workflowPresets": [
+    {
+      "name": "dev",
+      "steps": [
+        {"type": "configure", "name": "dev"},
+        {"type": "build", "name": "dev"},
+        {"type": "test", "name": "dev"}
+      ]
+    },
+    {
+      "name": "release",
+      "steps": [
+        {"type": "configure", "name": "release"},
+        {"type": "build", "name": "release"},
+        {"type": "test", "name": "release"}
+      ]
+    },
+    {
+      "name": "strict",
+      "steps": [
+        {"type": "configure", "name": "strict"},
+        {"type": "build", "name": "strict"},
+        {"type": "test", "name": "strict"}
+      ]
+    },
+    {
+      "name": "sanitize",
+      "steps": [
+        {"type": "configure", "name": "sanitize"},
+        {"type": "build", "name": "sanitize"},
+        {"type": "test", "name": "sanitize"}
+      ]
+    },
+    {
+      "name": "pgo-use",
+      "steps": [
+        {"type": "configure", "name": "pgo-use"},
+        {"type": "build", "name": "pgo-use"},
+        {"type": "test", "name": "pgo-use"}
+      ]
+    }
+  ]
+}
