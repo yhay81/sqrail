@@ -9,6 +9,10 @@ Performance claims are accepted only when the benchmark is:
 - reported with engine, compiler, OS, CPU, RAM, and storage versions
 - run with cold and warm filesystem cache results kept separate
 
+The committed [benchmark harness](../benchmarks/README.md) enforces matching
+row counts and logical checksums, records hyperfine timing data, and performs a
+separate peak-RSS run on Linux or macOS.
+
 ## Metrics
 
 - wall-clock time

@@ -3,7 +3,9 @@
 ## DuckDB
 
 sqrail statically links DuckDB v1.5.5 with its `core_functions`, `parquet`, and
-`json` extensions.
+`json` extensions. Release archives also contain the license and notice files
+from DuckDB's bundled third-party directory under
+`share/doc/sqrail/licenses/duckdb-third-party/`.
 
 Source: <https://github.com/duckdb/duckdb>
 

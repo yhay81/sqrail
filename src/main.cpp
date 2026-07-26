@@ -2,15 +2,19 @@
 
 #include <algorithm>
 #include <cctype>
+#include <charconv>
 #include <chrono>
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <random>
 #include <regex>
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <system_error>
+#include <unordered_set>
 #include <vector>
 
 namespace fs = std::filesystem;
@@ -45,6 +49,11 @@ struct RunOptions {
 	std::string memory_limit;
 	uint64_t threads = 0;
 	bool has_output = false;
+};
+
+struct FileType {
+	std::string extension;
+	std::string compression;
 };
 
 std::string JsonEscape(const std::string &input) {
@@ -119,35 +128,49 @@ std::string Lower(std::string value) {
 }
 
 bool EndsWith(const std::string &value, const std::string &suffix) {
-	return value.size() >= suffix.size() &&
-	       value.compare(value.size() - suffix.size(), suffix.size(), suffix) == 0;
+	return value.size() >= suffix.size() && value.compare(value.size() - suffix.size(), suffix.size(), suffix) == 0;
 }
 
-std::string StripCompressionSuffix(std::string path) {
-	for (const char *suffix : {".gz", ".zst", ".bz2", ".xz"}) {
-		if (EndsWith(path, suffix)) {
-			path.resize(path.size() - std::char_traits<char>::length(suffix));
-			break;
-		}
+FileType DetectFileType(const fs::path &path, int exit_code, const std::string &unsupported_code) {
+	std::string filename = Lower(path.filename().string());
+	std::string compression;
+
+	if (EndsWith(filename, ".gz")) {
+		filename.resize(filename.size() - 3);
+		compression = "GZIP";
+	} else if (EndsWith(filename, ".zst")) {
+		filename.resize(filename.size() - 4);
+		compression = "ZSTD";
+	} else if (EndsWith(filename, ".bz2") || EndsWith(filename, ".xz")) {
+		throw SqrailError(exit_code, "UNSUPPORTED_COMPRESSION",
+		                  "unsupported compression: " + path.string() + " (expected gzip or zstd)");
 	}
-	return path;
+
+	const std::string extension = fs::path(filename).extension().string();
+	if (extension.empty()) {
+		throw SqrailError(exit_code, unsupported_code, "file has no supported extension: " + path.string());
+	}
+	return {extension, compression};
 }
 
 std::string ReaderExpression(const fs::path &path) {
 	const std::string quoted = SqlString(path.string());
-	const std::string uncompressed = StripCompressionSuffix(Lower(path.filename().string()));
+	const auto type = DetectFileType(path, EXIT_INPUT, "UNSUPPORTED_FORMAT");
 
-	if (EndsWith(uncompressed, ".parquet")) {
+	if (type.extension == ".parquet") {
+		if (!type.compression.empty()) {
+			throw SqrailError(EXIT_INPUT, "UNSUPPORTED_COMPRESSION",
+			                  "externally compressed Parquet is not supported: " + path.string());
+		}
 		return "read_parquet(" + quoted + ")";
 	}
-	if (EndsWith(uncompressed, ".json") || EndsWith(uncompressed, ".jsonl") ||
-	    EndsWith(uncompressed, ".ndjson")) {
+	if (type.extension == ".json" || type.extension == ".jsonl" || type.extension == ".ndjson") {
 		return "read_json_auto(" + quoted + ")";
 	}
-	if (EndsWith(uncompressed, ".tsv") || EndsWith(uncompressed, ".tab")) {
+	if (type.extension == ".tsv" || type.extension == ".tab") {
 		return "read_csv_auto(" + quoted + ", delim='	')";
 	}
-	if (EndsWith(uncompressed, ".csv")) {
+	if (type.extension == ".csv") {
 		return "read_csv_auto(" + quoted + ")";
 	}
 
@@ -157,25 +180,34 @@ std::string ReaderExpression(const fs::path &path) {
 }
 
 std::string CopyOptionsFor(const fs::path &path) {
-	const std::string extension = Lower(path.extension().string());
-	if (extension == ".parquet") {
+	const auto type = DetectFileType(path, EXIT_OUTPUT, "UNSUPPORTED_OUTPUT");
+	std::string options;
+
+	if (type.extension == ".parquet") {
+		if (!type.compression.empty()) {
+			throw SqrailError(EXIT_OUTPUT, "UNSUPPORTED_COMPRESSION",
+			                  "externally compressed Parquet is not supported: " + path.string());
+		}
 		return "FORMAT PARQUET";
 	}
-	if (extension == ".csv") {
-		return "FORMAT CSV, HEADER true";
+	if (type.extension == ".csv") {
+		options = "FORMAT CSV, HEADER true";
+	} else if (type.extension == ".tsv" || type.extension == ".tab") {
+		options = "FORMAT CSV, HEADER true, DELIMITER '\t'";
+	} else if (type.extension == ".json") {
+		options = "FORMAT JSON, ARRAY true";
+	} else if (type.extension == ".jsonl" || type.extension == ".ndjson") {
+		options = "FORMAT JSON, ARRAY false";
+	} else {
+		throw SqrailError(EXIT_OUTPUT, "UNSUPPORTED_OUTPUT",
+		                  "unsupported output extension: " + path.string() +
+		                      " (expected csv, tsv, json, jsonl, ndjson, or parquet)");
 	}
-	if (extension == ".tsv" || extension == ".tab") {
-		return "FORMAT CSV, HEADER true, DELIMITER '\t'";
+
+	if (!type.compression.empty()) {
+		options += ", COMPRESSION " + type.compression;
 	}
-	if (extension == ".json") {
-		return "FORMAT JSON, ARRAY true";
-	}
-	if (extension == ".jsonl" || extension == ".ndjson") {
-		return "FORMAT JSON, ARRAY false";
-	}
-	throw SqrailError(EXIT_OUTPUT, "UNSUPPORTED_OUTPUT",
-	                  "unsupported output extension: " + path.string() +
-	                      " (expected csv, tsv, json, jsonl, ndjson, or parquet)");
+	return options;
 }
 
 fs::path ExistingInput(const std::string &raw_path) {
@@ -190,15 +222,13 @@ fs::path ExistingInput(const std::string &raw_path) {
 TableBinding ParseBinding(const std::string &raw) {
 	const auto separator = raw.find('=');
 	if (separator == std::string::npos || separator == 0 || separator + 1 >= raw.size()) {
-		throw SqrailError(EXIT_USAGE, "INVALID_TABLE",
-		                  "table binding must be NAME=FILE: " + raw);
+		throw SqrailError(EXIT_USAGE, "INVALID_TABLE", "table binding must be NAME=FILE: " + raw);
 	}
 
 	const std::string name = raw.substr(0, separator);
 	static const std::regex identifier("^[A-Za-z_][A-Za-z0-9_]*$");
 	if (!std::regex_match(name, identifier)) {
-		throw SqrailError(EXIT_USAGE, "INVALID_TABLE_NAME",
-		                  "table name must match [A-Za-z_][A-Za-z0-9_]*: " + name);
+		throw SqrailError(EXIT_USAGE, "INVALID_TABLE_NAME", "table name must match [A-Za-z_][A-Za-z0-9_]*: " + name);
 	}
 	return {name, ExistingInput(raw.substr(separator + 1))};
 }
@@ -226,11 +256,11 @@ std::string NormalizeQuery(std::string sql) {
 }
 
 uint64_t ParseThreads(const std::string &raw) {
-	static const std::regex integer("^[0-9]+$");
-	if (!std::regex_match(raw, integer)) {
+	uint64_t value = 0;
+	const auto parsed = std::from_chars(raw.data(), raw.data() + raw.size(), value);
+	if (raw.empty() || parsed.ec != std::errc() || parsed.ptr != raw.data() + raw.size()) {
 		throw SqrailError(EXIT_USAGE, "INVALID_THREADS", "--threads must be an integer");
 	}
-	const auto value = std::stoull(raw);
 	if (value == 0 || value > 1024) {
 		throw SqrailError(EXIT_USAGE, "INVALID_THREADS", "--threads must be between 1 and 1024");
 	}
@@ -238,11 +268,18 @@ uint64_t ParseThreads(const std::string &raw) {
 }
 
 std::string ParseMemory(const std::string &raw) {
-	static const std::regex size_pattern("^[0-9]+([.][0-9]+)?(B|KB|MB|GB|TB|KiB|MiB|GiB|TiB)$",
-	                                     std::regex::icase);
+	static const std::regex size_pattern("^[0-9]+([.][0-9]+)?(B|KB|MB|GB|TB|KiB|MiB|GiB|TiB)$", std::regex::icase);
 	if (!std::regex_match(raw, size_pattern)) {
-		throw SqrailError(EXIT_USAGE, "INVALID_MEMORY",
-		                  "--memory must be a size such as 512MB or 2GB");
+		throw SqrailError(EXIT_USAGE, "INVALID_MEMORY", "--memory must be a size such as 512MB or 2GB");
+	}
+	try {
+		if (std::stod(raw) <= 0) {
+			throw SqrailError(EXIT_USAGE, "INVALID_MEMORY", "--memory must be greater than zero");
+		}
+	} catch (const std::invalid_argument &) {
+		throw SqrailError(EXIT_USAGE, "INVALID_MEMORY", "--memory must be a size such as 512MB or 2GB");
+	} catch (const std::out_of_range &) {
+		throw SqrailError(EXIT_USAGE, "INVALID_MEMORY", "--memory value is too large");
 	}
 	return raw;
 }
@@ -258,20 +295,43 @@ std::string RequireValue(int &index, int argc, char **argv, const std::string &o
 RunOptions ParseRun(int argc, char **argv) {
 	RunOptions options;
 	std::vector<std::string> positional;
+	std::unordered_set<std::string> table_names;
+	bool has_memory = false;
+	bool has_threads = false;
+	bool has_spill = false;
 
 	for (int index = 2; index < argc; ++index) {
 		const std::string argument = argv[index];
 		if (argument == "-t" || argument == "--table") {
-			options.tables.push_back(ParseBinding(RequireValue(index, argc, argv, argument)));
+			auto table = ParseBinding(RequireValue(index, argc, argv, argument));
+			if (!table_names.insert(Lower(table.name)).second) {
+				throw SqrailError(EXIT_USAGE, "DUPLICATE_TABLE", "table name is bound more than once: " + table.name);
+			}
+			options.tables.push_back(std::move(table));
 		} else if (argument == "-o" || argument == "--output") {
+			if (options.has_output) {
+				throw SqrailError(EXIT_USAGE, "DUPLICATE_OPTION", "--output may only be specified once");
+			}
 			options.output = fs::absolute(RequireValue(index, argc, argv, argument));
 			options.has_output = true;
 		} else if (argument == "--memory") {
+			if (has_memory) {
+				throw SqrailError(EXIT_USAGE, "DUPLICATE_OPTION", "--memory may only be specified once");
+			}
 			options.memory_limit = ParseMemory(RequireValue(index, argc, argv, argument));
+			has_memory = true;
 		} else if (argument == "--threads") {
+			if (has_threads) {
+				throw SqrailError(EXIT_USAGE, "DUPLICATE_OPTION", "--threads may only be specified once");
+			}
 			options.threads = ParseThreads(RequireValue(index, argc, argv, argument));
+			has_threads = true;
 		} else if (argument == "--spill") {
+			if (has_spill) {
+				throw SqrailError(EXIT_USAGE, "DUPLICATE_OPTION", "--spill may only be specified once");
+			}
 			options.spill_directory = fs::absolute(RequireValue(index, argc, argv, argument));
+			has_spill = true;
 		} else if (argument == "-") {
 			positional.push_back(argument);
 		} else if (!argument.empty() && argument.front() == '-') {
@@ -282,8 +342,7 @@ RunOptions ParseRun(int argc, char **argv) {
 	}
 
 	if (positional.size() != 1) {
-		throw SqrailError(EXIT_USAGE, "SQL_ARGUMENT",
-		                  "run expects exactly one SQL argument or '-' for stdin");
+		throw SqrailError(EXIT_USAGE, "SQL_ARGUMENT", "run expects exactly one SQL argument or '-' for stdin");
 	}
 	options.sql = positional.front() == "-" ? ReadStdin() : positional.front();
 	options.sql = NormalizeQuery(std::move(options.sql));
@@ -291,13 +350,11 @@ RunOptions ParseRun(int argc, char **argv) {
 	if (options.has_output) {
 		std::error_code error;
 		if (fs::exists(options.output, error)) {
-			throw SqrailError(EXIT_OUTPUT, "OUTPUT_EXISTS",
-			                  "output already exists: " + options.output.string());
+			throw SqrailError(EXIT_OUTPUT, "OUTPUT_EXISTS", "output already exists: " + options.output.string());
 		}
 		const fs::path parent = options.output.parent_path();
 		if (!parent.empty() && !fs::is_directory(parent)) {
-			throw SqrailError(EXIT_OUTPUT, "OUTPUT_DIRECTORY",
-			                  "output directory does not exist: " + parent.string());
+			throw SqrailError(EXIT_OUTPUT, "OUTPUT_DIRECTORY", "output directory does not exist: " + parent.string());
 		}
 	}
 
@@ -311,8 +368,7 @@ void CheckResult(const duckdb::unique_ptr<duckdb::MaterializedQueryResult> &resu
 	}
 }
 
-void CheckResult(const duckdb::unique_ptr<duckdb::QueryResult> &result,
-                 const std::string &code = "QUERY_FAILED") {
+void CheckResult(const duckdb::unique_ptr<duckdb::QueryResult> &result, const std::string &code = "QUERY_FAILED") {
 	if (result->HasError()) {
 		throw SqrailError(EXIT_QUERY, code, result->GetError());
 	}
@@ -336,17 +392,59 @@ void Configure(duckdb::Connection &connection, const RunOptions &options) {
 			throw SqrailError(EXIT_OUTPUT, "SPILL_DIRECTORY",
 			                  "cannot create spill directory: " + options.spill_directory.string());
 		}
-		CheckResult(connection.Query("SET temp_directory = " +
-		                             SqlString(options.spill_directory.string())));
+		CheckResult(connection.Query("SET temp_directory = " + SqlString(options.spill_directory.string())));
 	}
 }
 
 void BindTables(duckdb::Connection &connection, const std::vector<TableBinding> &tables) {
 	for (const auto &table : tables) {
-		const std::string sql = "CREATE OR REPLACE TEMP VIEW " + SqlIdentifier(table.name) +
-		                        " AS SELECT * FROM " + ReaderExpression(table.path);
+		const std::string sql = "CREATE OR REPLACE TEMP VIEW " + SqlIdentifier(table.name) + " AS SELECT * FROM " +
+		                        ReaderExpression(table.path);
 		CheckResult(connection.Query(sql), "TABLE_BIND_FAILED");
 	}
+}
+
+std::string ValidateSelectQuery(duckdb::Connection &connection, const std::string &sql) {
+	std::vector<duckdb::unique_ptr<duckdb::SQLStatement>> statements;
+	try {
+		statements = connection.ExtractStatements(sql);
+	} catch (const std::exception &error) {
+		throw SqrailError(EXIT_QUERY, "QUERY_FAILED", error.what());
+	}
+
+	if (statements.size() != 1) {
+		throw SqrailError(EXIT_QUERY, "MULTIPLE_STATEMENTS", "exactly one SQL statement is required");
+	}
+	if (statements.front()->type != duckdb::StatementType::SELECT_STATEMENT) {
+		throw SqrailError(EXIT_QUERY, "READ_ONLY_QUERY", "only a SELECT, VALUES, or WITH query is allowed");
+	}
+	return NormalizeQuery(statements.front()->ToString());
+}
+
+fs::path TemporaryOutputPath(const fs::path &output) {
+	std::random_device random;
+	const auto timestamp = std::chrono::steady_clock::now().time_since_epoch().count();
+	fs::path temporary = output;
+	temporary += ".sqrail-tmp-" + std::to_string(timestamp) + "-" + std::to_string(static_cast<uint64_t>(random()));
+	return temporary;
+}
+
+void CommitOutput(const fs::path &temporary, const fs::path &output) {
+	std::error_code error;
+	fs::create_hard_link(temporary, output, error);
+	if (error) {
+		std::error_code ignored;
+		fs::remove(temporary, ignored);
+		if (fs::exists(output, ignored)) {
+			throw SqrailError(EXIT_OUTPUT, "OUTPUT_EXISTS", "output appeared during execution: " + output.string());
+		}
+		throw SqrailError(EXIT_OUTPUT, "OUTPUT_COMMIT",
+		                  "cannot commit output: " + output.string() + ": " + error.message());
+	}
+
+	// The destination now names the completed inode. Removing the private name
+	// cannot invalidate the committed output, so cleanup is deliberately best effort.
+	fs::remove(temporary, error);
 }
 
 int Run(int argc, char **argv) {
@@ -355,29 +453,15 @@ int Run(int argc, char **argv) {
 	duckdb::Connection connection(database);
 	Configure(connection, options);
 	BindTables(connection, options.tables);
+	options.sql = ValidateSelectQuery(connection, options.sql);
 
 	if (options.has_output) {
-		const auto nonce =
-		    std::chrono::steady_clock::now().time_since_epoch().count();
-		fs::path temporary_output = options.output;
-		temporary_output += ".sqrail-tmp-" + std::to_string(nonce);
-		const std::string copy_sql = "COPY (" + options.sql + ") TO " +
-		                             SqlString(temporary_output.string()) + " (" +
+		const fs::path temporary_output = TemporaryOutputPath(options.output);
+		const std::string copy_sql = "COPY (" + options.sql + ") TO " + SqlString(temporary_output.string()) + " (" +
 		                             CopyOptionsFor(options.output) + ")";
 		try {
 			CheckResult(connection.Query(copy_sql));
-			std::error_code error;
-			if (fs::exists(options.output, error)) {
-				fs::remove(temporary_output, error);
-				throw SqrailError(EXIT_OUTPUT, "OUTPUT_EXISTS",
-				                  "output appeared during execution: " + options.output.string());
-			}
-			fs::rename(temporary_output, options.output, error);
-			if (error) {
-				fs::remove(temporary_output, error);
-				throw SqrailError(EXIT_OUTPUT, "OUTPUT_COMMIT",
-				                  "cannot commit output: " + options.output.string());
-			}
+			CommitOutput(temporary_output, options.output);
 		} catch (...) {
 			std::error_code ignored;
 			fs::remove(temporary_output, ignored);
@@ -389,8 +473,7 @@ int Run(int argc, char **argv) {
 	// DuckDB exposes a whole result row as a STRUCT when its relation alias is
 	// selected. to_json therefore gives us correct typed JSON without collecting
 	// the result or maintaining a second serializer in sqrail.
-	const std::string stream_sql =
-	    "SELECT to_json(__sqrail_row) FROM (" + options.sql + ") AS __sqrail_row";
+	const std::string stream_sql = "SELECT to_json(__sqrail_row) FROM (" + options.sql + ") AS __sqrail_row";
 	auto result = connection.SendQuery(stream_sql);
 	CheckResult(result);
 
@@ -427,8 +510,8 @@ int Schema(int argc, char **argv) {
 	for (int index = 2; index < argc; ++index) {
 		const fs::path path = ExistingInput(argv[index]);
 		const std::string view_name = "__sqrail_schema_" + std::to_string(index - 2);
-		const std::string bind_sql = "CREATE TEMP VIEW " + SqlIdentifier(view_name) +
-		                             " AS SELECT * FROM " + ReaderExpression(path);
+		const std::string bind_sql =
+		    "CREATE TEMP VIEW " + SqlIdentifier(view_name) + " AS SELECT * FROM " + ReaderExpression(path);
 		CheckResult(connection.Query(bind_sql), "SCHEMA_INFERENCE_FAILED");
 
 		auto result = connection.Query("DESCRIBE SELECT * FROM " + SqlIdentifier(view_name));
@@ -449,9 +532,8 @@ int Schema(int argc, char **argv) {
 				const auto name = chunk->GetValue(0, row).ToString();
 				const auto type = chunk->GetValue(1, row).ToString();
 				const auto nullable = chunk->GetValue(2, row).ToString();
-				std::cout << "{\"name\":\"" << JsonEscape(name) << "\",\"type\":\""
-				          << JsonEscape(type) << "\",\"nullable\":"
-				          << (nullable == "YES" ? "true" : "false") << '}';
+				std::cout << "{\"name\":\"" << JsonEscape(name) << "\",\"type\":\"" << JsonEscape(type)
+				          << "\",\"nullable\":" << (nullable == "YES" ? "true" : "false") << '}';
 			}
 		}
 		std::cout << "]}\n";
@@ -460,33 +542,33 @@ int Schema(int argc, char **argv) {
 }
 
 void PrintAgentHelp() {
-	std::cout
-	    << "sqrail executes DuckDB SQL over local CSV, TSV, JSONL, and Parquet files.\n"
-	    << "\n"
-	    << "sqrail schema FILE...\n"
-	    << "sqrail run [-t NAME=FILE]... [-o FILE] [--memory SIZE] [--threads N]\n"
-	    << "           [--spill DIR] [SQL|-]\n"
-	    << "\n"
-	    << "-t binds a read-only file to a SQL table name. '-' reads SQL from stdin.\n"
-	    << "Without -o, rows are JSONL on stdout. With -o, format follows the extension.\n"
-	    << "Outputs are never overwritten. Diagnostics are JSON on stderr.\n"
-	    << "SQL is DuckDB SQL. Row order is undefined without ORDER BY.\n"
-	    << "Exit codes: 0 success, 2 usage, 3 input, 4 SQL, 5 output, 70 internal.\n";
+	std::cout << "sqrail executes one read-only DuckDB query over CSV, TSV, JSON, and Parquet files.\n"
+	          << "\n"
+	          << "sqrail schema FILE...\n"
+	          << "sqrail run [-t NAME=FILE]... [-o FILE] [--memory SIZE] [--threads N]\n"
+	          << "           [--spill DIR] [SQL|-]\n"
+	          << "sqrail --version\n"
+	          << "\n"
+	          << "-t binds a read-only file to a SQL table name. '-' reads SQL from stdin.\n"
+	          << "Without -o, rows are JSONL on stdout. With -o, format follows the extension.\n"
+	          << "Text files may use .gz or .zst. Outputs are atomic and never overwritten.\n"
+	          << "SQL is one SELECT, VALUES, or WITH query. Row order is undefined without ORDER BY.\n"
+	          << "Diagnostics are one JSON object on stderr.\n"
+	          << "Exit codes: 0 success, 2 usage, 3 input, 4 SQL, 5 output, 70 internal.\n";
 }
 
 void PrintHumanHelp() {
 	std::cout << "sqrail " << SQRAIL_VERSION << " — SQL in, files out.\n\n";
 	PrintAgentHelp();
-	std::cout
-	    << "\nExamples:\n"
-	    << "  sqrail schema sales.csv\n"
-	    << "  sqrail run -t sales=sales.csv 'SELECT count(*) AS n FROM sales'\n"
-	    << "  sqrail run -t sales=sales.csv -o result.parquet - < query.sql\n";
+	std::cout << "\nExamples:\n"
+	          << "  sqrail schema sales.csv\n"
+	          << "  sqrail run -t sales=sales.csv 'SELECT count(*) AS n FROM sales'\n"
+	          << "  sqrail run -t sales=sales.csv -o result.parquet - < query.sql\n";
 }
 
 void PrintError(const std::string &code, const std::string &message) {
-	std::cerr << "{\"ok\":false,\"code\":\"" << JsonEscape(code) << "\",\"message\":\""
-	          << JsonEscape(message) << "\"}\n";
+	std::cerr << "{\"ok\":false,\"code\":\"" << JsonEscape(code) << "\",\"message\":\"" << JsonEscape(message)
+	          << "\"}\n";
 }
 
 } // namespace
