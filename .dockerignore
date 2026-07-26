@@ -1,0 +1,7 @@
+.git
+.cache
+.DS_Store
+build*
+out
+benchmark-data*
+benchmark-results*

@@ -1,0 +1,26 @@
+{
+  "name": "sqrail LLVM 18",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "remoteUser": "vscode",
+  "containerEnv": {
+    "CC": "clang",
+    "CXX": "clang++"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "llvm-vs-code-extensions.vscode-clangd",
+        "ms-vscode.cmake-tools",
+        "cheshirekow.cmake-format"
+      ],
+      "settings": {
+        "C_Cpp.intelliSenseEngine": "disabled",
+        "cmake.useCMakePresets": "always"
+      }
+    }
+  },
+  "postCreateCommand": "cmake --workflow --preset dev"
+}

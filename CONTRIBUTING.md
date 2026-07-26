@@ -13,15 +13,19 @@ how an agent can learn the addition without making `--agent-help` ambiguous.
 ## Build and test
 
 ```sh
-cmake -S . -B build \
-  -DCMAKE_BUILD_TYPE=Release \
-  -DSQRAIL_WARNINGS_AS_ERRORS=ON
-cmake --build build --target sqrail --parallel 2
-ctest --test-dir build --output-on-failure
+cmake --workflow --preset dev
+cmake --workflow --preset strict
+cmake --workflow --preset sanitize
+cmake --preset fuzz
+cmake --build --preset fuzz
+out/build/fuzz/sqrail-strict-json-fuzz -max_total_time=30
 shellcheck tests/*.sh benchmarks/*.sh
+actionlint
+zizmor --pedantic .
 ```
 
-Format C++ with the repository `.clang-format`.
+Format C++ with the repository `.clang-format`. GitHub Actions additionally run
+CodeQL and audit every workflow with Actionlint and Zizmor.
 
 ## Performance changes
 
@@ -38,5 +42,5 @@ output is a correctness failure.
   changes.
 - Do not update the DuckDB revision without documenting and benchmarking the
   change.
-- Confirm that `git diff --check`, the smoke test, ShellCheck, and Actionlint
-  pass.
+- Confirm that `git diff --check`, the smoke test, ShellCheck, Actionlint, and
+  Zizmor pass.

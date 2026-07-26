@@ -1,23 +1,114 @@
-cmake_minimum_required(VERSION 3.22)
+cmake_minimum_required(VERSION 3.25)
 
 project(
   sqrail
-  VERSION 0.1.0
+  VERSION 0.2.0
   DESCRIPTION "A minimal SQL-on-files CLI for coding agents"
   LANGUAGES CXX
 )
 
 include(FetchContent)
 include(GNUInstallDirs)
+include(CheckCXXCompilerFlag)
+include(CheckIPOSupported)
 
 option(SQRAIL_BUILD_TESTS "Enable sqrail smoke tests" ON)
+option(SQRAIL_BUILD_FUZZERS "Build coverage-guided fuzz targets" OFF)
 option(SQRAIL_BUILD_DUCKDB_SHELL "Build the pinned DuckDB CLI for benchmarks" OFF)
 option(SQRAIL_WARNINGS_AS_ERRORS "Treat sqrail compiler warnings as errors" OFF)
 option(SQRAIL_STATIC_CPP_RUNTIME "Statically link the C++ runtime on Linux" ON)
+option(SQRAIL_ENABLE_CLANG_TIDY "Run clang-tidy while compiling sqrail sources" OFF)
+option(SQRAIL_ENABLE_HARDENING "Enable production compiler and linker hardening" ON)
+option(SQRAIL_ENABLE_IPO "Enable whole-program interprocedural optimization" OFF)
+option(SQRAIL_ENABLE_SANITIZERS "Enable AddressSanitizer and UndefinedBehaviorSanitizer" OFF)
+option(SQRAIL_NATIVE_ARCH "Optimize for the build host CPU; never use for portable releases" OFF)
+set(SQRAIL_PGO_MODE "OFF" CACHE STRING "Clang PGO mode: OFF, GENERATE, or USE")
+set_property(CACHE SQRAIL_PGO_MODE PROPERTY STRINGS OFF GENERATE USE)
+set(
+  SQRAIL_PGO_PROFILE
+  "${CMAKE_BINARY_DIR}/pgo/sqrail.profdata"
+  CACHE FILEPATH
+  "Merged Clang instrumentation profile used by SQRAIL_PGO_MODE=USE"
+)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL "Generate the clang tooling compilation database" FORCE)
+
+string(TOUPPER "${SQRAIL_PGO_MODE}" SQRAIL_PGO_MODE)
+if(NOT SQRAIL_PGO_MODE MATCHES "^(OFF|GENERATE|USE)$")
+  message(FATAL_ERROR "SQRAIL_PGO_MODE must be OFF, GENERATE, or USE")
+endif()
+if(NOT SQRAIL_PGO_MODE STREQUAL "OFF")
+  if(NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    message(FATAL_ERROR "sqrail instrumentation PGO currently requires Clang")
+  endif()
+  if(SQRAIL_ENABLE_SANITIZERS)
+    message(FATAL_ERROR "PGO and sanitizers must use separate build trees")
+  endif()
+  if(SQRAIL_PGO_MODE STREQUAL "GENERATE")
+    file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/pgo/raw")
+    set(SQRAIL_PGO_FLAGS "-fprofile-instr-generate=${CMAKE_BINARY_DIR}/pgo/raw/sqrail-%m.profraw")
+  else()
+    if(NOT EXISTS "${SQRAIL_PGO_PROFILE}")
+      message(FATAL_ERROR "PGO profile does not exist: ${SQRAIL_PGO_PROFILE}")
+    endif()
+    set(
+      SQRAIL_PGO_FLAGS
+      "-fprofile-instr-use=${SQRAIL_PGO_PROFILE}"
+      "-Werror=profile-instr-out-of-date"
+    )
+  endif()
+  add_compile_options(${SQRAIL_PGO_FLAGS})
+  add_link_options(${SQRAIL_PGO_FLAGS})
+endif()
+
+if(SQRAIL_ENABLE_IPO)
+  check_ipo_supported(RESULT SQRAIL_IPO_SUPPORTED OUTPUT SQRAIL_IPO_ERROR LANGUAGES CXX)
+  if(NOT SQRAIL_IPO_SUPPORTED)
+    message(FATAL_ERROR "IPO is unavailable: ${SQRAIL_IPO_ERROR}")
+  endif()
+  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
+endif()
+
+if(SQRAIL_NATIVE_ARCH)
+  check_cxx_compiler_flag("-march=native" SQRAIL_HAS_MARCH_NATIVE)
+  if(SQRAIL_HAS_MARCH_NATIVE)
+    add_compile_options(-march=native)
+  else()
+    check_cxx_compiler_flag("-mcpu=native" SQRAIL_HAS_MCPU_NATIVE)
+    if(NOT SQRAIL_HAS_MCPU_NATIVE)
+      message(FATAL_ERROR "The compiler has no supported native-CPU optimization flag")
+    endif()
+    add_compile_options(-mcpu=native)
+  endif()
+endif()
+
+if(SQRAIL_ENABLE_HARDENING AND CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+  add_compile_options(-fstack-protector-strong)
+  if(UNIX AND NOT APPLE)
+    add_compile_definitions($<$<NOT:$<CONFIG:Debug>>:_FORTIFY_SOURCE=3>)
+  endif()
+endif()
+
+if(SQRAIL_ENABLE_SANITIZERS)
+  if(NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+    message(FATAL_ERROR "SQRAIL_ENABLE_SANITIZERS requires Clang or GCC")
+  endif()
+  set(SQRAIL_SANITIZER_FLAGS -fsanitize=address,undefined -fno-omit-frame-pointer)
+  # Instrument the embedded engine as well as the frontend. Sanitizing only the
+  # thin CLI layer would miss almost all parser and file-format memory access.
+  add_compile_options(${SQRAIL_SANITIZER_FLAGS})
+  add_link_options(${SQRAIL_SANITIZER_FLAGS})
+endif()
+
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+  add_compile_options(
+    $<$<CONFIG:Release>:-ffunction-sections>
+    $<$<CONFIG:Release>:-fdata-sections>
+  )
+endif()
 
 # sqrail deliberately ships one engine. DuckDB is pinned so the SQL behavior of
 # a release is reproducible. The human-readable version is kept separately from
@@ -44,8 +135,12 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(duckdb)
 
+add_library(sqrail_json STATIC src/json.cpp)
+target_include_directories(sqrail_json PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
+
 add_executable(sqrail src/main.cpp)
 target_include_directories(sqrail SYSTEM PRIVATE "${duckdb_SOURCE_DIR}/src/include")
+target_link_libraries(sqrail PRIVATE sqrail_json)
 if(APPLE)
   target_link_libraries(
     sqrail
@@ -76,13 +171,51 @@ target_compile_definitions(
     SQRAIL_DUCKDB_VERSION="${DUCKDB_VERSION}"
 )
 
-if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
-  target_compile_options(sqrail PRIVATE -Wall -Wextra -Wpedantic)
-  if(SQRAIL_WARNINGS_AS_ERRORS)
-    target_compile_options(sqrail PRIVATE -Werror)
+function(sqrail_enable_project_warnings target)
+  if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+    target_compile_options(
+      "${target}"
+      PRIVATE
+        -Wall
+        -Wextra
+        -Wpedantic
+        -Wshadow
+        -Wconversion
+        -Wsign-conversion
+        -Wformat=2
+    )
   endif()
+  if(SQRAIL_WARNINGS_AS_ERRORS)
+    target_compile_options("${target}" PRIVATE -Werror)
+  endif()
+endfunction()
+
+sqrail_enable_project_warnings(sqrail_json)
+sqrail_enable_project_warnings(sqrail)
+
+if(SQRAIL_ENABLE_HARDENING AND CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+  if(UNIX AND NOT APPLE)
+    target_link_options(sqrail PRIVATE -Wl,-z,relro,-z,now)
+  endif()
+endif()
+
+if(SQRAIL_ENABLE_CLANG_TIDY)
+  find_program(SQRAIL_CLANG_TIDY NAMES clang-tidy REQUIRED)
+  add_custom_target(
+    sqrail-static-analysis
+    COMMAND
+      "${CMAKE_COMMAND}" -E env
+      "CLANG_TIDY=${SQRAIL_CLANG_TIDY}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/tests/static-analysis.sh"
+      "${CMAKE_BINARY_DIR}"
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+    COMMENT "Running Clang-Tidy over every non-fuzz sqrail translation unit"
+    VERBATIM
+  )
+endif()
+
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
   if(CMAKE_BUILD_TYPE STREQUAL "Release")
-    target_compile_options(sqrail PRIVATE -ffunction-sections -fdata-sections)
     if(APPLE)
       target_link_options(sqrail PRIVATE -Wl,-dead_strip)
     else()
@@ -93,6 +226,7 @@ endif()
 
 if(
   SQRAIL_STATIC_CPP_RUNTIME
+  AND NOT SQRAIL_ENABLE_SANITIZERS
   AND UNIX
   AND NOT APPLE
   AND CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU"
@@ -137,8 +271,29 @@ install(
 
 if(SQRAIL_BUILD_TESTS)
   enable_testing()
+  add_executable(sqrail-json-test tests/json_test.cpp)
+  target_link_libraries(sqrail-json-test PRIVATE sqrail_json)
+  sqrail_enable_project_warnings(sqrail-json-test)
+  add_test(NAME sqrail-json-unit COMMAND sqrail-json-test)
   add_test(
     NAME sqrail-smoke
     COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/tests/smoke.sh" "$<TARGET_FILE:sqrail>"
   )
+  set_tests_properties(sqrail-json-unit sqrail-smoke PROPERTIES TIMEOUT 120)
+endif()
+
+if(SQRAIL_BUILD_FUZZERS)
+  if(NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    message(FATAL_ERROR "SQRAIL_BUILD_FUZZERS requires Clang")
+  endif()
+  add_executable(sqrail-strict-json-fuzz fuzz/strict_json_fuzz.cpp src/json.cpp)
+  target_include_directories(sqrail-strict-json-fuzz PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
+  sqrail_enable_project_warnings(sqrail-strict-json-fuzz)
+  target_compile_options(
+    sqrail-strict-json-fuzz
+    PRIVATE
+      -fsanitize=fuzzer,address,undefined
+      -fno-omit-frame-pointer
+  )
+  target_link_options(sqrail-strict-json-fuzz PRIVATE -fsanitize=fuzzer,address,undefined)
 endif()

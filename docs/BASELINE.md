@@ -80,3 +80,36 @@ Single observed run:
 The dataset is generated rather than scanned, and filesystem caching was not
 controlled. This result only verifies that direct Parquet output works within
 the stated 64 MB DuckDB memory limit on the development host.
+
+## v0.2.0 host-tuned development results
+
+These measurements use the same host and DuckDB revision as the v0.1.0
+baseline. The portable comparison binary uses a conventional Release build.
+The host-tuned binary additionally applies ThinLTO and `-mcpu=native`; it is not
+portable and is never used for release archives.
+
+| Workload | Portable mean | Host-tuned mean | Elapsed reduction |
+|---|---:|---:|---:|
+| 1M-row Parquet grouped aggregate, 15 runs | 105.0 ms | 93.9 ms | 10.5% |
+| 1M-row generated strict JSONL, 10 runs | 612.8 ms | 574.4 ms | 6.3% |
+
+The grouped aggregate used two threads. Both cohorts were warm-cache
+measurements; the comparison combines native code generation and ThinLTO and
+does not isolate their individual contributions.
+
+An explicit out-of-core run then fully sorted 10,000,000 Parquet rows with a
+128 MiB DuckDB memory limit, two threads, and a 2 GiB spill cap:
+
+| Metric | Observed value |
+|---|---:|
+| Input Parquet | 496,596,101 bytes |
+| Harness wall time | 2.123 s |
+| Maximum process RSS | 276,168,704 bytes |
+| Sampled peak spill | 215,154,688 bytes |
+| Output Parquet | 121,696,159 bytes |
+| Verified rows | 10,000,000 |
+
+The spill sampler runs every 10 ms, so its maximum is a lower bound. DuckDB's
+memory setting limits its buffer manager rather than total process RSS. The
+committed `run-out-of-core.sh` harness refuses to replace results and validates
+the output row count and logical checksum.

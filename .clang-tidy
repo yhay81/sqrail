@@ -1,0 +1,24 @@
+---
+Checks: >
+  -*,
+  bugprone-*,
+  cert-*,
+  clang-analyzer-*,
+  concurrency-*,
+  performance-*,
+  portability-*,
+  modernize-use-nullptr,
+  modernize-use-override
+WarningsAsErrors: >
+  bugprone-*,
+  cert-*,
+  clang-analyzer-*,
+  concurrency-*,
+  performance-*,
+  portability-*
+HeaderFilterRegex: '.*/(src|tests|fuzz)/.*'
+FormatStyle: file
+CheckOptions:
+  bugprone-easily-swappable-parameters.MinimumLength: 3
+  cert-err33-c.CheckedFunctions: ''
+SystemHeaders: false

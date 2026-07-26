@@ -34,6 +34,24 @@ gzip -c "$test_dir/sales.csv" > "$test_dir/sales.csv.gz"
 schema=$("$sqrail_bin" schema "$test_dir/sales.csv")
 printf '%s\n' "$schema" | grep -q '"name":"drug_id"'
 printf '%s\n' "$schema" | grep -q '"name":"amount"'
+printf '%s\n' "$schema" | python3 -c 'import json,sys; json.load(sys.stdin)'
+python3 - "$sqrail_bin" <<'PY'
+import json
+import os
+import subprocess
+import sys
+
+result = subprocess.run(
+    [os.fsencode(sys.argv[1]), b"\xff"],
+    stdout=subprocess.PIPE,
+    stderr=subprocess.PIPE,
+    check=False,
+)
+assert result.returncode == 2
+payload = json.loads(result.stderr.decode("utf-8"))
+assert payload["code"] == "UNKNOWN_COMMAND"
+assert "\ufffd" in payload["message"]
+PY
 
 multi_schema=$("$sqrail_bin" schema "$test_dir/sales.csv.gz" "$test_dir/odd ' sales.csv")
 test "$(printf '%s\n' "$multi_schema" | wc -l | tr -d ' ')" = "2"
@@ -90,9 +108,45 @@ json_output="$test_dir/result.jsonl.gz"
 test "$("$sqrail_bin" run -t compressed="$json_output" \
   'SELECT sum(amount) AS total FROM compressed')" = '{"total":45}'
 
-spill_result=$("$sqrail_bin" run --spill "$test_dir/spill/nested" 'SELECT 1 AS value')
+strict_json=$("$sqrail_bin" run \
+  "SELECT 'NaN' AS text, CAST('NaN' AS DOUBLE) AS special, [CAST('Infinity' AS DOUBLE)] AS nested")
+printf '%s\n' "$strict_json" | python3 -c \
+  'import json,sys; value=json.load(sys.stdin, parse_constant=lambda token: (_ for _ in ()).throw(ValueError(token))); assert value == {"text":"NaN","special":None,"nested":[None]}'
+
+strict_json_file="$test_dir/strict.json.zst"
+"$sqrail_bin" run -o "$strict_json_file" \
+  "SELECT CAST(value AS DOUBLE) AS value FROM (VALUES ('NaN'), ('Infinity'), ('-Infinity')) input(value)"
+"$sqrail_bin" run -t strict="$strict_json_file" \
+  'SELECT count(*) AS rows FROM strict WHERE value IS NULL' | grep -q '"rows":3'
+
+mkdir -p "$test_dir/dataset/year=2025" "$test_dir/dataset/year=2026"
+"$sqrail_bin" run -o "$test_dir/dataset/year=2025/part-0.parquet" \
+  'SELECT 1 AS id, 10 AS amount'
+"$sqrail_bin" run -o "$test_dir/dataset/year=2026/part-0.parquet" \
+  'SELECT 2 AS id, 20 AS amount'
+dataset_result=$("$sqrail_bin" run -t data="$test_dir/dataset" \
+  'SELECT year, sum(amount) AS total FROM data GROUP BY year ORDER BY year')
+test "$dataset_result" = '{"year":2025,"total":10}
+{"year":2026,"total":20}'
+test "$("$sqrail_bin" run -t data="$test_dir/dataset/**/*.parquet" \
+  'SELECT count(*) AS rows FROM data')" = '{"rows":2}'
+"$sqrail_bin" schema "$test_dir/dataset" | grep -q '"files":2'
+
+plan=$("$sqrail_bin" check -t sales="$test_dir/sales.csv" \
+  'SELECT sum(amount) AS total FROM sales')
+printf '%s\n' "$plan" | python3 -c \
+  'import json,sys; value=json.load(sys.stdin); assert value["ok"] is True; assert value["plan"][0]["name"] == "UNGROUPED_AGGREGATE"'
+
+spill_root="$test_dir/spill/nested"
+mkdir -p "$spill_root"
+printf 'private\n' > "$spill_root/not-spill-data.txt"
+spill_result=$("$sqrail_bin" run --spill "$spill_root" --max-spill 64MiB \
+  'SELECT 1 AS value')
 test "$spill_result" = '{"value":1}'
-test -d "$test_dir/spill/nested"
+expect_error 4 QUERY_FAILED "$test_dir/spill-read.json" \
+  "$sqrail_bin" run --spill "$spill_root" \
+  "SELECT content FROM read_text('$spill_root/not-spill-data.txt')"
+test "$(find "$spill_root" -maxdepth 1 -name '.sqrail-spill-*' | wc -l | tr -d ' ')" = "0"
 
 expect_error 5 OUTPUT_EXISTS "$test_dir/error.json" \
   "$sqrail_bin" run -t sales="$test_dir/sales.csv" -o "$test_dir/result.parquet" \
@@ -117,6 +171,23 @@ expect_error 2 INVALID_THREADS "$test_dir/threads.json" \
   "$sqrail_bin" run --threads 999999999999999999999999 'SELECT 1'
 expect_error 2 INVALID_MEMORY "$test_dir/memory.json" \
   "$sqrail_bin" run --memory 0MB 'SELECT 1'
+expect_error 2 MAX_SPILL_REQUIRES_SPILL "$test_dir/max-spill.json" \
+  "$sqrail_bin" run --max-spill 64MiB 'SELECT 1'
+expect_error 2 INVALID_MAX_SPILL "$test_dir/max-spill-value.json" \
+  "$sqrail_bin" run --spill "$test_dir/spill" --max-spill invalid 'SELECT 1'
+expect_error 2 INVALID_TIMEOUT "$test_dir/timeout-value.json" \
+  "$sqrail_bin" run --timeout 0ms 'SELECT 1'
+expect_error 2 CHECK_SPILL "$test_dir/check-spill.json" \
+  "$sqrail_bin" check --spill "$test_dir/check-spill" 'SELECT 1'
+expect_error 4 QUERY_TIMEOUT "$test_dir/timeout.json" \
+  "$sqrail_bin" run --timeout 1ms \
+  'SELECT sum(left_side.i * right_side.i) FROM range(1000000) left_side(i), range(1000000) right_side(i)'
+expect_error 4 QUERY_FAILED "$test_dir/external-access.json" \
+  "$sqrail_bin" run "SELECT content FROM read_text('/etc/hosts')"
+
+mkdir "$test_dir/empty-dataset"
+expect_error 3 EMPTY_DATASET "$test_dir/empty-dataset.json" \
+  "$sqrail_bin" schema "$test_dir/empty-dataset"
 
 printf 'not really bzip2\n' > "$test_dir/data.csv.bz2"
 expect_error 3 UNSUPPORTED_COMPRESSION "$test_dir/compression.json" \
@@ -154,4 +225,4 @@ test "$("$sqrail_bin" run -t race="$test_dir/race.parquet" \
 agent_help=$("$sqrail_bin" --agent-help)
 printf '%s\n' "$agent_help" | grep -q 'SQL is one SELECT'
 test "$(printf '%s\n' "$agent_help" | wc -w | tr -d ' ')" -le 130
-"$sqrail_bin" --version | grep -q '^sqrail 0.1.0 (DuckDB v1.5.5)$'
+"$sqrail_bin" --version | grep -q '^sqrail 0.2.0 (DuckDB v1.5.5)$'
