@@ -138,7 +138,7 @@
       "name": "sanitize",
       "configurePreset": "sanitize",
       "targets": ["sqrail", "sqrail-json-test"],
-      "jobs": 2
+      "jobs": 4
     },
     {
       "name": "fuzz",

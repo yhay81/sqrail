@@ -88,7 +88,13 @@ endif()
 if(SQRAIL_ENABLE_HARDENING AND CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
   add_compile_options(-fstack-protector-strong)
   if(UNIX AND NOT APPLE)
-    add_compile_definitions($<$<NOT:$<CONFIG:Debug>>:_FORTIFY_SOURCE=3>)
+    # Hosted and distribution toolchains may inject their own fortify level.
+    # Normalize it before applying sqrail's policy so strict builds remain
+    # deterministic without weakening the requested protection.
+    add_compile_options(
+      $<$<NOT:$<CONFIG:Debug>>:-U_FORTIFY_SOURCE>
+      $<$<NOT:$<CONFIG:Debug>>:-D_FORTIFY_SOURCE=3>
+    )
   endif()
 endif()
 
