@@ -35,14 +35,29 @@ FetchContent_MakeAvailable(duckdb)
 
 add_executable(sqrail src/main.cpp)
 target_include_directories(sqrail SYSTEM PRIVATE "${duckdb_SOURCE_DIR}/src/include")
-target_link_libraries(
-  sqrail
-  PRIVATE
-    duckdb_generated_extension_loader
-    core_functions_extension
-    parquet_extension
-    json_extension
-)
+if(APPLE)
+  target_link_libraries(
+    sqrail
+    PRIVATE
+      duckdb_generated_extension_loader
+      core_functions_extension
+      parquet_extension
+      json_extension
+  )
+else()
+  # GNU linkers resolve static archives from left to right. Put DuckDB before
+  # the generated extension loader; the extension targets add it again
+  # transitively to resolve symbols introduced by the extensions.
+  target_link_libraries(
+    sqrail
+    PRIVATE
+      duckdb_static
+      duckdb_generated_extension_loader
+      core_functions_extension
+      parquet_extension
+      json_extension
+  )
+endif()
 target_compile_definitions(
   sqrail
   PRIVATE

@@ -124,9 +124,9 @@ bool EndsWith(const std::string &value, const std::string &suffix) {
 }
 
 std::string StripCompressionSuffix(std::string path) {
-	for (const std::string &suffix : {".gz", ".zst", ".bz2", ".xz"}) {
+	for (const char *suffix : {".gz", ".zst", ".bz2", ".xz"}) {
 		if (EndsWith(path, suffix)) {
-			path.resize(path.size() - suffix.size());
+			path.resize(path.size() - std::char_traits<char>::length(suffix));
 			break;
 		}
 	}
