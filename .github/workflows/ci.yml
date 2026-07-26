@@ -1,0 +1,28 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+      - name: Build
+        run: cmake --build build --target sqrail --parallel 2
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+      - name: Size
+        run: |
+          ls -lh build/sqrail
+          gzip -c -9 build/sqrail > build/sqrail.gz
+          ls -lh build/sqrail.gz
