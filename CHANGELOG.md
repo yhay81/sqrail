@@ -5,6 +5,8 @@ versions follow semantic versioning.
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-07-27
+
 ### Added
 
 - a `SYSTEM` DuckDB provider and source-only distribution workflow suitable for
@@ -75,7 +77,8 @@ versions follow semantic versioning.
 - Linux and macOS release archives for x86-64 and Arm64
 - SHA-256 checksums and build-provenance attestations
 
-[Unreleased]: https://github.com/yhay81/sqrail/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/yhay81/sqrail/compare/v0.2.2...HEAD
+[0.2.2]: https://github.com/yhay81/sqrail/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/yhay81/sqrail/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/yhay81/sqrail/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/yhay81/sqrail/releases/tag/v0.1.0

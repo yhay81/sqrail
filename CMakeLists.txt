@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.25)
 
 project(
   sqrail
-  VERSION 0.2.1
+  VERSION 0.2.2
   DESCRIPTION "A minimal SQL-on-files CLI for coding agents"
   LANGUAGES CXX
 )
