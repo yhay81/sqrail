@@ -42,6 +42,27 @@ OUTPUT_FORMATS = {
     "result_limit": ".parquet",
 }
 
+PROMPT_PATH_ROLES = {
+    "schema_discovery": ("fact_csv",),
+    "selective_jsonl": ("fact_parquet",),
+    "join_aggregate": ("fact_parquet", "dim_parquet", "output"),
+    "csv_to_parquet": ("fact_csv", "output"),
+    "parquet_to_jsonl": ("fact_parquet", "output"),
+    "bounded_sort": ("fact_parquet", "output", "spill"),
+    "timeout_recovery": ("fact_parquet",),
+    "no_overwrite": ("fact_parquet", "output"),
+    "check_metadata": ("fact_parquet",),
+    "result_limit": ("fact_parquet", "output"),
+    "schema_evolution": ("evolution_a_parquet", "evolution_b_parquet"),
+    "success_stats": ("fact_parquet",),
+}
+
+EVALUATION_SOURCES = {
+    "runner": Path(__file__).resolve(),
+    "oracle": Path(__file__).with_name("agent_oracle.py").resolve(),
+    "evaluator": Path(__file__).with_name("agent-eval.py").resolve(),
+}
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
@@ -172,8 +193,12 @@ def prepare_session(arguments: argparse.Namespace) -> int:
     if help_result.returncode != 0:
         raise RunnerError(f"cannot capture {arguments.arm} help")
 
+    try:
+        prompt_path_roles = PROMPT_PATH_ROLES[arguments.task]
+    except KeyError as error:
+        raise RunnerError(f"task has no prompt-path contract: {arguments.task}") from error
     path_lines = "\n".join(
-        f"- {role}: {relative}" for role, relative in paths.items()
+        f"- {role}: {paths[role]}" for role in prompt_path_roles
     )
     prompt = (
         tasks[arguments.task]["prompt"]
@@ -190,11 +215,15 @@ def prepare_session(arguments: argparse.Namespace) -> int:
         "task": arguments.task,
         "attempt": arguments.attempt,
         "prompt": prompt,
+        "prompt_path_roles": list(prompt_path_roles),
         "tool_help": help_result.stdout.decode("utf-8", errors="replace"),
         "tool_help_sha256": hashlib.sha256(help_result.stdout).hexdigest(),
         "sqrail_sha256": sha256(arguments.sqrail.resolve()),
         "duckdb_sha256": sha256(arguments.duckdb.resolve()),
         "task_corpus_sha256": sha256(arguments.tasks.resolve()),
+        "evaluation_source_sha256": {
+            name: sha256(path) for name, path in EVALUATION_SOURCES.items()
+        },
         "dataset_manifest_sha256": sha256(manifest),
         "paths": paths,
         "source_paths": sources,
@@ -319,6 +348,11 @@ def execute_candidate(arguments: argparse.Namespace) -> int:
         raise RunnerError("DuckDB binary changed after session preparation")
     if sha256(arguments.tasks.resolve()) != session.get("task_corpus_sha256"):
         raise RunnerError("task corpus changed after session preparation")
+    expected_sources = {
+        name: sha256(path) for name, path in EVALUATION_SOURCES.items()
+    }
+    if session.get("evaluation_source_sha256") != expected_sources:
+        raise RunnerError("evaluation source changed after session preparation")
 
     invocations = validate_candidate(candidate, session["arm"], session["task"])
     records: list[dict[str, Any]] = []

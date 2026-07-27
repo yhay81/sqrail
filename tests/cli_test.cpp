@@ -119,6 +119,12 @@ int main() {
 	if (exact_sizes.max_output_bytes != 1536 || exact_sizes.max_sql_bytes != std::numeric_limits<uint64_t>::max()) {
 		return Fail("exact byte sizes", "decimal or maximum byte value did not parse exactly");
 	}
+	const auto short_resource_sizes =
+	    Parse({"sqrail", "run", "--memory", "128M", "--spill", "spill", "--max-spill", "2G", "SELECT 1"},
+	          [](const int argc, char **argv) { return sqrail::ParseRun(argc, argv, false); });
+	if (short_resource_sizes.memory_limit != "128M" || short_resource_sizes.max_spill != "2G") {
+		return Fail("short resource sizes", "common K/M/G/T suffixes did not parse");
+	}
 	if (!ExpectError("INVALID_MAX_OUTPUT",
 	                 []() {
 		                 Parse({"sqrail", "run", "--max-output-bytes", "18446744073709551616B", "SELECT 1"},

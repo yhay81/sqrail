@@ -115,6 +115,33 @@ class AgentRunnerTest(unittest.TestCase):
             ["cross join"],
         )
 
+    def test_prompt_paths_hide_irrelevant_destinations(self) -> None:
+        stdout_tasks = {
+            "schema_discovery",
+            "selective_jsonl",
+            "check_metadata",
+            "schema_evolution",
+            "success_stats",
+        }
+        for task_id in stdout_tasks:
+            with self.subTest(task=task_id):
+                self.assertNotIn("output", RUNNER.PROMPT_PATH_ROLES[task_id])
+        self.assertEqual(
+            RUNNER.PROMPT_PATH_ROLES["bounded_sort"],
+            ("fact_parquet", "output", "spill"),
+        )
+        self.assertEqual(
+            set(RUNNER.PROMPT_PATH_ROLES),
+            {
+                task["id"]
+                for task in json.loads(
+                    (ROOT / "benchmarks" / "agent-tasks-v0.3.json").read_text(
+                        encoding="utf-8"
+                    )
+                )["tasks"]
+            },
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

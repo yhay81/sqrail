@@ -103,6 +103,14 @@ class AgentOracleTest(unittest.TestCase):
             "sqrail_sha256": file_sha256(Path(sys.executable)),
             "duckdb_sha256": file_sha256(Path(sys.executable)),
             "task_corpus_sha256": file_sha256(TASKS_PATH),
+            "evaluation_source_sha256": {
+                name: file_sha256(path)
+                for name, path in {
+                    "runner": BENCHMARKS / "agent-run.py",
+                    "oracle": BENCHMARKS / "agent_oracle.py",
+                    "evaluator": BENCHMARKS / "agent-eval.py",
+                }.items()
+            },
             "paths": paths,
             "source_paths": sources,
             "input_sha256": digests,
@@ -208,6 +216,20 @@ class AgentOracleTest(unittest.TestCase):
     def test_changed_dataset_is_rejected(self) -> None:
         (self.workspace / self.session["paths"]["fact_csv"]).write_bytes(b"changed")
         with self.assertRaisesRegex(OracleError, "dataset role digest differs"):
+            verify_attempt(
+                self.attempt,
+                TASK,
+                TASKS_PATH,
+                self.artifacts,
+                self.data,
+                Path(sys.executable),
+                Path(sys.executable),
+            )
+
+    def test_changed_evaluation_source_digest_is_rejected(self) -> None:
+        self.session["evaluation_source_sha256"]["runner"] = "0" * 64
+        self.write_metadata()
+        with self.assertRaisesRegex(OracleError, "evaluation source digests"):
             verify_attempt(
                 self.attempt,
                 TASK,

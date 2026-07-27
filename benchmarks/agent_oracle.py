@@ -26,6 +26,13 @@ class Verification:
     evidence_sha256: str
 
 
+EVALUATION_SOURCES = {
+    "runner": Path(__file__).with_name("agent-run.py").resolve(),
+    "oracle": Path(__file__).resolve(),
+    "evaluator": Path(__file__).with_name("agent-eval.py").resolve(),
+}
+
+
 def sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -256,6 +263,11 @@ def validate_tools(
     for field, actual in expected.items():
         if session.get(field) != actual:
             raise OracleError(f"{field} does not match the verified artifact")
+    expected_sources = {
+        name: sha256(path) for name, path in EVALUATION_SOURCES.items()
+    }
+    if session.get("evaluation_source_sha256") != expected_sources:
+        raise OracleError("evaluation source digests do not match the verified artifact")
 
 
 def safety_issues(record: dict[str, Any], session: dict[str, Any]) -> list[str]:

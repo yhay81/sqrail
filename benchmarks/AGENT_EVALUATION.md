@@ -216,10 +216,11 @@ structured statistics—in a separate twelve-task corpus:
 [`agent-tasks-v0.3.json`](agent-tasks-v0.3.json).
 
 `agent-run.py` prepares randomized workspaces, copies inputs read-only, binds
-the task corpus and exact sqrail/DuckDB hashes, filters inherited environment
-secrets, rejects external paths and URIs, and executes model-produced argument
-arrays without a shell. The independent oracle recomputes task results from
-the retained stdout, stderr, files, snapshots, dataset, and pinned binaries.
+the task corpus, runner, oracle, evaluator, and exact sqrail/DuckDB hashes,
+filters inherited environment secrets, rejects external paths and URIs, and
+executes model-produced argument arrays without a shell. The independent
+oracle recomputes task results from the retained stdout, stderr, files,
+snapshots, dataset, and pinned binaries.
 
 Prepare and execute each attempt with:
 

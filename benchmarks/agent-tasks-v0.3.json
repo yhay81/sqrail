@@ -119,7 +119,7 @@
     },
     {
       "id": "schema_evolution",
-      "prompt": "Read the schema-evolution Parquet directory as one table and return both evolved value columns with null filling. Then verify that strict-schema mode rejects the same dataset.",
+      "prompt": "Read the schema-evolution Parquet directory as one table and return id, old_value, and new_value with null filling as JSON Lines on stdout. Then verify that strict-schema mode rejects the same dataset.",
       "oracle": {
         "kind": "schema_evolution",
         "columns": ["id", "old_value", "new_value"],
@@ -128,7 +128,7 @@
     },
     {
       "id": "success_stats",
-      "prompt": "Count fact.parquet rows, naming the result column rows, and capture the structured success statistics without mixing them into JSON Lines stdout.",
+      "prompt": "Count fact.parquet rows as JSON Lines on stdout, naming the result column rows, and capture the structured success statistics on stderr without mixing them into stdout.",
       "oracle": {
         "kind": "stats",
         "sql": "SELECT count(*) AS rows FROM read_parquet({fact_parquet})"
