@@ -121,6 +121,7 @@ jobs:
           expected_version=$(duckdb --version | awk '{print $1}')
           test "${actual_version}" = "${expected_version}"
           if [ "$(uname -s)" = Linux ]; then
+            readelf -d install/bin/sqrail | grep "$(brew --prefix duckdb)/lib"
             ldd install/bin/sqrail | grep 'libduckdb'
           else
             otool -L install/bin/sqrail | grep 'libduckdb'

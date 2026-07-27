@@ -213,6 +213,11 @@ target_include_directories(sqrail_json PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
 add_executable(sqrail src/main.cpp)
 target_include_directories(sqrail SYSTEM PRIVATE "${SQRAIL_DUCKDB_INCLUDE_DIRS}")
 target_link_libraries(sqrail PRIVATE sqrail_json ${SQRAIL_DUCKDB_LIBRARIES})
+if(SQRAIL_DUCKDB_PROVIDER STREQUAL "SYSTEM")
+  # Preserve non-default distribution prefixes (for example Linuxbrew) after
+  # `cmake --install` removes the build-tree RPATH.
+  set_property(TARGET sqrail PROPERTY INSTALL_RPATH_USE_LINK_PATH TRUE)
+endif()
 target_compile_definitions(
   sqrail
   PRIVATE
