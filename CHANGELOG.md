@@ -5,6 +5,11 @@ versions follow semantic versioning.
 
 ## [Unreleased]
 
+### Added
+
+- an identity-concealed, randomized agent evaluation harness for crossed
+  sqrail/DuckDB CLI and Codex/Claude task-completion experiments
+
 ## [0.2.2] - 2026-07-27
 
 ### Added

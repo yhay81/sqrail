@@ -66,6 +66,8 @@ jobs:
           cmake --install out/build/release --prefix install --component sqrail
           install/bin/sqrail --version
           test -f install/share/doc/sqrail/THIRD_PARTY_NOTICES.md
+          test -x install/share/doc/sqrail/benchmarks/agent-eval/run.py
+          test -f install/share/doc/sqrail/benchmarks/agent-eval/launcher.c
           test -f install/share/doc/sqrail/licenses/duckdb-third-party/zstd/LICENSE
           test "$(find install -type f \( -name '*.a' -o -name '*.h' -o -name '*.hpp' \) | wc -l)" -eq 0
       - name: Verify Linux runtime
@@ -156,7 +158,21 @@ jobs:
         with:
           persist-credentials: false
       - name: Format
-        run: clang-format-18 --dry-run --Werror src/*.cpp src/*.hpp tests/*.cpp fuzz/*.cpp
+        run: >-
+          clang-format-18 --dry-run --Werror
+          src/*.cpp src/*.hpp tests/*.cpp fuzz/*.cpp
+          benchmarks/agent-eval/launcher.c
+      - name: Validate agent evaluation runner
+        run: |
+          python3 -m py_compile benchmarks/agent-eval/run.py
+          clang-18 \
+            -std=c11 -O2 -Wall -Wextra -Werror \
+            -DRAIL_MODE=0 \
+            '-DRAIL_TARGET="/bin/true"' \
+            '-DRAIL_HELP="/dev/null"' \
+            '-DRAIL_LOG="/tmp/sqrail-agent-eval.log"' \
+            benchmarks/agent-eval/launcher.c \
+            -o "$RUNNER_TEMP/rail-launcher"
       - name: Configure
         env:
           CC: clang-18

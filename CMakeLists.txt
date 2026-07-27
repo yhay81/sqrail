@@ -312,6 +312,16 @@ install(
   DESTINATION "${CMAKE_INSTALL_DOCDIR}/benchmarks"
   COMPONENT sqrail
 )
+install(
+  PROGRAMS benchmarks/agent-eval/run.py
+  DESTINATION "${CMAKE_INSTALL_DOCDIR}/benchmarks/agent-eval"
+  COMPONENT sqrail
+)
+install(
+  FILES benchmarks/agent-eval/launcher.c
+  DESTINATION "${CMAKE_INSTALL_DOCDIR}/benchmarks/agent-eval"
+  COMPONENT sqrail
+)
 if(SQRAIL_DUCKDB_PROVIDER STREQUAL "BUNDLED")
   install(
     DIRECTORY "${duckdb_SOURCE_DIR}/third_party/"

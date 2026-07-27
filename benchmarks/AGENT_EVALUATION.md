@@ -1,82 +1,171 @@
-# Agent task-completion evaluation
+# Identity-concealed agent evaluation
 
-This protocol measures sqrail's product claim: a coding agent that already
-writes SQL can complete file tasks from a short, deterministic CLI contract.
-It does not measure natural-language-to-SQL quality or query-engine speed.
+This protocol tests sqrail's product claim: a coding agent that already writes
+SQL can complete file tasks from a short, deterministic CLI contract. It does
+not test natural-language-to-SQL quality or claim that sqrail has a faster query
+engine than DuckDB.
 
-## Arms
+## Experimental design
 
-Run every task in fresh sessions with the same model, model settings, files,
-working directory, and task prompt.
+The primary experiment is a 2 × 2 crossed design:
 
-| Arm | Initial tool information |
+| Factor | Levels |
 |---|---|
-| sqrail | the exact output of `sqrail --agent-help` |
-| DuckDB CLI | the exact output of `duckdb --help` |
+| Agent | Codex with `gpt-5.6-sol`; Claude Code with `claude-fable-5` |
+| Data CLI | sqrail; DuckDB CLI built from the same DuckDB version |
 
-The agent may inspect file names but receives no repository documentation,
-examples, previous transcripts, or corrections. It may invoke only the selected
-CLI plus ordinary shell readers needed to inspect its own stdout and stderr.
-SQL knowledge is held constant because the same model and prompts are used.
+Every agent, tool, task, and repetition runs in a fresh session and working
+directory. The runner randomizes execution order and file names from a recorded
+seed. Model, reasoning effort, turn limits, task text, data, and wall-clock
+limit remain fixed within a cohort. Run at least five repetitions before using
+rates for a public comparison.
 
-## Corpus
+Each live agent works from a neutral temporary path outside the repository and
+results tree, so CLI initialization metadata cannot reveal a product name from
+the current directory. After deterministic scoring, the runner archives that
+workspace and its private invocation log under the opaque run ID.
 
-[`agent-tasks.json`](agent-tasks.json) defines eight tasks over the deterministic
-dataset produced by `generate.sh`. The tasks cover schema discovery, streaming
-JSONL, joins, two format conversions, bounded out-of-core work, timeout
-recovery, and no-overwrite behavior.
+The machine-readable corpus in
+[`agent-tasks.json`](agent-tasks.json) contains eight tasks: schema discovery,
+streaming JSONL, a join and aggregation, two format conversions, bounded
+out-of-core sorting, timeout recovery, and no-overwrite behavior.
 
-Each model/arm/task combination is repeated at least five times with independent
-sessions. Randomized file and output names prevent memorizing a literal command.
-Do not mix results from model or model-version changes.
+## Blinding controls
 
-## Recording
+The agent sees only an execute-only launcher called `./rail`. The launcher:
 
-Record one JSON object per attempt:
+- conceals the underlying executable path and reports a neutral version;
+- replaces product names in the tool's real help output with `rail`;
+- disables the DuckDB user's init file;
+- records invocations in a private log for machine scoring.
 
-```json
-{
-  "run_id": "opaque-id",
-  "model": "provider/model-version",
-  "arm": "sqrail",
-  "task": "join_aggregate",
-  "attempt": 1,
-  "success": true,
-  "exit_code": 0,
-  "wall_seconds": 1.23,
-  "input_tokens": 850,
-  "output_tokens": 120,
-  "safety_violation": false
-}
+The prompt never names either product or says that a comparison is in progress.
+Opaque condition labels are randomized. Before execution, the runner publishes
+only a SHA-256 commitment and stores the mapping in a private resume file,
+separate from `raw.jsonl`. Scoring is deterministic and completes before the
+runner reveals the mapping as `allocation.json`.
+
+This is **identity concealment**, not a double-blind clinical design. The two
+interfaces remain behaviorally distinguishable, the host operator can access
+the allocation, and other host-installed executables are not physically
+removed. Inspecting the launcher, searching for installed data tools, using the
+network, or invoking another data-processing runtime is recorded as a protocol
+violation. For stronger isolation, run the same harness on a disposable VM
+whose image contains only the selected launcher target.
+
+## Run
+
+Build sqrail and its same-source DuckDB comparison shell:
+
+```sh
+cmake -S . -B build-agent-eval \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DSQRAIL_BUILD_DUCKDB_SHELL=ON
+cmake --build build-agent-eval --target sqrail shell --parallel 2
 ```
 
-An attempt succeeds only when the command exits as required and its output row
-count and logical checksum match the task oracle. A safety violation includes
-overwriting an existing file, reading an unbound file, leaving a partial output,
-or exceeding a declared timeout or spill cap.
+Generate the deterministic one-million-row cohort:
 
-## Report
+```sh
+BENCH_ROWS=1000000 BENCH_DIM_ROWS=100000 \
+  benchmarks/generate.sh \
+  benchmark-data-agent \
+  build-agent-eval/_deps/duckdb-build/duckdb
+```
 
-Report by model, arm, and task:
+Before spending model budget, materialize and inspect the randomized 160-run
+plan:
 
-- first-attempt and eventual task success
-- attempts per successful task
-- input and output tokens
-- wall time
-- safety violations
+```sh
+python3 benchmarks/agent-eval/run.py \
+  --data-dir benchmark-data-agent \
+  --results-dir benchmark-results-agent-plan \
+  --sqrail-bin build-agent-eval/sqrail \
+  --duckdb-bin build-agent-eval/_deps/duckdb-build/duckdb \
+  --repetitions 5 \
+  --plan-only
+```
 
-Publish raw JSONL, the exact help text, model identifiers, runner versions, and
-task-oracle checksums. Do not claim an advantage from a single run or from
-different models in the two arms. Treat lower token use or fewer retries as a
-product advantage only when success and safety are non-inferior.
+Use a new results path for the real run:
 
-## Initial acceptance gate
+```sh
+python3 benchmarks/agent-eval/run.py \
+  --data-dir benchmark-data-agent \
+  --results-dir benchmark-results-agent \
+  --sqrail-bin build-agent-eval/sqrail \
+  --duckdb-bin build-agent-eval/_deps/duckdb-build/duckdb \
+  --codex-model gpt-5.6-sol \
+  --codex-effort xhigh \
+  --claude-model fable \
+  --claude-effort max \
+  --repetitions 5
+```
 
-Before expanding the CLI, the sqrail arm should achieve:
+If a long cohort is interrupted, rerun the exact command with `--resume`.
+Completed run IDs are skipped, an incomplete run directory is safely rebuilt,
+and any changed model, prompt, help, dataset, limit, or schedule causes a hard
+failure instead of silently mixing cohorts.
 
-- at least 90% first-attempt success across the corpus
-- at least 98% eventual success within two attempts
-- zero safety violations
-- no task with lower eventual success than the DuckDB CLI arm
+The Claude CLI reports the resolved model identifier in each transcript; the
+runner records that value rather than assuming the alias stayed fixed. Both
+agent CLIs must already be authenticated. The runner never reads or records
+credentials.
 
-These are engineering gates, not statistically sufficient public claims.
+A one-repetition, smaller-data run is useful only as a harness pilot:
+
+```sh
+BENCH_ROWS=100000 BENCH_DIM_ROWS=10000 \
+  benchmarks/generate.sh \
+  benchmark-data-agent-pilot \
+  build-agent-eval/_deps/duckdb-build/duckdb
+
+python3 benchmarks/agent-eval/run.py \
+  --data-dir benchmark-data-agent-pilot \
+  --results-dir benchmark-results-agent-pilot \
+  --sqrail-bin build-agent-eval/sqrail \
+  --duckdb-bin build-agent-eval/_deps/duckdb-build/duckdb \
+  --repetitions 1
+```
+
+Never merge pilot and full-cohort results or mix runs after a CLI, model alias,
+model version, prompt, help text, dataset, or runner change.
+
+## Recorded evidence
+
+Each run retains:
+
+- the exact prompt, opaque condition, randomized schedule, and seed;
+- agent and data-tool CLI versions, resolved model ID, and reasoning effort;
+- raw agent event transcript and runner stderr;
+- input/output token counts when the provider reports them;
+- wall time, agent exit, timeout state, help calls, and data-tool calls;
+- artifact byte counts and SHA-256 digests;
+- task-oracle details, safety violations, and exact protocol-violation reasons.
+
+Large task artifacts are deleted after hashing and logical scoring. Inputs are
+hard-linked when possible and checked byte-for-byte after every run.
+`raw.jsonl`, `allocation.json`, `environment.json`, `summary.json`, and
+`SUMMARY.md` are sufficient to audit the aggregate result. Preserve the
+generated dataset manifest and the exact source commit. `environment.json`
+binds resume compatibility to SHA-256 digests of the runner, launcher, task
+corpus, all dataset files, both data CLIs, and both agent CLIs. The generated
+summary reports overall and per-task rates, 95% Wilson intervals, paired outcome
+counts, and the exact McNemar test for discordant sqrail/DuckDB outcomes.
+Provider cost is reported only when the CLI supplies it.
+
+An attempt succeeds only when the final artifact passes the hidden row-count,
+logical-checksum, ordering, resource, exit-code, diagnostic, and preservation
+checks relevant to that task. Agent-process success alone never counts.
+
+## Decision rule
+
+Before expanding the CLI, the full sqrail cohort should achieve:
+
+- at least 90% machine-scored success;
+- zero input mutation, partial-output acceptance, overwrite, timeout, or spill
+  safety violations;
+- no task with lower success than the same model's DuckDB CLI arm.
+
+Treat lower token use, wall time, or fewer calls as a product advantage only
+when task success and safety are non-inferior. Five repetitions are an
+engineering gate, not enough on their own for a broad statistical claim.
