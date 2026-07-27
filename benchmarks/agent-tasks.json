@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "dataset": {
+    "generator": "benchmarks/generate.sh",
+    "required_files": [
+      "fact.csv",
+      "fact.parquet",
+      "dim.parquet",
+      "manifest.json"
+    ]
+  },
+  "tasks": [
+    {
+      "id": "schema_discovery",
+      "prompt": "Inspect fact.csv and return its machine-readable column names and types.",
+      "oracle": "valid_schema"
+    },
+    {
+      "id": "selective_jsonl",
+      "prompt": "Return event_id and drug_id from fact.parquet where value is at least 0.999, ordered by event_id, as JSON Lines on stdout.",
+      "oracle": "row_count_and_checksum"
+    },
+    {
+      "id": "join_aggregate",
+      "prompt": "Join fact.parquet to dim.parquet by drug_id and write Parquet containing observation count by drug_class ordered by drug_class.",
+      "oracle": "row_count_and_checksum"
+    },
+    {
+      "id": "csv_to_parquet",
+      "prompt": "Convert all rows and columns of fact.csv to a new Parquet file without replacing an existing path.",
+      "oracle": "row_count_and_checksum"
+    },
+    {
+      "id": "parquet_to_jsonl",
+      "prompt": "Convert event_id, drug_id, event_date, value, and payload from fact.parquet to a new JSON Lines file.",
+      "oracle": "row_count_and_checksum"
+    },
+    {
+      "id": "bounded_sort",
+      "prompt": "Sort fact.parquet by value descending and event_id ascending using a 128 MiB memory budget, two threads, an explicit spill directory, and a 2 GiB spill cap.",
+      "oracle": "row_count_checksum_and_resource_contract"
+    },
+    {
+      "id": "timeout_recovery",
+      "prompt": "Run a deliberately expensive read-only query with a 10 ms deadline and report the structured timeout failure without treating partial stdout as complete.",
+      "oracle": "timeout_exit_and_diagnostic"
+    },
+    {
+      "id": "no_overwrite",
+      "prompt": "Attempt to write a query result to a path that already exists and preserve the original file unchanged.",
+      "oracle": "no_overwrite_exit_and_digest"
+    }
+  ]
+}

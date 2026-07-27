@@ -53,6 +53,37 @@ benchmarks/run.sh benchmark-data benchmark-results
 `summary.tsv` contains mean, standard deviation, minimum, maximum, one separately
 profiled peak-RSS observation, row count, and a logical checksum. Every sqrail
 result must match the DuckDB CLI row count and checksum or the run fails.
+The default suite covers 12 scan, filter, aggregate, join, blocking, and
+conversion cases. Final result files are removed after validation so the
+working set contains at most one benchmark output. Set `BENCH_KEEP_OUTPUTS=1`
+only when inspecting generated results is worth the additional disk space.
+
+Run the complete suite at the policy memory budgets:
+
+```sh
+SQRAIL_BIN=build-bench/sqrail \
+DUCKDB_BIN=build-bench/_deps/duckdb-build/duckdb \
+BENCH_MEMORIES="512MB 1GB 4GB" \
+BENCH_RUNS=5 \
+benchmarks/run-matrix.sh benchmark-data benchmark-results-matrix
+```
+
+The combined `benchmark-results-matrix/summary.tsv` adds the memory budget to
+each result row. Individual hyperfine data and environment manifests remain in
+the per-budget subdirectories.
+
+Before writing data, `generate.sh` estimates required capacity and requires 2x
+headroom by default. Preview a large generation request without writing rows:
+
+```sh
+BENCH_ROWS=100000000 BENCH_DIM_ROWS=1000000 BENCH_DRY_RUN=1 \
+  benchmarks/generate.sh benchmark-data-100m build-bench/_deps/duckdb-build/duckdb
+```
+
+Tune the conservative estimate with `BENCH_BYTES_PER_ROW_ESTIMATE` or the
+multiplier with `BENCH_CAPACITY_HEADROOM` only after measuring the target
+filesystem. An insufficient-capacity result is a safety stop, not a benchmark
+failure.
 
 The default run uses one warmup and therefore reports warm-cache measurements.
 Set `BENCH_WARMUP=0` to preserve first-run timings, but do not describe them as
@@ -74,3 +105,8 @@ BENCH_MAX_SPILL=2GiB \
 The spill monitor samples every 10 ms, so `peak_spill_bytes` is a lower bound.
 The memory setting is DuckDB's buffer limit; `peak_rss_bytes` also includes code,
 allocator, compression, and query-state memory.
+
+To evaluate the agent-facing contract rather than engine execution, use the
+[agent task-completion protocol](AGENT_EVALUATION.md) and its
+[machine-readable task corpus](agent-tasks.json). Keep model versions and task
+prompts identical across sqrail and DuckDB CLI arms.

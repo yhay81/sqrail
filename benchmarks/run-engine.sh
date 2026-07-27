@@ -7,10 +7,24 @@ engine=${1:?engine is required}
 : "${BENCH_FACT_READER:?BENCH_FACT_READER is required}"
 : "${BENCH_DIM:?BENCH_DIM is required}"
 : "${BENCH_OUTPUT:?BENCH_OUTPUT is required}"
+: "${BENCH_OUTPUT_FORMAT:?BENCH_OUTPUT_FORMAT is required}"
 : "${BENCH_MEMORY:?BENCH_MEMORY is required}"
 : "${BENCH_THREADS:?BENCH_THREADS is required}"
 
 query=$(<"$BENCH_QUERY")
+
+case $BENCH_OUTPUT_FORMAT in
+  parquet)
+    copy_options="FORMAT PARQUET"
+    ;;
+  jsonl)
+    copy_options="FORMAT JSON, ARRAY false"
+    ;;
+  *)
+    echo "unsupported benchmark output format: $BENCH_OUTPUT_FORMAT" >&2
+    exit 2
+    ;;
+esac
 
 case $engine in
   sqrail)
@@ -47,7 +61,7 @@ SET threads = ${BENCH_THREADS};
 SET preserve_insertion_order = false;
 CREATE TEMP VIEW fact AS SELECT * FROM ${BENCH_FACT_READER}('${fact}');
 CREATE TEMP VIEW dim AS SELECT * FROM read_parquet('${dim}');
-COPY (${query}) TO '${output}' (FORMAT PARQUET);
+COPY (${query}) TO '${output}' (${copy_options});
 " >/dev/null
     ;;
   *)

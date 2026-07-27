@@ -269,7 +269,7 @@ install(
   COMPONENT sqrail
 )
 install(
-  FILES benchmarks/README.md
+  FILES benchmarks/README.md benchmarks/AGENT_EVALUATION.md benchmarks/agent-tasks.json
   DESTINATION "${CMAKE_INSTALL_DOCDIR}/benchmarks"
   COMPONENT sqrail
 )

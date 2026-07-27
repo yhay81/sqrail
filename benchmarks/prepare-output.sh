@@ -3,7 +3,7 @@ set -euo pipefail
 
 output=${1:?output path is required}
 case $output in
-  */outputs/*.parquet)
+  */outputs/*.parquet|*/outputs/*.jsonl)
     rm -f -- "$output"
     ;;
   *)
