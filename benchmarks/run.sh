@@ -9,11 +9,20 @@ result_dir=${2:-benchmark-results}
 sqrail_bin=${SQRAIL_BIN:-"$repo_dir/build-bench/sqrail"}
 duckdb_bin=${DUCKDB_BIN:-"$repo_dir/build-bench/_deps/duckdb-build/duckdb"}
 memory=${BENCH_MEMORY:-512MB}
+max_spill=${BENCH_MAX_SPILL:-8GiB}
 threads=${BENCH_THREADS:-2}
 runs=${BENCH_RUNS:-5}
 warmup=${BENCH_WARMUP:-1}
 keep_outputs=${BENCH_KEEP_OUTPUTS:-0}
 
+for size in "$memory" "$max_spill"; do
+  case $size in
+    ''|*[!A-Za-z0-9.]*)
+      echo "memory and spill limits must use compact size syntax such as 512MB or 8GiB" >&2
+      exit 2
+      ;;
+  esac
+done
 for command in "$sqrail_bin" "$duckdb_bin" hyperfine jq; do
   if ! command -v "$command" >/dev/null 2>&1 && [ ! -x "$command" ]; then
     echo "required command not found: $command" >&2
@@ -55,6 +64,7 @@ export SQRAIL_BIN="$sqrail_bin"
 export DUCKDB_BIN="$duckdb_bin"
 export BENCH_DIM="$data_dir/dim.parquet"
 export BENCH_MEMORY="$memory"
+export BENCH_MAX_SPILL="$max_spill"
 export BENCH_THREADS="$threads"
 
 printf 'case\tengine\tmean_s\tstddev_s\tmin_s\tmax_s\tpeak_rss_bytes\trows\tchecksum\n' \
@@ -96,8 +106,10 @@ run_case() {
 
   for engine in duckdb sqrail; do
     export BENCH_OUTPUT="$result_dir/outputs/${case_name}-${engine}.${output_format}"
+    export BENCH_SPILL="$result_dir/spill/${case_name}-${engine}"
     result_json="$result_dir/hyperfine/${case_name}-${engine}.json"
-    printf -v prepare_command '%q %q' "$script_dir/prepare-output.sh" "$BENCH_OUTPUT"
+    printf -v prepare_command \
+      '%q %q %q' "$script_dir/prepare-output.sh" "$BENCH_OUTPUT" "$BENCH_SPILL"
     printf -v engine_command '%q %q' "$script_dir/run-engine.sh" "$engine"
 
     hyperfine \
@@ -107,7 +119,7 @@ run_case() {
       --export-json "$result_json" \
       "$engine_command"
 
-    "$script_dir/prepare-output.sh" "$BENCH_OUTPUT"
+    "$script_dir/prepare-output.sh" "$BENCH_OUTPUT" "$BENCH_SPILL"
     rss=$(
       "$script_dir/measure-rss.sh" "$engine" \
         "$result_dir/hyperfine/${case_name}-${engine}-rss.txt"
@@ -146,9 +158,7 @@ run_case() {
         $checksum
       ] | @tsv' "$result_json" >> "$result_dir/summary.tsv"
 
-    if [ "$keep_outputs" -eq 0 ]; then
-      "$script_dir/prepare-output.sh" "$BENCH_OUTPUT"
-    fi
+    "$script_dir/prepare-output.sh" "$BENCH_OUTPUT" "$BENCH_SPILL" "$keep_outputs"
   done
 }
 
@@ -181,6 +191,7 @@ cp "$data_dir/manifest.json" "$result_dir/data-manifest.json"
 {
   printf '{\n'
   printf '  "memory": "%s",\n' "$memory"
+  printf '  "max_spill": "%s",\n' "$max_spill"
   printf '  "threads": %s,\n' "$threads"
   printf '  "runs": %s,\n' "$runs"
   printf '  "warmup": %s,\n' "$warmup"

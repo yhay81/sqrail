@@ -17,6 +17,9 @@ The full matrix runner executes every workload at each declared memory budget.
 Outputs are deleted after their checksum is recorded by default, bounding disk
 usage to the input dataset plus one result at a time. Dataset generation refuses
 to start unless the filesystem has the configured capacity headroom.
+Each frontend receives an isolated explicit spill directory and an identical
+spill cap so an engine's implicit temporary-directory policy cannot skew a
+low-memory comparison.
 
 ## Metrics
 

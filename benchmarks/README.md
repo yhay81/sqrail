@@ -64,13 +64,16 @@ Run the complete suite at the policy memory budgets:
 SQRAIL_BIN=build-bench/sqrail \
 DUCKDB_BIN=build-bench/_deps/duckdb-build/duckdb \
 BENCH_MEMORIES="512MB 1GB 4GB" \
+BENCH_MAX_SPILL=8GiB \
 BENCH_RUNS=5 \
 benchmarks/run-matrix.sh benchmark-data benchmark-results-matrix
 ```
 
 The combined `benchmark-results-matrix/summary.tsv` adds the memory budget to
 each result row. Individual hyperfine data and environment manifests remain in
-the per-budget subdirectories.
+the per-budget subdirectories. Both frontends receive isolated explicit spill
+directories under the result tree and the same `BENCH_MAX_SPILL` limit. The
+runner safely clears only directories carrying its private benchmark marker.
 
 Before writing data, `generate.sh` estimates required capacity and requires 2x
 headroom by default. Preview a large generation request without writing rows:

@@ -9,6 +9,8 @@ engine=${1:?engine is required}
 : "${BENCH_OUTPUT:?BENCH_OUTPUT is required}"
 : "${BENCH_OUTPUT_FORMAT:?BENCH_OUTPUT_FORMAT is required}"
 : "${BENCH_MEMORY:?BENCH_MEMORY is required}"
+: "${BENCH_SPILL:?BENCH_SPILL is required}"
+: "${BENCH_MAX_SPILL:?BENCH_MAX_SPILL is required}"
 : "${BENCH_THREADS:?BENCH_THREADS is required}"
 
 query=$(<"$BENCH_QUERY")
@@ -32,6 +34,8 @@ case $engine in
     "$SQRAIL_BIN" run \
       --memory "$BENCH_MEMORY" \
       --threads "$BENCH_THREADS" \
+      --spill "$BENCH_SPILL" \
+      --max-spill "$BENCH_MAX_SPILL" \
       -t fact="$BENCH_FACT" \
       -t dim="$BENCH_DIM" \
       -o "$BENCH_OUTPUT" \
@@ -57,6 +61,8 @@ case $engine in
     esac
     "$DUCKDB_BIN" -no-stdin -c "
 SET memory_limit = '$(sql_quote "$BENCH_MEMORY")';
+SET temp_directory = '$(sql_quote "$BENCH_SPILL")';
+SET max_temp_directory_size = '$(sql_quote "$BENCH_MAX_SPILL")';
 SET threads = ${BENCH_THREADS};
 SET preserve_insertion_order = false;
 CREATE TEMP VIEW fact AS SELECT * FROM ${BENCH_FACT_READER}('${fact}');
