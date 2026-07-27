@@ -1,0 +1,33 @@
+sqrail runs read-only SQL over CSV, TSV, JSON, and Parquet.
+
+sqrail schema [-o FILE] INPUT...
+sqrail check [-t NAME=PATH]... [--memory SIZE] [--threads N] [--timeout DURATION] [SQL|-]
+sqrail run [-t NAME=PATH]... [-o FILE] [--memory SIZE] [--threads N]
+           [--spill DIR [--max-spill SIZE]] [--timeout DURATION] [SQL|-]
+sqrail --version
+
+Choose one data action after this help:
+- Names/types are the requested result: schema once.
+- All other tasks, including joins: stated names/types are final; never call schema; run once.
+After that action exits 0: task complete. STOP; run no more commands.
+
+-t NAME=PATH creates table NAME from a file, Parquet directory, or glob.
+'-' reads SQL from stdin. Give -o the requested path. Without -o, run emits
+JSONL on stdout. With -o, the extension selects format. Outputs are atomic and
+never replaced. SQL is one SELECT, VALUES, or WITH query; ordering needs
+ORDER BY. Errors are JSON on stderr.
+Exit codes: 0 success, 2 usage, 3 input, 4 SQL/timeout, 5 output, 70 internal.
+
+One-shot patterns:
+  sqrail schema -o requested.json input.csv
+  sqrail run -t data=input.parquet 'SELECT id FROM data' > rows.jsonl
+  sqrail run -t data=input.csv -o result.parquet 'SELECT * FROM data'
+  sqrail run --memory 128MiB --threads 2 --spill ./spill --max-spill 2GiB
+             -t data=input.parquet -o sorted.parquet
+             'SELECT * FROM data ORDER BY score DESC'
+  sqrail run --timeout 10ms -t data=input.parquet 'SELECT count(*) FROM data'
+             > partial.jsonl 2> diagnostic.json;
+             printf '%s\n' $? > status.txt
+
+For an expected timeout, saved status 4 plus QUERY_TIMEOUT means success: stop.
+The compound shell command may exit 0 after writing status.txt.

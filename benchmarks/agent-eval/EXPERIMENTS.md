@@ -28,6 +28,7 @@ kept byte-for-byte equal to the compiled `--agent-help` output by tests.
 | Gemini 3.6 Flash Low, original help | 16/16 | 1.125 | 9.034 | Four tasks × four contexts. |
 | Gemini 3.6 Flash Low, decision-first | 16/16 | 1.000 | 8.607 | Four tasks × four contexts. |
 | Gemini 3.5 Flash Low, decision-first | 16/16 | 1.000 | 12.482 | Resolved-model audit passed for every run. |
+| Claude Haiku 4.5 Low, decision-first | 16/16 | 1.813 | 31.955 | Claude Code OAuth on a Max subscription; zero model, safety, or protocol mismatches. |
 | GPT-OSS 120B Medium, decision-first | 15/15 | 1.467 | 21.105 | One additional attempt was provider overload before any model response. |
 | Qwen 3.5 9B via local Ollama, final stop wording | 1/1 | 4.000 | 116.256 | Noisy join only; correct but much less efficient. |
 
@@ -37,6 +38,14 @@ exactly one data call per run. A local 9B run improved from a logically correct
 artifact followed by a 180-second agent timeout and nine data calls to a
 completed 116.256-second run with four calls. One observation is not evidence
 of a stable local-model effect.
+
+Haiku completed every representative task but inspected or verified the join
+more often than the other hosted models: the four join contexts averaged 4.25
+data calls. A stricter 249-word candidate explicitly prohibited `schema` for
+joins and prohibited all commands after success. It passed the same four joins
+but still averaged 3.75 calls, so it was rejected rather than replacing the
+broader 250-word contract. Its exact text is retained as
+[`help-candidate-haiku-strict.txt`](help-candidate-haiku-strict.txt).
 
 ## Model and infrastructure exclusions
 
@@ -50,7 +59,9 @@ of a stable local-model effect.
   runtime.
 - Current Claude Haiku is
   [`claude-haiku-4-5-20251001`](https://platform.claude.com/docs/en/about-claude/models/overview).
-  It could not be tested because the installed Claude CLI was not authenticated.
+  After Claude Code OAuth login, the `haiku` alias resolved to that exact model
+  for all 16 runs. The CLI reported Claude Max subscription authentication,
+  no API-key source, and no overage use.
 - `gpt-oss:20b` was not installed locally. The Mac had sufficient unified
   memory but initially insufficient disk capacity to fetch the weights. The
   runner now supports it through `--agents local --local-model gpt-oss:20b`.
@@ -64,20 +75,21 @@ of a stable local-model effect.
 
 ## Interpretation
 
-The strongest result is not that every small model is reliable. It is that a
-short decision-first contract kept three inexpensive hosted model cohorts at
-16/16 while eliminating redundant data calls for Luna and Gemini 3.6. The 4B
-local model described the correct next action but never issued a tool call. The
-9B local model could complete tasks, but ignored one-shot guidance and was
-roughly an order of magnitude slower than Gemini 3.6 Flash Low on the tested
-join. Local open-weight support remains useful for privacy and offline use, not
-yet as the default performance path.
+The strongest result is not that every small model is equally efficient. A
+short decision-first contract kept four inexpensive hosted model cohorts at
+16/16 and eliminated redundant data calls for Luna and Gemini 3.6. Haiku was
+equally correct and safe but less obedient to the one-shot rule. The 4B local
+model described the correct next action but never issued a tool call. The 9B
+local model could complete tasks, but ignored one-shot guidance and was roughly
+an order of magnitude slower than Gemini 3.6 Flash Low on the tested join.
+Local open-weight support remains useful for privacy and offline use, not yet
+as the default performance path.
 
 Future public claims require at least five repetitions, both blinded data-CLI
 arms, all eight tasks, all four contexts, and no model-selection mismatches or
 infrastructure failures in the analyzed cohort.
 
-Direct API evaluation of Flash-Lite, Haiku, and nano is the next useful model
-expansion. It requires provider credentials and a restricted shell
-tool-calling adapter; consumer ChatGPT or Claude subscriptions must not be
-assumed to cover separate API usage.
+Under the no-direct-API constraint, the remaining useful expansion is more
+repetitions with the authenticated Codex, Claude Code, and Agy runtimes.
+Flash-Lite and nano remain excluded until a non-API authenticated runtime
+offers them.
