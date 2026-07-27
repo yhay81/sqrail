@@ -746,8 +746,7 @@ uint64_t StreamJson(duckdb::Connection &connection, const std::string &sql, cons
 			} else {
 				const auto &value = values[index];
 				const std::string_view json(value.GetData(), value.GetSize());
-				if (json.find("NaN") == std::string_view::npos &&
-				    json.find("Infinity") == std::string_view::npos) {
+				if (json.find("NaN") == std::string_view::npos && json.find("Infinity") == std::string_view::npos) {
 					append(json);
 				} else {
 					append(sqrail::StrictJson(std::string(json)));
