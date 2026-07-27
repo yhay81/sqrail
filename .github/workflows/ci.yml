@@ -82,6 +82,24 @@ jobs:
           gzip -c -9 out/build/release/sqrail > out/build/release/sqrail.gz
           ls -lh out/build/release/sqrail.gz
 
+  debug-build:
+    name: Developer debug build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Configure
+        env:
+          CC: clang-18
+          CXX: clang++-18
+        run: cmake --preset dev
+      - name: Build
+        run: cmake --build --preset dev
+      - name: Test
+        run: ctest --preset dev
+
   static-analysis:
     name: Clang static analysis
     runs-on: ubuntu-24.04

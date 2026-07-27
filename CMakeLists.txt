@@ -131,6 +131,14 @@ set(BUILD_SHELL "${SQRAIL_BUILD_DUCKDB_SHELL}" CACHE BOOL "" FORCE)
 set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(BUILD_BENCHMARKS OFF CACHE BOOL "" FORCE)
 set(BUILD_EXTENSIONS "parquet;json" CACHE STRING "" FORCE)
+# DuckDB enables ASan and UBSan by default for Debug builds, but those flags are
+# scoped to its subdirectory and do not reach sqrail's final link step. Keep the
+# embedded engine's sanitizer switches off and let SQRAIL_ENABLE_SANITIZERS
+# instrument and link the entire process consistently.
+set(ENABLE_SANITIZER OFF CACHE BOOL "DuckDB sanitizer policy is managed by sqrail" FORCE)
+set(ENABLE_UBSAN OFF CACHE BOOL "DuckDB sanitizer policy is managed by sqrail" FORCE)
+set(ENABLE_THREAD_SANITIZER OFF CACHE BOOL "DuckDB sanitizer policy is managed by sqrail" FORCE)
+set(RELEASE_SANITIZER OFF CACHE BOOL "DuckDB sanitizer policy is managed by sqrail" FORCE)
 
 FetchContent_Declare(
   duckdb
