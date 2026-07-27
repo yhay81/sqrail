@@ -9,10 +9,20 @@ result_dir=${2:-benchmark-results}
 sqrail_bin=${SQRAIL_BIN:-"$repo_dir/build-bench/sqrail"}
 duckdb_bin=${DUCKDB_BIN:-"$repo_dir/build-bench/_deps/duckdb-build/duckdb"}
 memory=${BENCH_MEMORY:-512MB}
+max_spill=${BENCH_MAX_SPILL:-8GiB}
 threads=${BENCH_THREADS:-2}
 runs=${BENCH_RUNS:-5}
 warmup=${BENCH_WARMUP:-1}
+keep_outputs=${BENCH_KEEP_OUTPUTS:-0}
 
+for size in "$memory" "$max_spill"; do
+  case $size in
+    ''|*[!A-Za-z0-9.]*)
+      echo "memory and spill limits must use compact size syntax such as 512MB or 8GiB" >&2
+      exit 2
+      ;;
+  esac
+done
 for command in "$sqrail_bin" "$duckdb_bin" hyperfine jq; do
   if ! command -v "$command" >/dev/null 2>&1 && [ ! -x "$command" ]; then
     echo "required command not found: $command" >&2
@@ -30,6 +40,10 @@ for number in "$threads" "$runs" "$warmup"; do
 done
 if [ "$threads" -eq 0 ] || [ "$runs" -eq 0 ]; then
   echo "BENCH_THREADS and BENCH_RUNS must be greater than zero" >&2
+  exit 2
+fi
+if [ "$keep_outputs" != 0 ] && [ "$keep_outputs" != 1 ]; then
+  echo "BENCH_KEEP_OUTPUTS must be 0 or 1" >&2
   exit 2
 fi
 
@@ -50,43 +64,72 @@ export SQRAIL_BIN="$sqrail_bin"
 export DUCKDB_BIN="$duckdb_bin"
 export BENCH_DIM="$data_dir/dim.parquet"
 export BENCH_MEMORY="$memory"
+export BENCH_MAX_SPILL="$max_spill"
 export BENCH_THREADS="$threads"
 
 printf 'case\tengine\tmean_s\tstddev_s\tmin_s\tmax_s\tpeak_rss_bytes\trows\tchecksum\n' \
   > "$result_dir/summary.tsv"
+
+sql_quote() {
+  local value=$1
+  value=${value//\'/\'\'}
+  printf '%s' "$value"
+}
 
 run_case() {
   local case_name=$1
   local fact_file=$2
   local fact_reader=$3
   local query_file=$4
+  local output_format=$5
   local expected_fingerprint=
+  local output_reader=
+  local output_path=
 
   export BENCH_FACT="$fact_file"
   export BENCH_FACT_READER="$fact_reader"
   export BENCH_QUERY="$query_file"
+  export BENCH_OUTPUT_FORMAT="$output_format"
+
+  case $output_format in
+    parquet)
+      output_reader=read_parquet
+      ;;
+    jsonl)
+      output_reader=read_json_auto
+      ;;
+    *)
+      echo "unsupported benchmark output format: $output_format" >&2
+      exit 2
+      ;;
+  esac
 
   for engine in duckdb sqrail; do
-    export BENCH_OUTPUT="$result_dir/outputs/${case_name}-${engine}.parquet"
+    export BENCH_OUTPUT="$result_dir/outputs/${case_name}-${engine}.${output_format}"
+    export BENCH_SPILL="$result_dir/spill/${case_name}-${engine}"
     result_json="$result_dir/hyperfine/${case_name}-${engine}.json"
+    printf -v prepare_command \
+      '%q %q %q' "$script_dir/prepare-output.sh" "$BENCH_OUTPUT" "$BENCH_SPILL"
+    printf -v engine_command '%q %q' "$script_dir/run-engine.sh" "$engine"
 
     hyperfine \
       --warmup "$warmup" \
       --runs "$runs" \
-      --prepare "$script_dir/prepare-output.sh '$BENCH_OUTPUT'" \
+      --prepare "$prepare_command" \
       --export-json "$result_json" \
-      "$script_dir/run-engine.sh $engine"
+      "$engine_command"
 
-    "$script_dir/prepare-output.sh" "$BENCH_OUTPUT"
+    "$script_dir/prepare-output.sh" "$BENCH_OUTPUT" "$BENCH_SPILL"
     rss=$(
       "$script_dir/measure-rss.sh" "$engine" \
         "$result_dir/hyperfine/${case_name}-${engine}-rss.txt"
     )
 
     fingerprint=$(
+      output_path=$(sql_quote "$BENCH_OUTPUT")
       "$duckdb_bin" -csv -noheader -c \
         "SELECT count(*), bit_xor(hash(row_value))
-         FROM read_parquet('$BENCH_OUTPUT') AS row_value"
+         FROM ${output_reader}('${output_path}') AS row_value"
     )
     if [ -z "$expected_fingerprint" ]; then
       expected_fingerprint=$fingerprint
@@ -114,22 +157,45 @@ run_case() {
         $rows,
         $checksum
       ] | @tsv' "$result_json" >> "$result_dir/summary.tsv"
+
+    "$script_dir/prepare-output.sh" "$BENCH_OUTPUT" "$BENCH_SPILL" "$keep_outputs"
   done
 }
 
-run_case scan_parquet "$data_dir/fact.parquet" read_parquet "$script_dir/queries/scan.sql"
-run_case aggregate_parquet "$data_dir/fact.parquet" read_parquet "$script_dir/queries/aggregate.sql"
-run_case join_parquet "$data_dir/fact.parquet" read_parquet "$script_dir/queries/join.sql"
-run_case window_parquet "$data_dir/fact.parquet" read_parquet "$script_dir/queries/window.sql"
-run_case csv_to_parquet "$data_dir/fact.csv" read_csv_auto "$script_dir/queries/conversion.sql"
+run_case scan_parquet_selective \
+  "$data_dir/fact.parquet" read_parquet "$script_dir/queries/scan.sql" parquet
+run_case scan_csv_selective \
+  "$data_dir/fact.csv" read_csv_auto "$script_dir/queries/scan.sql" parquet
+run_case scan_parquet_nonselective \
+  "$data_dir/fact.parquet" read_parquet "$script_dir/queries/scan-wide.sql" parquet
+run_case aggregate_low_cardinality \
+  "$data_dir/fact.parquet" read_parquet "$script_dir/queries/aggregate-low.sql" parquet
+run_case aggregate_high_cardinality \
+  "$data_dir/fact.parquet" read_parquet "$script_dir/queries/aggregate.sql" parquet
+run_case join_small_large \
+  "$data_dir/fact.parquet" read_parquet "$script_dir/queries/join.sql" parquet
+run_case join_large_large \
+  "$data_dir/fact.parquet" read_parquet "$script_dir/queries/join-large.sql" parquet
+run_case sort_parquet \
+  "$data_dir/fact.parquet" read_parquet "$script_dir/queries/sort.sql" parquet
+run_case distinct_parquet \
+  "$data_dir/fact.parquet" read_parquet "$script_dir/queries/distinct.sql" parquet
+run_case window_parquet \
+  "$data_dir/fact.parquet" read_parquet "$script_dir/queries/window.sql" parquet
+run_case csv_to_parquet \
+  "$data_dir/fact.csv" read_csv_auto "$script_dir/queries/conversion.sql" parquet
+run_case parquet_to_jsonl \
+  "$data_dir/fact.parquet" read_parquet "$script_dir/queries/conversion.sql" jsonl
 
 cp "$data_dir/manifest.json" "$result_dir/data-manifest.json"
 {
   printf '{\n'
   printf '  "memory": "%s",\n' "$memory"
+  printf '  "max_spill": "%s",\n' "$max_spill"
   printf '  "threads": %s,\n' "$threads"
   printf '  "runs": %s,\n' "$runs"
   printf '  "warmup": %s,\n' "$warmup"
+  printf '  "keep_outputs": %s,\n' "$keep_outputs"
   printf '  "sqrail": "%s",\n' "$("$sqrail_bin" --version | tr '\n' ' ')"
   printf '  "duckdb": "%s",\n' "$("$duckdb_bin" --version | tr '\n' ' ')"
   printf '  "system": "%s"\n' "$(uname -a | tr '"' "'")"
