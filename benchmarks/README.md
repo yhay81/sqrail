@@ -36,6 +36,20 @@ cmake --workflow --preset pgo-use
 Portable release results, native results, and PGO results are separate benchmark
 cohorts. A host-tuned binary must never be published as a portable release.
 
+Measure frontend startup paths independently from data workloads:
+
+```sh
+SQRAIL_BIN=build-bench/sqrail \
+DUCKDB_BIN=build-bench/_deps/duckdb-build/duckdb \
+BENCH_RUNS=50 \
+benchmarks/run-startup.sh benchmark-results-startup
+```
+
+This records raw Hyperfine samples, a Markdown summary, exact tool versions, and
+host metadata for version-only and `SELECT 1` processes. The default five
+warmups make this a warm-cache measurement; it must not be described as cold
+start.
+
 Generate deterministic local data and run:
 
 ```sh
@@ -50,9 +64,10 @@ BENCH_RUNS=5 \
 benchmarks/run.sh benchmark-data benchmark-results
 ```
 
-`summary.tsv` contains mean, standard deviation, minimum, maximum, one separately
-profiled peak-RSS observation, row count, and a logical checksum. Every sqrail
-result must match the DuckDB CLI row count and checksum or the run fails.
+`summary.tsv` contains mean, standard deviation, minimum, maximum, Hyperfine
+user/system CPU time, one separately profiled peak-RSS observation, output
+bytes, row count, and a logical checksum. Every sqrail result must match the
+DuckDB CLI row count and checksum or the run fails.
 The default suite covers 12 scan, filter, aggregate, join, blocking, and
 conversion cases. Final result files are removed after validation so the
 working set contains at most one benchmark output. Set `BENCH_KEEP_OUTPUTS=1`
@@ -88,10 +103,15 @@ multiplier with `BENCH_CAPACITY_HEADROOM` only after measuring the target
 filesystem. An insufficient-capacity result is a safety stop, not a benchmark
 failure.
 
-The default run uses one warmup and therefore reports warm-cache measurements.
-Set `BENCH_WARMUP=0` to preserve first-run timings, but do not describe them as
-cold-cache results unless the operating-system page cache was independently
-controlled and recorded.
+The default run uses one warmup and therefore records `cache.state=warm`.
+`BENCH_WARMUP=0` records `first-run-uncontrolled`; it is not a cold-cache
+claim. A caller that independently controls the operating-system page cache may
+set `BENCH_CACHE_STATE=cold-controlled` only together with a non-empty
+`BENCH_CACHE_CONTROL_EVIDENCE` describing the exact mechanism. The environment
+manifest also records OS, architecture, CPU model/count, RAM, storage capacity,
+compiler, git commit/dirty state, binary sizes and SHA-256 digests, dataset
+manifest digest, parameters, and locale without copying arbitrary environment
+variables.
 
 For an explicit out-of-core sort with sampled peak spill usage:
 
@@ -110,10 +130,25 @@ The memory setting is DuckDB's buffer limit; `peak_rss_bytes` also includes code
 allocator, compression, and query-state memory.
 
 To evaluate the agent-facing contract rather than engine execution, use the
-[agent task-completion protocol](AGENT_EVALUATION.md) and its
-[machine-readable task corpus](agent-tasks.json). Keep model versions and task
-prompts identical across sqrail and DuckDB CLI arms. The reproducible runner in
-[`agent-eval/run.py`](agent-eval/run.py) conceals tool identity behind `./rail`,
-uses a neutral temporary working path, randomizes the crossed schedule, retains
-raw agent events, and machine-scores all eight task oracles before revealing the
-condition allocation.
+[agent task-completion protocol](AGENT_EVALUATION.md). Its primary
+identity-concealed runner, [`agent-eval/run.py`](agent-eval/run.py), uses the
+eight-task [`agent-tasks.json`](agent-tasks.json) corpus, hides tool identity
+behind `./rail`, randomizes the crossed schedule, retains raw agent events, and
+scores every oracle before revealing the condition allocation.
+
+The complementary v0.3 artifact gate uses the twelve-task
+[`agent-tasks-v0.3.json`](agent-tasks-v0.3.json) corpus. After recording
+attempts through `agent-run.py` as JSONL, independently recompute the evidence
+and enforce completeness with:
+
+```sh
+python3 benchmarks/agent-eval.py agent-results.jsonl \
+  --artifacts agent-artifacts \
+  --data benchmark-data \
+  --sqrail build-bench/sqrail \
+  --duckdb build-bench/_deps/duckdb-build/duckdb \
+  > agent-evaluation-report.json
+```
+
+See [the agent protocol](AGENT_EVALUATION.md) for both lifecycles. A report
+derived only from recorded success booleans cannot pass the release gate.

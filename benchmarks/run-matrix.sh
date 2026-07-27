@@ -19,7 +19,7 @@ fi
 
 mkdir -p "$result_root"
 combined_summary="$result_root/summary.tsv"
-printf 'memory\tcase\tengine\tmean_s\tstddev_s\tmin_s\tmax_s\tpeak_rss_bytes\trows\tchecksum\n' \
+printf 'memory\tcase\tengine\tmean_s\tstddev_s\tmin_s\tmax_s\tuser_s\tsystem_s\tpeak_rss_bytes\toutput_bytes\trows\tchecksum\n' \
   > "$combined_summary"
 
 for memory in "${memory_values[@]}"; do

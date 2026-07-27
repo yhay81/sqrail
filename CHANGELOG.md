@@ -5,10 +5,50 @@ versions follow semantic versioning.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-07-28
+
 ### Added
 
 - an identity-concealed, randomized agent evaluation harness for crossed
   sqrail/DuckDB CLI and Codex/Claude task-completion experiments
+- `--max-rows` result guards for execution and validation, with atomic
+  destination cleanup on limit failures
+- `--stats` success telemetry on stderr with result rows, bytes, elapsed time,
+  resolved input count, and destination
+- result-column and input-count metadata in `check` JSON
+- resource limits and strict multi-file validation for `schema`
+- SQL-byte, input-file, and output-byte caps with structured fail-closed
+  diagnostics
+- an artifact-backed agent-evaluation runner, independent oracle, validator,
+  and gate reporter, backed by a twelve-task v0.3 corpus
+- a reproducible frontend startup benchmark for version-only and trivial-query
+  process paths
+- isolated CLI parser unit tests in addition to end-to-end smoke coverage
+- Linux, macOS, and Windows x86-64/Arm64 CI and release targets, with Windows
+  UTF-8/long-path support and protected output ACLs
+- ThreadSanitizer and CLI-parser fuzz lanes
+- deterministic archives, SPDX SBOMs, signed-tag enforcement, and provenance
+  and SBOM attestations
+
+### Changed
+
+- multi-file CSV, JSON, and Parquet bindings to union evolving columns by name
+  unless `--strict-schema` is requested
+- file outputs to use owner-only permissions on POSIX systems
+- query deadlines to cover input resolution, schema inference, planning,
+  execution, and output finalization
+- every machine-readable object to carry schema and sqrail versions
+- benchmark evidence to record CPU time, output bytes, cache classification,
+  binary/dataset digests, host resources, compiler, and git state
+- the compact agent contract to document result guards, statistics, schema
+  evolution, and option termination
+
+### Fixed
+
+- `SIGINT` and `SIGTERM` now interrupt DuckDB work and remove private output and
+  spill artifacts
+- closed stdout pipes now produce a structured `STDOUT_WRITE` failure instead
+  of bypassing cleanup through `SIGPIPE`
 
 ## [0.2.2] - 2026-07-27
 
@@ -82,7 +122,8 @@ versions follow semantic versioning.
 - Linux and macOS release archives for x86-64 and Arm64
 - SHA-256 checksums and build-provenance attestations
 
-[Unreleased]: https://github.com/yhay81/sqrail/compare/v0.2.2...HEAD
+[Unreleased]: https://github.com/yhay81/sqrail/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/yhay81/sqrail/compare/v0.2.2...v0.3.0
 [0.2.2]: https://github.com/yhay81/sqrail/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/yhay81/sqrail/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/yhay81/sqrail/compare/v0.1.0...v0.2.0

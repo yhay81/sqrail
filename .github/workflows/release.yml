@@ -13,13 +13,41 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  verify-tag:
+    name: Verify signed annotated tag
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    outputs:
+      source-date-epoch: ${{ steps.metadata.outputs.source-date-epoch }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify GitHub tag signature
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag_type=$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${GITHUB_REF_NAME}" --jq '.object.type')
+          test "$tag_type" = tag
+          tag_sha=$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${GITHUB_REF_NAME}" --jq '.object.sha')
+          verified=$(gh api "repos/${GITHUB_REPOSITORY}/git/tags/${tag_sha}" --jq '.verification.verified')
+          test "$verified" = true
+      - name: Record deterministic build timestamp
+        id: metadata
+        run: echo "source-date-epoch=$(git show -s --format=%ct "${GITHUB_SHA}")" >> "$GITHUB_OUTPUT"
+
   build:
     name: Build ${{ matrix.target }}
+    needs: verify-tag
     timeout-minutes: 60
     permissions:
       contents: read
       id-token: write # Request the OIDC token used by artifact attestations.
       attestations: write # Publish build provenance for the release archive.
+      artifact-metadata: write # Register the attested release archive with GitHub.
     strategy:
       fail-fast: false
       matrix:
@@ -27,16 +55,24 @@ jobs:
           - runner: ubuntu-22.04
             target: linux-x86_64
             strip: strip --strip-unneeded
+            architecture: x86-64
           - runner: ubuntu-22.04-arm
             target: linux-arm64
             strip: strip --strip-unneeded
+            architecture: aarch64
           - runner: macos-15
             target: macos-arm64
             strip: strip -x
+            architecture: arm64
           - runner: macos-15-intel
             target: macos-x86_64
             strip: strip -x
+            architecture: x86_64
     runs-on: ${{ matrix.runner }}
+    env:
+      PACKAGE_NAME: sqrail-${{ github.ref_name }}-${{ matrix.target }}
+      SOURCE_DATE_EPOCH: ${{ needs.verify-tag.outputs.source-date-epoch }}
+      SQRAIL_EXPECTED_ARCHITECTURE: ${{ matrix.architecture }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -56,46 +92,176 @@ jobs:
           TARGET: ${{ matrix.target }}
           STRIP_COMMAND: ${{ matrix.strip }}
         run: |
-          package_name="sqrail-${GITHUB_REF_NAME}-${TARGET}"
-          cmake --install out/build/release --prefix "dist/${package_name}" --component sqrail
-          ${STRIP_COMMAND} "dist/${package_name}/bin/sqrail"
-          "dist/${package_name}/bin/sqrail" --version
-          test -f "dist/${package_name}/share/doc/sqrail/THIRD_PARTY_NOTICES.md"
-          test -f "dist/${package_name}/share/doc/sqrail/benchmarks/AGENT_EVALUATION.md"
-          test -f "dist/${package_name}/share/doc/sqrail/benchmarks/agent-tasks.json"
-          test -x "dist/${package_name}/share/doc/sqrail/benchmarks/agent-eval/run.py"
-          test -f "dist/${package_name}/share/doc/sqrail/benchmarks/agent-eval/launcher.c"
-          test -f "dist/${package_name}/share/doc/sqrail/licenses/duckdb-third-party/zstd/LICENSE"
-          test "$(find "dist/${package_name}" -type f \( -name '*.a' -o -name '*.h' -o -name '*.hpp' \) | wc -l)" -eq 0
+          cmake --install out/build/release --prefix "dist/${PACKAGE_NAME}" --component sqrail
+          ${STRIP_COMMAND} "dist/${PACKAGE_NAME}/bin/sqrail"
+          "dist/${PACKAGE_NAME}/bin/sqrail" --version
+          file "dist/${PACKAGE_NAME}/bin/sqrail" | grep -F "$SQRAIL_EXPECTED_ARCHITECTURE"
+          test -f "dist/${PACKAGE_NAME}/share/doc/sqrail/THIRD_PARTY_NOTICES.md"
+          test -f "dist/${PACKAGE_NAME}/share/doc/sqrail/benchmarks/AGENT_EVALUATION.md"
+          test -f "dist/${PACKAGE_NAME}/share/doc/sqrail/benchmarks/agent-tasks.json"
+          test -f "dist/${PACKAGE_NAME}/share/doc/sqrail/benchmarks/agent-tasks-v0.3.json"
+          test -x "dist/${PACKAGE_NAME}/share/doc/sqrail/benchmarks/agent-eval/run.py"
+          test -f "dist/${PACKAGE_NAME}/share/doc/sqrail/benchmarks/agent-eval/launcher.c"
+          test -x "dist/${PACKAGE_NAME}/share/doc/sqrail/benchmarks/agent-eval.py"
+          test -x "dist/${PACKAGE_NAME}/share/doc/sqrail/benchmarks/agent-run.py"
+          test -f "dist/${PACKAGE_NAME}/share/doc/sqrail/benchmarks/agent_oracle.py"
+          test -f "dist/${PACKAGE_NAME}/share/doc/sqrail/docs/PLATFORMS.md"
+          test -f "dist/${PACKAGE_NAME}/share/doc/sqrail/docs/V0.3_RELEASE.md"
+          test -f "dist/${PACKAGE_NAME}/share/doc/sqrail/licenses/duckdb-third-party/zstd/LICENSE"
+          test "$(find "dist/${PACKAGE_NAME}" -type f \( -name '*.a' -o -name '*.h' -o -name '*.hpp' \) | wc -l)" -eq 0
           if [ "$(uname -s)" = Linux ]; then
-            ldd "dist/${package_name}/bin/sqrail"
-            if ldd "dist/${package_name}/bin/sqrail" | grep -E 'libstdc\+\+|libgcc_s'; then
+            ldd "dist/${PACKAGE_NAME}/bin/sqrail"
+            if ldd "dist/${PACKAGE_NAME}/bin/sqrail" | grep -E 'libstdc\+\+|libgcc_s'; then
               echo "C++ runtime is dynamically linked" >&2
               exit 1
             fi
           else
-            otool -L "dist/${package_name}/bin/sqrail"
+            otool -L "dist/${PACKAGE_NAME}/bin/sqrail"
           fi
-          tar -C dist -czf "${package_name}.tar.gz" "${package_name}"
-          ls -lh "${package_name}.tar.gz"
-      - name: Attest
-        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
+          python3 tools/generate-sbom.py \
+            --root "dist/${PACKAGE_NAME}" \
+            --output "dist/${PACKAGE_NAME}/share/doc/sqrail/SBOM.spdx.json" \
+            --version "${GITHUB_REF_NAME#v}" \
+            --target "$TARGET" \
+            --duckdb-version v1.5.5 \
+            --duckdb-revision d8cdaa33fda8df955cc76ef58a280f68f4cd43fa
+          cp "dist/${PACKAGE_NAME}/share/doc/sqrail/SBOM.spdx.json" "${PACKAGE_NAME}.spdx.json"
+          python3 tools/package-release.py --root "dist/${PACKAGE_NAME}" --output "${PACKAGE_NAME}.tar.gz"
+          python3 tools/package-release.py --root "dist/${PACKAGE_NAME}" --output "${PACKAGE_NAME}-repro.tar.gz"
+          cmp "${PACKAGE_NAME}.tar.gz" "${PACKAGE_NAME}-repro.tar.gz"
+          rm "${PACKAGE_NAME}-repro.tar.gz"
+          ls -lh "${PACKAGE_NAME}.tar.gz" "${PACKAGE_NAME}.spdx.json"
+      - name: Attest build provenance
+        uses: actions/attest@f7c74d28b9d84cb8768d0b8ca14a4bac6ef463e6 # v4
         with:
           subject-path: sqrail-${{ github.ref_name }}-${{ matrix.target }}.tar.gz
+      - name: Attest SBOM
+        uses: actions/attest@f7c74d28b9d84cb8768d0b8ca14a4bac6ef463e6 # v4
+        with:
+          subject-path: sqrail-${{ github.ref_name }}-${{ matrix.target }}.tar.gz
+          sbom-path: sqrail-${{ github.ref_name }}-${{ matrix.target }}.spdx.json
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: sqrail-${{ matrix.target }}
-          path: sqrail-${{ github.ref_name }}-${{ matrix.target }}.tar.gz
+          path: |
+            sqrail-${{ github.ref_name }}-${{ matrix.target }}.tar.gz
+            sqrail-${{ github.ref_name }}-${{ matrix.target }}.spdx.json
+          if-no-files-found: error
+          retention-days: 7
+
+  build-windows:
+    name: Build ${{ matrix.target }}
+    needs: verify-tag
+    timeout-minutes: 75
+    permissions:
+      contents: read
+      id-token: write # Request the OIDC token used by artifact attestations.
+      attestations: write # Publish provenance and SBOM attestations.
+      artifact-metadata: write # Register the attested release archive with GitHub.
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: windows-2025
+            target: windows-x86_64
+            preset: windows-x64
+            machine: "8664"
+          - runner: windows-11-arm
+            target: windows-arm64
+            preset: windows-arm64
+            machine: "AA64"
+    runs-on: ${{ matrix.runner }}
+    env:
+      PACKAGE_NAME: sqrail-${{ github.ref_name }}-${{ matrix.target }}
+      SOURCE_DATE_EPOCH: ${{ needs.verify-tag.outputs.source-date-epoch }}
+      SQRAIL_WINDOWS_PRESET: ${{ matrix.preset }}
+      SQRAIL_WINDOWS_MACHINE: ${{ matrix.machine }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Configure
+        run: cmake --preset "$env:SQRAIL_WINDOWS_PRESET"
+      - name: Build
+        run: cmake --build --preset "$env:SQRAIL_WINDOWS_PRESET"
+      - name: Test
+        run: ctest --preset "$env:SQRAIL_WINDOWS_PRESET"
+      - name: Verify tag version and package
+        shell: pwsh
+        env:
+          TARGET: ${{ matrix.target }}
+        run: |
+          $binary = "out/build/$env:SQRAIL_WINDOWS_PRESET/Release/sqrail.exe"
+          $version = (& $binary --version).Split(" ")[1]
+          if ("v$version" -ne $env:GITHUB_REF_NAME) { throw "tag and binary versions differ" }
+          cmake --install "out/build/$env:SQRAIL_WINDOWS_PRESET" --config Release --prefix "dist/$env:PACKAGE_NAME" --component sqrail
+          & "dist/$env:PACKAGE_NAME/bin/sqrail.exe" --version
+          $headers = (dumpbin /headers "dist/$env:PACKAGE_NAME/bin/sqrail.exe" | Out-String)
+          if ($headers -notmatch "$env:SQRAIL_WINDOWS_MACHINE machine") {
+            throw "release binary has the wrong Windows machine type"
+          }
+          $dependencies = (dumpbin /dependents "dist/$env:PACKAGE_NAME/bin/sqrail.exe" | Out-String)
+          if ($dependencies -match "VCRUNTIME|MSVCP") {
+            throw "MSVC runtime is dynamically linked"
+          }
+          $required = @(
+            "dist/$env:PACKAGE_NAME/share/doc/sqrail/THIRD_PARTY_NOTICES.md",
+            "dist/$env:PACKAGE_NAME/share/doc/sqrail/benchmarks/AGENT_EVALUATION.md",
+            "dist/$env:PACKAGE_NAME/share/doc/sqrail/benchmarks/agent-tasks.json",
+            "dist/$env:PACKAGE_NAME/share/doc/sqrail/benchmarks/agent-tasks-v0.3.json",
+            "dist/$env:PACKAGE_NAME/share/doc/sqrail/benchmarks/agent-eval/run.py",
+            "dist/$env:PACKAGE_NAME/share/doc/sqrail/benchmarks/agent-eval/launcher.c",
+            "dist/$env:PACKAGE_NAME/share/doc/sqrail/benchmarks/agent-eval.py",
+            "dist/$env:PACKAGE_NAME/share/doc/sqrail/benchmarks/agent-run.py",
+            "dist/$env:PACKAGE_NAME/share/doc/sqrail/benchmarks/agent_oracle.py",
+            "dist/$env:PACKAGE_NAME/share/doc/sqrail/docs/PLATFORMS.md",
+            "dist/$env:PACKAGE_NAME/share/doc/sqrail/docs/V0.3_RELEASE.md"
+          )
+          foreach ($path in $required) {
+            if (-not (Test-Path $path -PathType Leaf)) { throw "missing package file: $path" }
+          }
+          python tools/generate-sbom.py `
+            --root "dist/$env:PACKAGE_NAME" `
+            --output "dist/$env:PACKAGE_NAME/share/doc/sqrail/SBOM.spdx.json" `
+            --version $version `
+            --target $env:TARGET `
+            --duckdb-version v1.5.5 `
+            --duckdb-revision d8cdaa33fda8df955cc76ef58a280f68f4cd43fa
+          Copy-Item "dist/$env:PACKAGE_NAME/share/doc/sqrail/SBOM.spdx.json" "$env:PACKAGE_NAME.spdx.json"
+          python tools/package-release.py --root "dist/$env:PACKAGE_NAME" --output "$env:PACKAGE_NAME.zip"
+          python tools/package-release.py --root "dist/$env:PACKAGE_NAME" --output "$env:PACKAGE_NAME-repro.zip"
+          $first = (Get-FileHash "$env:PACKAGE_NAME.zip" -Algorithm SHA256).Hash
+          $second = (Get-FileHash "$env:PACKAGE_NAME-repro.zip" -Algorithm SHA256).Hash
+          if ($first -ne $second) { throw "Windows release archive is not reproducible" }
+          Remove-Item "$env:PACKAGE_NAME-repro.zip"
+      - name: Attest build provenance
+        uses: actions/attest@f7c74d28b9d84cb8768d0b8ca14a4bac6ef463e6 # v4
+        with:
+          subject-path: sqrail-${{ github.ref_name }}-${{ matrix.target }}.zip
+      - name: Attest SBOM
+        uses: actions/attest@f7c74d28b9d84cb8768d0b8ca14a4bac6ef463e6 # v4
+        with:
+          subject-path: sqrail-${{ github.ref_name }}-${{ matrix.target }}.zip
+          sbom-path: sqrail-${{ github.ref_name }}-${{ matrix.target }}.spdx.json
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: sqrail-${{ matrix.target }}
+          path: |
+            sqrail-${{ github.ref_name }}-${{ matrix.target }}.zip
+            sqrail-${{ github.ref_name }}-${{ matrix.target }}.spdx.json
           if-no-files-found: error
           retention-days: 7
 
   publish:
     name: Publish GitHub release
-    needs: build
+    needs: [verify-tag, build, build-windows]
     runs-on: ubuntu-22.04
     timeout-minutes: 15
     permissions:
-      contents: write # Create the immutable GitHub release and upload archives.
+      contents: write # Create the GitHub release and upload archives.
+      id-token: write # Request the OIDC token used by artifact attestations.
+      attestations: write # Publish provenance for the checksum manifest.
+      artifact-metadata: write # Register the attested checksum manifest with GitHub.
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -107,8 +273,17 @@ jobs:
           merge-multiple: true
       - name: Checksums
         working-directory: release-assets
-        run: sha256sum ./*.tar.gz > SHA256SUMS
-      - name: Publish GitHub Release
+        run: |
+          manifest=$(mktemp)
+          find . -maxdepth 1 -type f ! -name SHA256SUMS -print0 |
+            sort -z |
+            xargs -0 sha256sum > "$manifest"
+          mv "$manifest" SHA256SUMS
+      - name: Attest checksum manifest
+        uses: actions/attest@f7c74d28b9d84cb8768d0b8ca14a4bac6ef463e6 # v4
+        with:
+          subject-path: release-assets/SHA256SUMS
+      - name: Create complete draft release
         env:
           GH_TOKEN: ${{ github.token }}
         run: >-
@@ -118,3 +293,10 @@ jobs:
           --verify-tag
           --title "sqrail ${GITHUB_REF_NAME}"
           --generate-notes
+          --draft
+      - name: Publish and verify immutable release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release edit "${GITHUB_REF_NAME}" --draft=false --latest
+          gh release verify "${GITHUB_REF_NAME}"

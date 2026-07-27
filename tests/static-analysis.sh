@@ -28,5 +28,12 @@ run_checked \
   --warnings-as-errors='*' \
   -p="$build_directory" \
   "$repository_directory/src/main.cpp" \
+  "$repository_directory/src/commands.cpp" \
+  "$repository_directory/src/cli.cpp" \
+  "$repository_directory/src/control.cpp" \
+  "$repository_directory/src/engine.cpp" \
   "$repository_directory/src/json.cpp" \
+  "$repository_directory/src/platform.cpp" \
+  "$repository_directory/src/result.cpp" \
+  "$repository_directory/tests/cli_test.cpp" \
   "$repository_directory/tests/json_test.cpp"

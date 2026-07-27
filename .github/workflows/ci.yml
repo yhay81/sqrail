@@ -46,7 +46,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, macos-15]
+        os: [ubuntu-24.04, ubuntu-24.04-arm, macos-15, macos-15-intel]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -66,8 +66,16 @@ jobs:
           cmake --install out/build/release --prefix install --component sqrail
           install/bin/sqrail --version
           test -f install/share/doc/sqrail/THIRD_PARTY_NOTICES.md
+          test -f install/share/doc/sqrail/benchmarks/AGENT_EVALUATION.md
+          test -f install/share/doc/sqrail/benchmarks/agent-tasks.json
+          test -f install/share/doc/sqrail/benchmarks/agent-tasks-v0.3.json
           test -x install/share/doc/sqrail/benchmarks/agent-eval/run.py
           test -f install/share/doc/sqrail/benchmarks/agent-eval/launcher.c
+          test -x install/share/doc/sqrail/benchmarks/agent-eval.py
+          test -x install/share/doc/sqrail/benchmarks/agent-run.py
+          test -f install/share/doc/sqrail/benchmarks/agent_oracle.py
+          test -f install/share/doc/sqrail/docs/PLATFORMS.md
+          test -f install/share/doc/sqrail/docs/V0.3_RELEASE.md
           test -f install/share/doc/sqrail/licenses/duckdb-third-party/zstd/LICENSE
           test "$(find install -type f \( -name '*.a' -o -name '*.h' -o -name '*.hpp' \) | wc -l)" -eq 0
       - name: Verify Linux runtime
@@ -83,6 +91,71 @@ jobs:
           ls -lh out/build/release/sqrail
           gzip -c -9 out/build/release/sqrail > out/build/release/sqrail.gz
           ls -lh out/build/release/sqrail.gz
+
+  windows:
+    name: Build and test Windows ${{ matrix.arch }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: windows-2025
+            arch: x64
+            preset: windows-x64
+            machine: "8664"
+          - runner: windows-11-arm
+            arch: arm64
+            preset: windows-arm64
+            machine: "AA64"
+    runs-on: ${{ matrix.runner }}
+    env:
+      SQRAIL_WINDOWS_PRESET: ${{ matrix.preset }}
+      SQRAIL_WINDOWS_MACHINE: ${{ matrix.machine }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Configure
+        run: cmake --preset "$env:SQRAIL_WINDOWS_PRESET"
+      - name: Build
+        run: cmake --build --preset "$env:SQRAIL_WINDOWS_PRESET"
+      - name: Test
+        run: ctest --preset "$env:SQRAIL_WINDOWS_PRESET"
+      - name: Install and verify
+        shell: pwsh
+        run: |
+          cmake --install "out/build/$env:SQRAIL_WINDOWS_PRESET" --config Release --prefix install --component sqrail
+          & "install/bin/sqrail.exe" --version
+          if ($LASTEXITCODE -ne 0) { throw "installed sqrail failed" }
+          $headers = (dumpbin /headers "install/bin/sqrail.exe" | Out-String)
+          if ($headers -notmatch "$env:SQRAIL_WINDOWS_MACHINE machine") {
+            throw "installed sqrail has the wrong Windows machine type"
+          }
+          $dependencies = (dumpbin /dependents "install/bin/sqrail.exe" | Out-String)
+          if ($dependencies -match "VCRUNTIME|MSVCP") {
+            throw "MSVC runtime is dynamically linked"
+          }
+          $required = @(
+            "install/share/doc/sqrail/THIRD_PARTY_NOTICES.md",
+            "install/share/doc/sqrail/benchmarks/AGENT_EVALUATION.md",
+            "install/share/doc/sqrail/benchmarks/agent-tasks.json",
+            "install/share/doc/sqrail/benchmarks/agent-tasks-v0.3.json",
+            "install/share/doc/sqrail/benchmarks/agent-eval/run.py",
+            "install/share/doc/sqrail/benchmarks/agent-eval/launcher.c",
+            "install/share/doc/sqrail/benchmarks/agent-eval.py",
+            "install/share/doc/sqrail/benchmarks/agent-run.py",
+            "install/share/doc/sqrail/benchmarks/agent_oracle.py",
+            "install/share/doc/sqrail/docs/PLATFORMS.md",
+            "install/share/doc/sqrail/docs/V0.3_RELEASE.md"
+          )
+          foreach ($path in $required) {
+            if (-not (Test-Path $path -PathType Leaf)) { throw "missing installed file: $path" }
+          }
+          & "install/bin/sqrail.exe" run -o private.parquet "SELECT 1 AS value"
+          if ($LASTEXITCODE -ne 0) { throw "Windows output test failed" }
+          $acl = Get-Acl private.parquet
+          if (-not $acl.AreAccessRulesProtected) { throw "output ACL still inherits permissions" }
+          Get-Item "install/bin/sqrail.exe" | Select-Object Name, Length
 
   system-duckdb:
     name: System DuckDB build and test (${{ matrix.os }})
@@ -115,6 +188,17 @@ jobs:
           cmake --install out/build/system --prefix install --component sqrail
           install/bin/sqrail --version
           test -f install/share/doc/sqrail/THIRD_PARTY_NOTICES.md
+          test -f install/share/doc/sqrail/benchmarks/AGENT_EVALUATION.md
+          test -f install/share/doc/sqrail/benchmarks/agent-tasks.json
+          test -f install/share/doc/sqrail/benchmarks/agent-tasks-v0.3.json
+          test -x install/share/doc/sqrail/benchmarks/agent-eval/run.py
+          test -f install/share/doc/sqrail/benchmarks/agent-eval/launcher.c
+          test -x install/share/doc/sqrail/benchmarks/agent-eval.py
+          test -x install/share/doc/sqrail/benchmarks/agent-run.py
+          test -f install/share/doc/sqrail/benchmarks/agent_oracle.py
+          test -f install/share/doc/sqrail/docs/PLATFORMS.md
+          test -f install/share/doc/sqrail/docs/V0.3_RELEASE.md
+          test -f install/share/doc/sqrail/docs/V0.3_RELEASE.md
           test ! -d install/share/doc/sqrail/licenses/duckdb-third-party
           test "$(find install -type f \( -name '*.a' -o -name '*.h' -o -name '*.hpp' \) | wc -l)" -eq 0
       - name: Verify DuckDB runtime
@@ -201,6 +285,24 @@ jobs:
       - name: ASan and UBSan tests
         run: ctest --preset sanitize
 
+  thread-sanitizer:
+    name: ThreadSanitizer
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Configure
+        env:
+          CC: clang-18
+          CXX: clang++-18
+        run: cmake --preset thread
+      - name: Build
+        run: cmake --build --preset thread
+      - name: ThreadSanitizer tests
+        run: ctest --preset thread
+
   fuzz:
     name: Coverage-guided fuzz smoke
     runs-on: ubuntu-24.04
@@ -220,5 +322,11 @@ jobs:
         run: >-
           out/build/fuzz/sqrail-strict-json-fuzz
           -dict=fuzz/strict_json.dict
+          -max_total_time=30
+          -timeout=5
+      - name: Fuzz CLI parser boundary
+        run: >-
+          out/build/fuzz/sqrail-cli-fuzz
+          -dict=fuzz/cli.dict
           -max_total_time=30
           -timeout=5

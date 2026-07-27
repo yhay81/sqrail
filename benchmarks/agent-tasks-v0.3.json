@@ -1,0 +1,138 @@
+{
+  "version": 2,
+  "name": "sqrail-v0.3-artifact-gate",
+  "dataset": {
+    "generator": "benchmarks/generate.sh",
+    "required_files": [
+      "fact.csv",
+      "fact.parquet",
+      "dim.parquet",
+      "schema-evolution/part-a.parquet",
+      "schema-evolution/part-b.parquet",
+      "manifest.json"
+    ]
+  },
+  "tasks": [
+    {
+      "id": "schema_discovery",
+      "prompt": "Inspect fact.csv and return its machine-readable column names and types.",
+      "oracle": {
+        "kind": "schema",
+        "source": "fact_csv",
+        "columns": ["event_id", "drug_id", "event_date", "value", "payload"]
+      }
+    },
+    {
+      "id": "selective_jsonl",
+      "prompt": "Return event_id and drug_id from fact.parquet where value is at least 0.999, ordered by event_id, as JSON Lines on stdout.",
+      "oracle": {
+        "kind": "rows",
+        "source": "stdout",
+        "ordered": true,
+        "sql": "SELECT event_id, drug_id FROM read_parquet({fact_parquet}) WHERE value >= 0.999 ORDER BY event_id"
+      }
+    },
+    {
+      "id": "join_aggregate",
+      "prompt": "Join fact.parquet to dim.parquet by drug_id and write Parquet containing observation count by drug_class ordered by drug_class.",
+      "oracle": {
+        "kind": "rows",
+        "source": "output",
+        "format": "parquet",
+        "ordered": true,
+        "sql": "SELECT drug_class, count(*) AS observation_count FROM read_parquet({fact_parquet}) JOIN read_parquet({dim_parquet}) USING (drug_id) GROUP BY drug_class ORDER BY drug_class"
+      }
+    },
+    {
+      "id": "csv_to_parquet",
+      "prompt": "Convert all rows and columns of fact.csv to a new Parquet file without replacing an existing path.",
+      "oracle": {
+        "kind": "rows",
+        "source": "output",
+        "format": "parquet",
+        "ordered": false,
+        "sql": "SELECT * FROM read_csv_auto({fact_csv})"
+      }
+    },
+    {
+      "id": "parquet_to_jsonl",
+      "prompt": "Convert event_id, drug_id, event_date, value, and payload from fact.parquet to a new JSON Lines file.",
+      "oracle": {
+        "kind": "rows",
+        "source": "output",
+        "format": "jsonl",
+        "ordered": false,
+        "sql": "SELECT event_id, drug_id, event_date, value, payload FROM read_parquet({fact_parquet})"
+      }
+    },
+    {
+      "id": "bounded_sort",
+      "prompt": "Sort fact.parquet by value descending and event_id ascending using a 128 MiB memory budget, two threads, an explicit spill directory, and a 2 GiB spill cap.",
+      "oracle": {
+        "kind": "rows",
+        "source": "output",
+        "format": "parquet",
+        "ordered": true,
+        "required_arguments": ["128MiB", "2", "2GiB"],
+        "sql": "SELECT * FROM read_parquet({fact_parquet}) ORDER BY value DESC, event_id ASC"
+      }
+    },
+    {
+      "id": "timeout_recovery",
+      "prompt": "Run a deliberately expensive read-only query with a 10 ms deadline and report the structured timeout failure without treating partial stdout as complete.",
+      "oracle": {
+        "kind": "failure",
+        "sqrail_exit": 4,
+        "sqrail_code": "QUERY_TIMEOUT",
+        "duckdb_nonzero": true,
+        "output_absent": true,
+        "required_arguments": ["range"],
+        "max_wall_seconds": 5
+      }
+    },
+    {
+      "id": "no_overwrite",
+      "prompt": "Attempt to write a query result to a path that already exists and preserve the original file unchanged.",
+      "oracle": {
+        "kind": "no_overwrite",
+        "sqrail_exit": 5,
+        "sqrail_code": "OUTPUT_EXISTS"
+      }
+    },
+    {
+      "id": "check_metadata",
+      "prompt": "Validate, but do not execute, a count by drug_id over fact.parquet. Return the machine-readable result columns, input-file count, and physical plan.",
+      "oracle": {
+        "kind": "check",
+        "columns": ["drug_id", "observations"]
+      }
+    },
+    {
+      "id": "result_limit",
+      "prompt": "Attempt to write all rows of fact.parquet to a new Parquet file with a maximum of 10 result rows. Report the structured limit failure and leave no destination or temporary output.",
+      "oracle": {
+        "kind": "result_limit",
+        "limit": 10,
+        "sqrail_exit": 4,
+        "sqrail_code": "RESULT_LIMIT"
+      }
+    },
+    {
+      "id": "schema_evolution",
+      "prompt": "Read the schema-evolution Parquet directory as one table and return both evolved value columns with null filling. Then verify that strict-schema mode rejects the same dataset.",
+      "oracle": {
+        "kind": "schema_evolution",
+        "columns": ["id", "old_value", "new_value"],
+        "sqrail_strict_code": "SCHEMA_MISMATCH"
+      }
+    },
+    {
+      "id": "success_stats",
+      "prompt": "Count fact.parquet rows and capture the structured success statistics without mixing them into JSON Lines stdout.",
+      "oracle": {
+        "kind": "stats",
+        "sql": "SELECT count(*) AS rows FROM read_parquet({fact_parquet})"
+      }
+    }
+  ]
+}

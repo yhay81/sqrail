@@ -79,12 +79,13 @@ if [ "$dry_run" -eq 1 ]; then
   exit 0
 fi
 
-for file in fact.parquet fact.csv dim.parquet manifest.json; do
+for file in fact.parquet fact.csv dim.parquet schema-evolution manifest.json; do
   if [ -e "$data_dir/$file" ]; then
     echo "refusing to replace existing benchmark file: $data_dir/$file" >&2
     exit 5
   fi
 done
+mkdir "$data_dir/schema-evolution"
 
 sql_quote() {
   local value=$1
@@ -92,9 +93,19 @@ sql_quote() {
   printf '%s' "$value"
 }
 
+sha256_file() {
+  if command -v sha256sum >/dev/null 2>&1; then
+    sha256sum "$1" | awk '{print $1}'
+  else
+    shasum -a 256 "$1" | awk '{print $1}'
+  fi
+}
+
 fact_parquet=$(sql_quote "$data_dir/fact.parquet")
 fact_csv=$(sql_quote "$data_dir/fact.csv")
 dim_parquet=$(sql_quote "$data_dir/dim.parquet")
+evolution_a=$(sql_quote "$data_dir/schema-evolution/part-a.parquet")
+evolution_b=$(sql_quote "$data_dir/schema-evolution/part-b.parquet")
 
 "$duckdb_bin" -no-stdin -c "
 SET preserve_insertion_order = false;
@@ -123,6 +134,12 @@ COPY (
     'compound-' || i::VARCHAR AS compound_name
   FROM range(${dimension_rows}) AS generated(i)
 ) TO '${dim_parquet}' (FORMAT PARQUET);
+COPY (
+  SELECT 1::BIGINT AS id, 10::BIGINT AS old_value
+) TO '${evolution_a}' (FORMAT PARQUET);
+COPY (
+  SELECT 2::BIGINT AS id, 20::BIGINT AS new_value
+) TO '${evolution_b}' (FORMAT PARQUET);
 " >/dev/null
 
 duckdb_version=$("$duckdb_bin" --version | tr '\n' ' ')
@@ -134,9 +151,16 @@ cat > "$data_dir/manifest.json" <<EOF
   "capacity_available_bytes": ${available_bytes},
   "capacity_headroom": ${capacity_headroom},
   "duckdb": "${duckdb_version}",
+  "fact_parquet_sha256": "$(sha256_file "$data_dir/fact.parquet")",
+  "fact_csv_sha256": "$(sha256_file "$data_dir/fact.csv")",
+  "dim_parquet_sha256": "$(sha256_file "$data_dir/dim.parquet")",
+  "schema_evolution_a_sha256": "$(sha256_file "$data_dir/schema-evolution/part-a.parquet")",
+  "schema_evolution_b_sha256": "$(sha256_file "$data_dir/schema-evolution/part-b.parquet")",
   "fact_parquet_bytes": $(wc -c < "$data_dir/fact.parquet" | tr -d ' '),
   "fact_csv_bytes": $(wc -c < "$data_dir/fact.csv" | tr -d ' '),
-  "dim_parquet_bytes": $(wc -c < "$data_dir/dim.parquet" | tr -d ' ')
+  "dim_parquet_bytes": $(wc -c < "$data_dir/dim.parquet" | tr -d ' '),
+  "schema_evolution_a_bytes": $(wc -c < "$data_dir/schema-evolution/part-a.parquet" | tr -d ' '),
+  "schema_evolution_b_bytes": $(wc -c < "$data_dir/schema-evolution/part-b.parquet" | tr -d ' ')
 }
 EOF
 

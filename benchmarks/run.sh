@@ -14,6 +14,8 @@ threads=${BENCH_THREADS:-2}
 runs=${BENCH_RUNS:-5}
 warmup=${BENCH_WARMUP:-1}
 keep_outputs=${BENCH_KEEP_OUTPUTS:-0}
+cache_state=${BENCH_CACHE_STATE:-}
+cache_evidence=${BENCH_CACHE_CONTROL_EVIDENCE:-}
 
 for size in "$memory" "$max_spill"; do
   case $size in
@@ -23,7 +25,7 @@ for size in "$memory" "$max_spill"; do
       ;;
   esac
 done
-for command in "$sqrail_bin" "$duckdb_bin" hyperfine jq; do
+for command in "$sqrail_bin" "$duckdb_bin" hyperfine jq python3; do
   if ! command -v "$command" >/dev/null 2>&1 && [ ! -x "$command" ]; then
     echo "required command not found: $command" >&2
     exit 2
@@ -44,6 +46,25 @@ if [ "$threads" -eq 0 ] || [ "$runs" -eq 0 ]; then
 fi
 if [ "$keep_outputs" != 0 ] && [ "$keep_outputs" != 1 ]; then
   echo "BENCH_KEEP_OUTPUTS must be 0 or 1" >&2
+  exit 2
+fi
+if [ -z "$cache_state" ]; then
+  if [ "$warmup" -gt 0 ]; then
+    cache_state=warm
+  else
+    cache_state=first-run-uncontrolled
+  fi
+fi
+case $cache_state in
+  warm|cold-controlled|first-run-uncontrolled)
+    ;;
+  *)
+    echo "BENCH_CACHE_STATE must be warm, cold-controlled, or first-run-uncontrolled" >&2
+    exit 2
+    ;;
+esac
+if [ "$cache_state" = cold-controlled ] && [ -z "$cache_evidence" ]; then
+  echo "cold-controlled runs require BENCH_CACHE_CONTROL_EVIDENCE" >&2
   exit 2
 fi
 
@@ -67,7 +88,7 @@ export BENCH_MEMORY="$memory"
 export BENCH_MAX_SPILL="$max_spill"
 export BENCH_THREADS="$threads"
 
-printf 'case\tengine\tmean_s\tstddev_s\tmin_s\tmax_s\tpeak_rss_bytes\trows\tchecksum\n' \
+printf 'case\tengine\tmean_s\tstddev_s\tmin_s\tmax_s\tuser_s\tsystem_s\tpeak_rss_bytes\toutput_bytes\trows\tchecksum\n' \
   > "$result_dir/summary.tsv"
 
 sql_quote() {
@@ -140,10 +161,12 @@ run_case() {
 
     rows=${fingerprint%%,*}
     checksum=${fingerprint#*,}
+    output_bytes=$(wc -c < "$BENCH_OUTPUT" | tr -d ' ')
     jq -r \
       --arg case_name "$case_name" \
       --arg engine "$engine" \
       --arg rss "$rss" \
+      --arg output_bytes "$output_bytes" \
       --arg rows "$rows" \
       --arg checksum "$checksum" \
       '[
@@ -153,7 +176,10 @@ run_case() {
         (.results[0].stddev | tostring),
         (.results[0].min | tostring),
         (.results[0].max | tostring),
+        (.results[0].user | tostring),
+        (.results[0].system | tostring),
         $rss,
+        $output_bytes,
         $rows,
         $checksum
       ] | @tsv' "$result_json" >> "$result_dir/summary.tsv"
@@ -188,18 +214,31 @@ run_case parquet_to_jsonl \
   "$data_dir/fact.parquet" read_parquet "$script_dir/queries/conversion.sql" jsonl
 
 cp "$data_dir/manifest.json" "$result_dir/data-manifest.json"
-{
-  printf '{\n'
-  printf '  "memory": "%s",\n' "$memory"
-  printf '  "max_spill": "%s",\n' "$max_spill"
-  printf '  "threads": %s,\n' "$threads"
-  printf '  "runs": %s,\n' "$runs"
-  printf '  "warmup": %s,\n' "$warmup"
-  printf '  "keep_outputs": %s,\n' "$keep_outputs"
-  printf '  "sqrail": "%s",\n' "$("$sqrail_bin" --version | tr '\n' ' ')"
-  printf '  "duckdb": "%s",\n' "$("$duckdb_bin" --version | tr '\n' ' ')"
-  printf '  "system": "%s"\n' "$(uname -a | tr '"' "'")"
-  printf '}\n'
-} > "$result_dir/environment.json"
+parameters=$(
+  jq -cn \
+    --arg memory "$memory" \
+    --arg max_spill "$max_spill" \
+    --argjson threads "$threads" \
+    --argjson runs "$runs" \
+    --argjson warmup "$warmup" \
+    --argjson keep_outputs "$keep_outputs" \
+    '{
+      memory: $memory,
+      max_spill: $max_spill,
+      threads: $threads,
+      runs: $runs,
+      warmup: $warmup,
+      keep_outputs: $keep_outputs
+    }'
+)
+python3 "$script_dir/capture-environment.py" \
+  --output "$result_dir/environment.json" \
+  --repository "$repo_dir" \
+  --sqrail "$sqrail_bin" \
+  --duckdb "$duckdb_bin" \
+  --data-manifest "$data_dir/manifest.json" \
+  --cache-state "$cache_state" \
+  --cache-control-evidence "$cache_evidence" \
+  --parameters-json "$parameters"
 
 printf 'benchmark results written to %s\n' "$result_dir"
