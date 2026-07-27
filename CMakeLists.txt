@@ -268,6 +268,11 @@ target_compile_definitions(
   PRIVATE
     SQRAIL_VERSION="${PROJECT_VERSION}"
 )
+if(WIN32 AND SQRAIL_DUCKDB_PROVIDER STREQUAL "BUNDLED")
+  # DuckDB's Windows headers default to dllimport. Official sqrail builds link
+  # the bundled static archive, so consumers must select its static API mode.
+  target_compile_definitions(sqrail PRIVATE DUCKDB_STATIC_BUILD)
+endif()
 
 function(sqrail_enable_project_warnings target)
   if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
