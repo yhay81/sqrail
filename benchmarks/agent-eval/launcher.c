@@ -23,18 +23,22 @@
 #error "RAIL_MODE must be 0 for sqrail or 1 for the DuckDB CLI"
 #endif
 
-static void write_all(int fd, const char *buffer, size_t size) {
+static int write_all(int fd, const char *buffer, size_t size) {
 	while (size > 0) {
 		ssize_t written = write(fd, buffer, size);
 		if (written < 0) {
 			if (errno == EINTR) {
 				continue;
 			}
-			return;
+			return -1;
+		}
+		if (written == 0) {
+			return -1;
 		}
 		buffer += (size_t)written;
 		size -= (size_t)written;
 	}
+	return 0;
 }
 
 static void write_help(void) {
@@ -84,24 +88,24 @@ static int lock_log(int fd) {
 	return 0;
 }
 
-static void log_invocation(int argc, char **argv) {
+static int log_invocation(int argc, char **argv) {
 	char timestamp[64];
 	int size = snprintf(timestamp, sizeof(timestamp), "%lld", (long long)time(NULL));
 	if (size <= 0) {
-		return;
+		return -1;
 	}
 
 	size_t record_size = (size_t)size + 1;
 	for (int index = 1; index < argc; ++index) {
 		size_t argument_size = strlen(argv[index]);
 		if (argument_size > (SIZE_MAX - record_size - 1) / 2) {
-			return;
+			return -1;
 		}
 		record_size += 1 + argument_size * 2;
 	}
 	char *record = malloc(record_size);
 	if (record == NULL) {
-		return;
+		return -1;
 	}
 	char *cursor = record;
 	memcpy(cursor, timestamp, (size_t)size);
@@ -115,13 +119,15 @@ static void log_invocation(int argc, char **argv) {
 	int fd = open(RAIL_LOG, O_WRONLY | O_APPEND | O_CREAT, 0600);
 	if (fd < 0) {
 		free(record);
-		return;
+		return -1;
 	}
-	if (lock_log(fd) == 0) {
-		write_all(fd, record, record_size);
+	int result = -1;
+	if (lock_log(fd) == 0 && write_all(fd, record, record_size) == 0 && fsync(fd) == 0) {
+		result = 0;
 	}
 	close(fd);
 	free(record);
+	return result;
 }
 
 static int is_option(int argc, char **argv, const char *short_name, const char *long_name) {
@@ -129,7 +135,11 @@ static int is_option(int argc, char **argv, const char *short_name, const char *
 }
 
 int main(int argc, char **argv) {
-	log_invocation(argc, argv);
+	if (log_invocation(argc, argv) != 0) {
+		static const char message[] = "rail: cannot write private invocation log\n";
+		write_all(STDERR_FILENO, message, sizeof(message) - 1);
+		return 70;
+	}
 
 	if (is_option(argc, argv, "-h", "--help") || is_option(argc, argv, "-help", "-help")) {
 		write_help();

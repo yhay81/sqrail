@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "dataset": {
     "generator": "benchmarks/generate.sh",
     "required_files": [
@@ -9,6 +9,24 @@
       "manifest.json"
     ]
   },
+  "context_profiles": [
+    {
+      "id": "clean",
+      "purpose": "Fresh isolated task with no additional handoff context."
+    },
+    {
+      "id": "noisy_workspace",
+      "purpose": "Unrelated CSV, SQL, and notes coexist with the exact task inputs."
+    },
+    {
+      "id": "superseded_handoff",
+      "purpose": "Earlier discussion names a different runtime and output format; the current task is authoritative."
+    },
+    {
+      "id": "prior_error",
+      "purpose": "A failed command from another session is present and the agent must recover from actual filenames."
+    }
+  ],
   "tasks": [
     {
       "id": "schema_discovery",

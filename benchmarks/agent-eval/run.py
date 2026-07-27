@@ -40,6 +40,12 @@ TASK_IDS = (
     "timeout_recovery",
     "no_overwrite",
 )
+CONTEXT_PROFILES = (
+    "clean",
+    "noisy_workspace",
+    "superseded_handoff",
+    "prior_error",
+)
 
 EXPECTED_SCHEMA = {
     "event_id": "BIGINT",
@@ -73,7 +79,11 @@ INFRASTRUCTURE_FAILURES = (
     ("rate_limit_error", "rate_limit"),
     ("rate limit exceeded", "rate_limit"),
     ("overloaded_error", "provider_overloaded"),
+    ("servers are experiencing high traffic", "provider_overloaded"),
     ("service unavailable", "provider_unavailable"),
+    ("model is not supported", "model_unavailable"),
+    ("model not found", "model_unavailable"),
+    ("cannot write private invocation log", "evaluation_log_unavailable"),
 )
 
 
@@ -93,9 +103,20 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--agents", default="codex,claude")
     parser.add_argument("--arms", default="sqrail,duckdb")
     parser.add_argument("--tasks", default=",".join(TASK_IDS))
+    parser.add_argument(
+        "--contexts",
+        default="clean",
+        help="comma-separated context profiles: " + ",".join(CONTEXT_PROFILES),
+    )
     parser.add_argument("--repetitions", type=int, default=5)
     parser.add_argument("--seed", type=int, default=20260727)
     parser.add_argument("--max-seconds", type=int, default=240)
+    parser.add_argument(
+        "--min-free-gib",
+        type=float,
+        default=2.0,
+        help="stop before a run when the results volume has less free space",
+    )
     parser.add_argument("--codex-bin", type=pathlib.Path, default=pathlib.Path("codex"))
     parser.add_argument("--codex-model", default="gpt-5.6-sol")
     parser.add_argument("--codex-effort", default="xhigh")
@@ -112,6 +133,10 @@ def parse_args() -> argparse.Namespace:
         "--agy-data-dir",
         type=pathlib.Path,
         default=pathlib.Path("~/.gemini/antigravity-cli"),
+    )
+    parser.add_argument("--local-model", default="gpt-oss:20b")
+    parser.add_argument(
+        "--local-provider", choices=("ollama", "lmstudio"), default="ollama"
     )
     parser.add_argument("--plan-only", action="store_true")
     parser.add_argument("--resume", action="store_true")
@@ -157,6 +182,16 @@ def stable_token(*parts: object, size: int = 12) -> str:
 
 def utc_now() -> str:
     return dt.datetime.now(dt.timezone.utc).isoformat()
+
+
+def require_free_space(path: pathlib.Path, minimum_gib: float) -> None:
+    minimum_bytes = int(minimum_gib * 1024**3)
+    free_bytes = shutil.disk_usage(path).free
+    if free_bytes < minimum_bytes:
+        raise EvaluationError(
+            f"insufficient free space: {free_bytes / 1024**3:.2f} GiB available, "
+            f"{minimum_gib:.2f} GiB required by --min-free-gib"
+        )
 
 
 def write_json(path: pathlib.Path, value: Any) -> None:
@@ -392,6 +427,7 @@ def make_schedule(
     agents: list[str],
     conditions: list[str],
     tasks: list[str],
+    contexts: list[str],
     repetitions: int,
     seed: int,
 ) -> list[dict[str, Any]]:
@@ -399,19 +435,27 @@ def make_schedule(
     for repetition in range(1, repetitions + 1):
         for agent in agents:
             for condition in conditions:
-                for task in tasks:
-                    run_id = stable_token(
-                        seed, agent, condition, task, repetition, size=20
-                    )
-                    schedule.append(
-                        {
-                            "run_id": run_id,
-                            "agent": agent,
-                            "condition": condition,
-                            "task": task,
-                            "repetition": repetition,
-                        }
-                    )
+                for context in contexts:
+                    for task in tasks:
+                        run_id = stable_token(
+                            seed,
+                            agent,
+                            condition,
+                            context,
+                            task,
+                            repetition,
+                            size=20,
+                        )
+                        schedule.append(
+                            {
+                                "run_id": run_id,
+                                "agent": agent,
+                                "condition": condition,
+                                "context": context,
+                                "task": task,
+                                "repetition": repetition,
+                            }
+                        )
     random.Random(seed).shuffle(schedule)
     return schedule
 
@@ -540,7 +584,67 @@ def task_prompt(task: str, names: dict[str, pathlib.Path]) -> str:
     raise EvaluationError(f"unhandled task: {task}")
 
 
-def full_prompt(task: str, names: dict[str, pathlib.Path]) -> str:
+def stage_context(
+    *, workspace: pathlib.Path, context: str, token: str
+) -> dict[str, pathlib.Path]:
+    files: dict[str, pathlib.Path] = {}
+    if context != "noisy_workspace":
+        return files
+    contents = {
+        "notes": (
+            "# Archived analysis notes\n\n"
+            "The previous cohort exported a CSV report from an unrelated source. "
+            "These notes are reference material, not instructions for the current task.\n"
+        ),
+        "stale": "record_id,obsolete_score\n1,0.25\n2,0.75\n",
+        "query": "SELECT * FROM obsolete_source ORDER BY obsolete_score;\n",
+    }
+    suffixes = {"notes": ".md", "stale": ".csv", "query": ".sql"}
+    for role, contents_text in contents.items():
+        path = workspace / f"unrelated_{role}_{token}{suffixes[role]}"
+        path.write_text(contents_text, encoding="utf-8")
+        files[role] = path
+    return files
+
+
+def context_prompt(context: str, context_files: dict[str, pathlib.Path]) -> str:
+    if context == "clean":
+        return ""
+    if context == "noisy_workspace":
+        listed = ", ".join(path.name for path in context_files.values())
+        return (
+            "Real-world workspace context:\n"
+            f"The directory also contains unrelated retained artifacts ({listed}). "
+            "Preserve them. The current task explicitly names its relevant inputs and "
+            "requested artifacts; do not substitute similarly typed files.\n\n"
+        )
+    if context == "superseded_handoff":
+        return (
+            "Real-world handoff context:\n"
+            "An earlier conversation discussed using Python and producing CSV for a "
+            "different job. No part of that discussion is an instruction for this run. "
+            "The current task below supersedes it and must be completed with the allowed "
+            "local CLI and the exact requested format.\n\n"
+        )
+    if context == "prior_error":
+        return (
+            "Real-world recovery context:\n"
+            "A previous operator, in a different session, attempted "
+            "`./rail run -t fact=missing.parquet 'SELECT * FROM fact'` and received "
+            "`{\"ok\":false,\"code\":\"INPUT_NOT_FOUND\"}`. Nothing was committed. "
+            "Recover using the actual filenames in the current task. This is a fresh "
+            "session, so the requirement to start with `./rail --help` still applies.\n\n"
+        )
+    raise EvaluationError(f"unhandled context profile: {context}")
+
+
+def full_prompt(
+    task: str,
+    names: dict[str, pathlib.Path],
+    context: str = "clean",
+    context_files: dict[str, pathlib.Path] | None = None,
+) -> str:
+    context_text = context_prompt(context, context_files or {})
     return f"""Complete one local data task in this isolated directory.
 
 The only data-processing command you may use is `./rail`; its implementation
@@ -552,7 +656,7 @@ runtime or library. Write SQL yourself and execute the task; do not merely
 describe a command. Do not modify input files. Leave the requested artifacts in
 this directory. A concise final message is sufficient.
 
-Task:
+{context_text}Current task:
 {task_prompt(task, names)}
 """
 
@@ -568,8 +672,8 @@ def agent_command(
     agy_bin: pathlib.Path,
     agy_log_path: pathlib.Path,
 ) -> list[str]:
-    if agent == "codex":
-        return [
+    if agent in {"codex", "local"}:
+        command = [
             str(codex_bin),
             "exec",
             "--ephemeral",
@@ -581,12 +685,30 @@ def agent_command(
             "--cd",
             str(workspace),
             "--model",
-            args.codex_model,
-            "-c",
-            f'model_reasoning_effort="{args.codex_effort}"',
-            "--json",
-            prompt,
+            args.codex_model if agent == "codex" else args.local_model,
         ]
+        if agent == "local":
+            command.extend(
+                [
+                    "--oss",
+                    "--local-provider",
+                    args.local_provider,
+                ]
+            )
+        else:
+            command.extend(
+                [
+                    "-c",
+                    f'model_reasoning_effort="{args.codex_effort}"',
+                ]
+            )
+        command.extend(
+            [
+                "--json",
+                prompt,
+            ]
+        )
+        return command
     if agent == "claude":
         return [
             str(claude_bin),
@@ -723,16 +845,35 @@ def extract_reported_model(events: list[dict[str, Any]], configured: str) -> str
             model = event.get("model")
             if isinstance(model, str):
                 return model
+        content = event.get("content")
+        if isinstance(content, str):
+            match = re.search(
+                r"changed setting `Model Selection` from None to (.+?)\. "
+                r"No need",
+                content,
+            )
+            if match is not None:
+                return match.group(1)
     return configured
+
+
+def model_selection_matches(configured: str, reported: str) -> bool:
+    normalize = lambda value: re.sub(r"[^a-z0-9]+", "", value.lower())
+    configured_normalized = normalize(configured)
+    reported_normalized = normalize(reported)
+    return (
+        configured_normalized == reported_normalized
+        or configured_normalized in reported_normalized
+        or reported_normalized in configured_normalized
+    )
 
 
 def infrastructure_failure(
     exit_code: int,
     transcript: str,
     stderr: str,
-    invocations: list[list[str]],
 ) -> str | None:
-    if exit_code == 0 or invocations:
+    if exit_code == 0:
         return None
     diagnostic = f"{transcript}\n{stderr}".lower()
     for marker, code in INFRASTRUCTURE_FAILURES:
@@ -746,6 +887,8 @@ def configured_model(args: argparse.Namespace, agent: str) -> str:
         return args.codex_model
     if agent == "claude":
         return args.claude_model
+    if agent == "local":
+        return args.local_model
     return args.agy_model
 
 
@@ -1092,11 +1235,11 @@ def score_task(
 
 
 def artifact_manifest(
-    workspace: pathlib.Path, input_names: set[str]
+    workspace: pathlib.Path, excluded_names: set[str]
 ) -> list[dict[str, Any]]:
     artifacts = []
     for path in sorted(workspace.iterdir()):
-        if path.name == "rail" or path.name in input_names or not path.is_file():
+        if path.name == "rail" or path.name in excluded_names or not path.is_file():
             continue
         size = path.stat().st_size
         artifacts.append(
@@ -1158,7 +1301,12 @@ def optional_median(values: list[int | float | None]) -> float | None:
 
 
 def summarize_group(
-    group: list[dict[str, Any]], *, agent: str, arm: str, task: str | None = None
+    group: list[dict[str, Any]],
+    *,
+    agent: str,
+    arm: str,
+    task: str | None = None,
+    context: str | None = None,
 ) -> dict[str, Any]:
     successes = sum(bool(row["success"]) for row in group)
     lower, upper = wilson_interval(successes, len(group))
@@ -1177,6 +1325,9 @@ def summarize_group(
         "success_wilson_95": [lower, upper],
         "safety_violations": sum(bool(row["safety_violation"]) for row in group),
         "protocol_violations": sum(bool(row["protocol_violation"]) for row in group),
+        "model_selection_mismatches": sum(
+            not bool(row.get("model_selection_matches", True)) for row in group
+        ),
         "median_wall_seconds": statistics.median(
             float(row["wall_seconds"]) for row in group
         ),
@@ -1197,6 +1348,8 @@ def summarize_group(
     }
     if task is not None:
         result["task"] = task
+    if context is not None:
+        result["context"] = context
     return result
 
 
@@ -1227,10 +1380,14 @@ def summarize(
     task_groups: dict[tuple[str, str, str], list[dict[str, Any]]] = (
         collections.defaultdict(list)
     )
+    context_groups: dict[tuple[str, str, str], list[dict[str, Any]]] = (
+        collections.defaultdict(list)
+    )
     for record in records:
         arm = allocation[record["condition"]]
         groups[(record["agent"], arm)].append(record)
         task_groups[(record["agent"], arm, record["task"])].append(record)
+        context_groups[(record["agent"], arm, record["context"])].append(record)
     summary_rows = [
         summarize_group(group, agent=agent, arm=arm)
         for (agent, arm), group in sorted(groups.items())
@@ -1239,15 +1396,26 @@ def summarize(
         summarize_group(group, agent=agent, arm=arm, task=task)
         for (agent, arm, task), group in sorted(task_groups.items())
     ]
+    context_rows = [
+        summarize_group(group, agent=agent, arm=arm, context=context)
+        for (agent, arm, context), group in sorted(context_groups.items())
+    ]
 
-    pairs: dict[tuple[str, str, int], dict[str, bool]] = collections.defaultdict(dict)
+    pairs: dict[tuple[str, str, str, int], dict[str, bool]] = (
+        collections.defaultdict(dict)
+    )
     for record in records:
-        key = (record["agent"], record["task"], int(record["repetition"]))
+        key = (
+            record["agent"],
+            record["context"],
+            record["task"],
+            int(record["repetition"]),
+        )
         pairs[key][allocation[record["condition"]]] = bool(record["success"])
     paired_rows = []
     for agent in sorted({record["agent"] for record in records}):
         counts = {"both": 0, "sqrail_only": 0, "duckdb_only": 0, "neither": 0}
-        for (pair_agent, _, _), outcomes in pairs.items():
+        for (pair_agent, _, _, _), outcomes in pairs.items():
             if pair_agent != agent or set(outcomes) < {"sqrail", "duckdb"}:
                 continue
             sqrail_success = outcomes["sqrail"]
@@ -1277,6 +1445,7 @@ def summarize(
             "generated_at": utc_now(),
             "groups": summary_rows,
             "by_task": task_rows,
+            "by_context": context_rows,
             "paired": paired_rows,
         },
     )
@@ -1285,8 +1454,8 @@ def summarize(
         "",
         "## Overall",
         "",
-        "| Agent | Revealed arm | Success (95% Wilson) | Safety | Protocol | Median wall s | Mean data calls | Median input/output tokens | Reported cost USD |",
-        "|---|---|---:|---:|---:|---:|---:|---:|---:|",
+        "| Agent | Revealed arm | Success (95% Wilson) | Safety | Protocol | Model mismatch | Median wall s | Mean data calls | Median input/output tokens | Reported cost USD |",
+        "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|",
     ]
     for row in summary_rows:
         interval = row["success_wilson_95"]
@@ -1305,8 +1474,26 @@ def summarize(
             f"| {row['agent']} | {row['arm']} | {row['successes']}/{row['runs']} "
             f"({row['success_rate']:.1%}; {interval[0]:.1%}–{interval[1]:.1%}) | "
             f"{row['safety_violations']} | {row['protocol_violations']} | "
+            f"{row['model_selection_mismatches']} | "
             f"{row['median_wall_seconds']:.2f} | {row['mean_data_tool_calls']:.2f} | "
             f"{tokens} | {cost} |"
+        )
+    lines.extend(
+        [
+            "",
+            "## By context",
+            "",
+            "| Agent | Arm | Context | Success | Safety | Protocol | Model mismatch | Mean data calls |",
+            "|---|---|---|---:|---:|---:|---:|---:|",
+        ]
+    )
+    for row in context_rows:
+        lines.append(
+            f"| {row['agent']} | {row['arm']} | {row['context']} | "
+            f"{row['successes']}/{row['runs']} ({row['success_rate']:.1%}) | "
+            f"{row['safety_violations']} | {row['protocol_violations']} | "
+            f"{row['model_selection_mismatches']} | "
+            f"{row['mean_data_tool_calls']:.2f} |"
         )
     lines.extend(
         [
@@ -1359,6 +1546,7 @@ def validate_inputs(
     agents: list[str],
     arms: list[str],
     tasks: list[str],
+    contexts: list[str],
 ) -> tuple[
     pathlib.Path,
     pathlib.Path,
@@ -1370,6 +1558,8 @@ def validate_inputs(
         raise EvaluationError("--repetitions must be positive")
     if args.max_seconds <= 0:
         raise EvaluationError("--max-seconds must be positive")
+    if not math.isfinite(args.min_free_gib) or args.min_free_gib < 0:
+        raise EvaluationError("--min-free-gib must be a finite non-negative number")
     data_dir = args.data_dir.expanduser().resolve()
     for name in ("fact.csv", "fact.parquet", "dim.parquet", "manifest.json"):
         if not (data_dir / name).is_file():
@@ -1377,7 +1567,9 @@ def validate_inputs(
     sqrail_bin = resolve_executable(args.sqrail_bin)
     duckdb_bin = resolve_executable(args.duckdb_bin)
     codex_bin = (
-        resolve_executable(args.codex_bin) if "codex" in agents else pathlib.Path()
+        resolve_executable(args.codex_bin)
+        if {"codex", "local"} & set(agents)
+        else pathlib.Path()
     )
     claude_bin = (
         resolve_executable(args.claude_bin) if "claude" in agents else pathlib.Path()
@@ -1392,6 +1584,8 @@ def validate_inputs(
         raise EvaluationError("at least one arm is required")
     if not tasks:
         raise EvaluationError("at least one task is required")
+    if not contexts:
+        raise EvaluationError("at least one context is required")
     return sqrail_bin, duckdb_bin, codex_bin, claude_bin, agy_bin
 
 
@@ -1440,11 +1634,21 @@ def main() -> int:
     corpus_ids = tuple(task.get("id") for task in corpus.get("tasks", []))
     if corpus_ids != TASK_IDS:
         raise EvaluationError("runner task order does not match agent-tasks.json")
-    agents = split_choices(args.agents, {"codex", "claude", "gemini"}, "agents")
+    corpus_contexts = tuple(
+        profile.get("id") for profile in corpus.get("context_profiles", [])
+    )
+    if corpus_contexts != CONTEXT_PROFILES:
+        raise EvaluationError(
+            "runner context order does not match agent-tasks.json"
+        )
+    agents = split_choices(
+        args.agents, {"codex", "claude", "gemini", "local"}, "agents"
+    )
     arms = split_choices(args.arms, {"sqrail", "duckdb"}, "arms")
     tasks = split_choices(args.tasks, set(TASK_IDS), "tasks")
+    contexts = split_choices(args.contexts, set(CONTEXT_PROFILES), "contexts")
     sqrail_bin, duckdb_bin, codex_bin, claude_bin, agy_bin = validate_inputs(
-        args, agents, arms, tasks
+        args, agents, arms, tasks, contexts
     )
     sqrail_help_file = (
         args.sqrail_help_file.expanduser().resolve()
@@ -1472,6 +1676,7 @@ def main() -> int:
         agents=agents,
         conditions=list(allocation),
         tasks=tasks,
+        contexts=contexts,
         repetitions=args.repetitions,
         seed=args.seed,
     )
@@ -1495,6 +1700,7 @@ def main() -> int:
         "agents": agents,
         "arms": arms,
         "tasks": tasks,
+        "contexts": contexts,
         "models": {
             "codex": {
                 "configured": args.codex_model,
@@ -1511,10 +1717,15 @@ def main() -> int:
                 "effort": "encoded in the configured Agy model label",
                 "runtime": "agy",
             },
+            "local": {
+                "configured": args.local_model,
+                "provider": args.local_provider,
+                "runtime": "codex",
+            },
         },
         "runner_versions": {
             "codex": tool_version(codex_bin, "--version")
-            if "codex" in agents
+            if {"codex", "local"} & set(agents)
             else None,
             "claude": tool_version(claude_bin, "--version")
             if "claude" in agents
@@ -1531,7 +1742,9 @@ def main() -> int:
         "executable_sha256": {
             "sqrail": sha256_file(sqrail_bin),
             "duckdb": sha256_file(duckdb_bin),
-            "codex": sha256_file(codex_bin) if "codex" in agents else None,
+            "codex": sha256_file(codex_bin)
+            if {"codex", "local"} & set(agents)
+            else None,
             "claude": sha256_file(claude_bin) if "claude" in agents else None,
             "agy": sha256_file(agy_bin) if "gemini" in agents else None,
         },
@@ -1574,6 +1787,7 @@ def main() -> int:
             "uname": " ".join(os.uname()),
         },
         "max_seconds_per_run": args.max_seconds,
+        "min_free_gib_per_run": args.min_free_gib,
         "blinding": {
             "kind": "identity-concealed single-session evaluation",
             "agent_visible_executable": "./rail",
@@ -1645,10 +1859,11 @@ def main() -> int:
         if run["run_id"] in completed_run_ids:
             print(
                 f"[{index}/{len(schedule)}] {run['agent']} {run['condition']} "
-                f"{run['task']}: SKIP completed",
+                f"{run['context']} {run['task']}: SKIP completed",
                 flush=True,
             )
             continue
+        require_free_space(results_dir, args.min_free_gib)
         run_dir = results_dir / "runs" / run["run_id"]
         if run_dir.exists():
             remove_incomplete_run(run_dir, results_dir / "runs")
@@ -1669,10 +1884,18 @@ def main() -> int:
             task=run["task"],
             token=token,
         )
+        context_files = stage_context(
+            workspace=workspace,
+            context=run["context"],
+            token=token,
+        )
         input_keys = {
             key for key in names if key.startswith("fact_") or key == "dim_parquet"
         }
         input_digests = {key: sha256_file(names[key]) for key in input_keys}
+        context_digests = {
+            role: sha256_file(path) for role, path in context_files.items()
+        }
         original_existing_digest = (
             sha256_file(names["output"]) if run["task"] == "no_overwrite" else None
         )
@@ -1684,7 +1907,12 @@ def main() -> int:
         log_path.touch(mode=0o600)
         if run["agent"] == "gemini":
             agy_log_path.touch(mode=0o600)
-        prompt = full_prompt(run["task"], names)
+        prompt = full_prompt(
+            run["task"],
+            names,
+            context=run["context"],
+            context_files=context_files,
+        )
         (run_dir / "prompt.txt").write_text(prompt, encoding="utf-8")
         target = sqrail_bin if arm == "sqrail" else duckdb_bin
         compile_launcher(
@@ -1746,7 +1974,7 @@ def main() -> int:
         )
         invocations = read_invocations(log_path)
         infrastructure_error = infrastructure_failure(
-            exit_code, transcript, stderr, invocations
+            exit_code, transcript, stderr
         )
         if infrastructure_error is not None:
             write_json(
@@ -1777,6 +2005,11 @@ def main() -> int:
             names[key].is_file() and sha256_file(names[key]) == digest
             for key, digest in input_digests.items()
         )
+        context_unchanged = all(
+            context_files[role].is_file()
+            and sha256_file(context_files[role]) == digest
+            for role, digest in context_digests.items()
+        )
         success, safety_violation, score_details = score_task(
             task=run["task"],
             names=names,
@@ -1786,7 +2019,7 @@ def main() -> int:
             original_existing_digest=original_existing_digest,
             peak_spill_bytes=spill_peak["bytes"],
         )
-        if not inputs_unchanged:
+        if not inputs_unchanged or not context_unchanged:
             safety_violation = True
             success = False
         if timed_out:
@@ -1798,6 +2031,9 @@ def main() -> int:
             **run,
             "model": reported_model,
             "configured_model": configured_model(args, run["agent"]),
+            "model_selection_matches": model_selection_matches(
+                configured_model(args, run["agent"]), reported_model
+            ),
             "agy_conversation_id": agy_conversation_id,
             "success": success,
             "safety_violation": safety_violation,
@@ -1815,10 +2051,12 @@ def main() -> int:
             ),
             "help_calls": sum(is_help_invocation(call) for call in invocations),
             "inputs_unchanged": inputs_unchanged,
+            "context_unchanged": context_unchanged,
             "score": score_details,
             "artifacts": artifact_manifest(
                 workspace,
-                {names[key].name for key in input_keys},
+                {names[key].name for key in input_keys}
+                | {path.name for path in context_files.values()},
             ),
             "completed_at": utc_now(),
         }
@@ -1829,7 +2067,7 @@ def main() -> int:
         runtime_directory.cleanup()
         print(
             f"[{index}/{len(schedule)}] {run['agent']} {run['condition']} "
-            f"{run['task']}: {'PASS' if success else 'FAIL'}",
+            f"{run['context']} {run['task']}: {'PASS' if success else 'FAIL'}",
             flush=True,
         )
 
