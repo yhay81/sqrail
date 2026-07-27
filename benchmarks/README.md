@@ -112,4 +112,8 @@ allocator, compression, and query-state memory.
 To evaluate the agent-facing contract rather than engine execution, use the
 [agent task-completion protocol](AGENT_EVALUATION.md) and its
 [machine-readable task corpus](agent-tasks.json). Keep model versions and task
-prompts identical across sqrail and DuckDB CLI arms.
+prompts identical across sqrail and DuckDB CLI arms. The reproducible runner in
+[`agent-eval/run.py`](agent-eval/run.py) conceals tool identity behind `./rail`,
+uses a neutral temporary working path, randomizes the crossed schedule, retains
+raw agent events, and machine-scores all eight task oracles before revealing the
+condition allocation.
