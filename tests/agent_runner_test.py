@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import os
 import sys
 import tempfile
@@ -60,7 +61,9 @@ class AgentRunnerTest(unittest.TestCase):
             )
         candidate = self.candidate("duckdb", "-json")
         candidate["invocations"][0]["stdin"] = "COPY (SELECT 1) TO '/tmp/out.parquet'"
-        with self.assertRaisesRegex(RUNNER.RunnerError, "stdin contains an absolute path"):
+        with self.assertRaisesRegex(
+            RUNNER.RunnerError, "stdin contains an absolute path"
+        ):
             RUNNER.validate_candidate(candidate, "duckdb")
 
     def test_timeout_wrapper_is_limited_to_duckdb_timeout_task(self) -> None:
@@ -90,6 +93,27 @@ class AgentRunnerTest(unittest.TestCase):
             self.assertNotEqual(destination.read_bytes(), source.read_bytes())
             if os.name != "nt":
                 self.assertEqual(destination.stat().st_mode & 0o222, 0)
+
+    def test_task_prompts_expose_oracle_specific_requirements(self) -> None:
+        corpus = json.loads(
+            (ROOT / "benchmarks" / "agent-tasks-v0.3.json").read_text(encoding="utf-8")
+        )
+        tasks = {task["id"]: task for task in corpus["tasks"]}
+        requirements = {
+            "join_aggregate": ("drug_class", "observation_count"),
+            "timeout_recovery": ("cross join", "10 ms"),
+            "check_metadata": ("drug_id", "observations"),
+            "success_stats": ("column rows",),
+        }
+        for task_id, required_phrases in requirements.items():
+            prompt = tasks[task_id]["prompt"].lower()
+            with self.subTest(task=task_id):
+                for phrase in required_phrases:
+                    self.assertIn(phrase, prompt)
+        self.assertEqual(
+            tasks["timeout_recovery"]["oracle"]["required_arguments"],
+            ["cross join"],
+        )
 
 
 if __name__ == "__main__":
