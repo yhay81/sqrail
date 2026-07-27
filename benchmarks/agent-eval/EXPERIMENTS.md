@@ -1,10 +1,11 @@
 # Agent-contract experiment log
 
 This log records engineering pilots used to refine `sqrail --agent-help`. It is
-not a statistically powered product comparison. All cohorts used the
-100,000-row pilot dataset, the sqrail arm, seed `20260727`, and deterministic
-machine scoring. The four realistic context profiles were `clean`,
-`noisy_workspace`, `superseded_handoff`, and `prior_error`.
+not a statistically powered product comparison. The cohorts below evaluated
+the v0.2.2 command surface with a 100,000-row pilot dataset, the sqrail arm,
+seed `20260727`, and deterministic machine scoring. The four realistic context
+profiles were `clean`, `noisy_workspace`, `superseded_handoff`, and
+`prior_error`.
 
 ## 2026-07-28 decision-first help
 
@@ -17,9 +18,8 @@ decision and stop rule first:
 2. every other task: trust the stated table/column names and run the SQL once;
 3. after success: stop without listing, reading, querying, or verifying output.
 
-The exact candidate is
-[`help-candidate-decision-first.txt`](help-candidate-decision-first.txt), and is
-kept byte-for-byte equal to the compiled `--agent-help` output by tests.
+The exact historical candidate is
+[`help-candidate-decision-first.txt`](help-candidate-decision-first.txt).
 
 | Cohort | Valid successes | Mean data calls | Median wall s | Notes |
 |---|---:|---:|---:|---|
@@ -93,3 +93,16 @@ Under the no-direct-API constraint, the remaining useful expansion is more
 repetitions with the authenticated Codex, Claude Code, and Agy runtimes.
 Flash-Lite and nano remain excluded until a non-API authenticated runtime
 offers them.
+
+## v0.3 transfer
+
+The v0.3 contract adds schema-evolution, result-limit, statistics, and safety
+options, so the v0.2.2 help cannot be copied byte-for-byte. Its validated
+decision rule was compressed into the 170-word v0.3 help:
+
+> Names/types result: schema once. Otherwise trust stated names/types, run once,
+> and stop after success.
+
+Claims about v0.3 agent behavior require a fresh cohort using the v0.3 binary
+and exact help digest. Historical v0.2.2 results remain evidence for the
+decision rule, not release evidence for the expanded v0.3 contract.

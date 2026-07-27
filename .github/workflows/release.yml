@@ -102,6 +102,7 @@ jobs:
           test -f "dist/${PACKAGE_NAME}/share/doc/sqrail/benchmarks/agent-tasks-v0.3.json"
           test -x "dist/${PACKAGE_NAME}/share/doc/sqrail/benchmarks/agent-eval/run.py"
           test -f "dist/${PACKAGE_NAME}/share/doc/sqrail/benchmarks/agent-eval/launcher.c"
+          test -f "dist/${PACKAGE_NAME}/share/doc/sqrail/benchmarks/agent-eval/EXPERIMENTS.md"
           test -x "dist/${PACKAGE_NAME}/share/doc/sqrail/benchmarks/agent-eval.py"
           test -x "dist/${PACKAGE_NAME}/share/doc/sqrail/benchmarks/agent-run.py"
           test -f "dist/${PACKAGE_NAME}/share/doc/sqrail/benchmarks/agent_oracle.py"
@@ -206,6 +207,7 @@ jobs:
             "dist/$env:PACKAGE_NAME/share/doc/sqrail/benchmarks/agent-tasks-v0.3.json",
             "dist/$env:PACKAGE_NAME/share/doc/sqrail/benchmarks/agent-eval/run.py",
             "dist/$env:PACKAGE_NAME/share/doc/sqrail/benchmarks/agent-eval/launcher.c",
+            "dist/$env:PACKAGE_NAME/share/doc/sqrail/benchmarks/agent-eval/EXPERIMENTS.md",
             "dist/$env:PACKAGE_NAME/share/doc/sqrail/benchmarks/agent-eval.py",
             "dist/$env:PACKAGE_NAME/share/doc/sqrail/benchmarks/agent-run.py",
             "dist/$env:PACKAGE_NAME/share/doc/sqrail/benchmarks/agent_oracle.py",

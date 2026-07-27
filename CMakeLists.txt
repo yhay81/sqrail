@@ -403,7 +403,11 @@ install(
   COMPONENT sqrail
 )
 install(
-  FILES benchmarks/agent-eval/launcher.c
+  FILES
+    benchmarks/agent-eval/launcher.c
+    benchmarks/agent-eval/EXPERIMENTS.md
+    benchmarks/agent-eval/help-candidate-decision-first.txt
+    benchmarks/agent-eval/help-candidate-haiku-strict.txt
   DESTINATION "${CMAKE_INSTALL_DOCDIR}/benchmarks/agent-eval"
   COMPONENT sqrail
 )
@@ -459,6 +463,12 @@ if(SQRAIL_BUILD_TESTS)
   )
   if(UNIX)
     add_test(
+      NAME sqrail-blind-agent-eval-unit
+      COMMAND
+        "${Python3_EXECUTABLE}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/blind_agent_eval_test.py"
+    )
+    add_test(
       NAME sqrail-smoke
       COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/tests/smoke.sh" "$<TARGET_FILE:sqrail>"
     )
@@ -475,7 +485,11 @@ if(SQRAIL_BUILD_TESTS)
     PROPERTIES TIMEOUT 120
   )
   if(UNIX)
-    set_tests_properties(sqrail-smoke PROPERTIES TIMEOUT 120)
+    set_tests_properties(
+      sqrail-blind-agent-eval-unit
+      sqrail-smoke
+      PROPERTIES TIMEOUT 120
+    )
   endif()
 endif()
 

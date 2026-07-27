@@ -7,12 +7,14 @@ engine than DuckDB.
 
 ## Experimental design
 
-The current experiment is a 3 × 2 crossed design:
+The runner builds a crossed design from the selected factors:
 
 | Factor | Levels |
 |---|---|
-| Agent | Codex with `gpt-5.6-luna`; Claude Code with `claude-sonnet-5`; Antigravity CLI (`agy`) with `Gemini 3.6 Flash (High)` |
+| Agent runtime | Codex; Claude Code; Antigravity CLI (`agy`); optional Codex-to-Ollama/LM Studio adapter |
 | Data CLI | sqrail; DuckDB CLI built from the same DuckDB version |
+| Context | clean; noisy workspace; superseded handoff; prior-error recovery |
+| Task | eight deterministic file, query, resource, and failure tasks |
 
 Every agent, tool, task, and repetition runs in a fresh session and working
 directory. The runner randomizes execution order and file names from a recorded
@@ -29,6 +31,9 @@ The machine-readable corpus in
 [`agent-tasks.json`](agent-tasks.json) contains eight tasks: schema discovery,
 streaming JSONL, a join and aggregation, two format conversions, bounded
 out-of-core sorting, timeout recovery, and no-overwrite behavior.
+It also defines four controlled context profiles that exercise realistic
+workspace noise, stale conversation state, and recovery from a failed command
+without changing the task oracle.
 
 ## Blinding controls
 
@@ -37,7 +42,8 @@ The agent sees only an execute-only launcher called `./rail`. The launcher:
 - conceals the underlying executable path and reports a neutral version;
 - replaces product names in the tool's real help output with `rail`;
 - disables the DuckDB user's init file;
-- records invocations in a private log for machine scoring.
+- records invocations in a private log for machine scoring and refuses to run
+  the concealed tool if that audit log cannot be written.
 
 The prompt never names either product or says that a comparison is in progress.
 Opaque condition labels are randomized. Before execution, the runner publishes
@@ -73,7 +79,7 @@ BENCH_ROWS=1000000 BENCH_DIM_ROWS=100000 \
   build-agent-eval/_deps/duckdb-build/duckdb
 ```
 
-Before spending model budget, materialize and inspect the randomized 240-run
+Before spending model budget, materialize and inspect the randomized 960-run
 plan:
 
 ```sh
@@ -88,6 +94,7 @@ python3 benchmarks/agent-eval/run.py \
   --claude-model claude-sonnet-5 \
   --claude-effort high \
   --agy-model 'Gemini 3.6 Flash (High)' \
+  --contexts clean,noisy_workspace,superseded_handoff,prior_error \
   --repetitions 5 \
   --plan-only
 ```
@@ -107,6 +114,7 @@ python3 benchmarks/agent-eval/run.py \
   --claude-effort high \
   --claude-max-budget-usd 1.0 \
   --agy-model 'Gemini 3.6 Flash (High)' \
+  --contexts clean,noisy_workspace,superseded_handoff,prior_error \
   --repetitions 5
 ```
 
@@ -115,13 +123,19 @@ Completed run IDs are skipped, an incomplete run directory is safely rebuilt,
 and any changed model, prompt, help, dataset, limit, or schedule causes a hard
 failure instead of silently mixing cohorts.
 
-The Claude CLI reports the resolved model identifier in each transcript; the
-runner records that value rather than assuming the alias stayed fixed. Agy
-records the selected Gemini model label and shell calls in its structured
-Antigravity transcript; the runner copies that transcript for protocol
-auditing and removes the separate runtime log, which can contain account
-metadata. All selected agent CLIs must already be authenticated. The runner
-never reads or records credentials.
+The Claude CLI reports the resolved model identifier in each transcript. The
+runner also extracts Agy's resolved model label rather than assuming its CLI
+selector stayed fixed, and reports model-selection mismatches. This catches
+aliases that silently resolve to a different price/performance tier. Agy shell
+calls remain in its structured Antigravity transcript; the runner copies that
+transcript for protocol auditing and removes the separate runtime log, which
+can contain account metadata. All selected agent CLIs must already be
+authenticated. The runner never reads or records credentials.
+
+The default `--min-free-gib 2` preflight prevents a low-space run from silently
+losing evidence. Provider authentication, unavailable-model, overload, and
+audit-log failures are infrastructure outcomes; repair the environment and
+resume rather than counting them as model failures.
 
 A one-repetition, smaller-data run is useful only as a harness pilot:
 
@@ -142,6 +156,7 @@ python3 benchmarks/agent-eval/run.py \
   --claude-model claude-sonnet-5 \
   --claude-effort high \
   --agy-model 'Gemini 3.6 Flash (High)' \
+  --contexts clean,noisy_workspace,superseded_handoff,prior_error \
   --repetitions 1
 ```
 
@@ -152,8 +167,10 @@ model version, prompt, help text, dataset, or runner change.
 
 Each run retains:
 
-- the exact prompt, opaque condition, randomized schedule, and seed;
-- agent and data-tool CLI versions, resolved model ID, and reasoning effort;
+- the exact prompt, context profile, opaque condition, randomized schedule,
+  and seed;
+- agent and data-tool CLI versions, configured and resolved model IDs,
+  model-selection match, and reasoning effort;
 - raw agent event transcript (including Agy's structured Antigravity
   transcript) and runner stderr;
 - input/output token counts when the provider reports them;
@@ -169,8 +186,9 @@ generated dataset manifest and the exact source commit. `environment.json`
 binds resume compatibility to SHA-256 digests of the runner, launcher, task
 corpus, all dataset files, both data CLIs, and every selected agent CLI. The
 generated summary reports overall and per-task rates, 95% Wilson intervals,
-paired outcome counts, and the exact McNemar test for discordant sqrail/DuckDB
-outcomes. Provider cost is reported only when the CLI supplies it.
+per-context rates, model-selection mismatches, paired outcome counts, and the
+exact McNemar test for discordant sqrail/DuckDB outcomes. Provider cost is
+reported only when the CLI supplies it.
 
 An attempt succeeds only when the final artifact passes the hidden row-count,
 logical-checksum, ordering, resource, exit-code, diagnostic, and preservation
@@ -241,3 +259,7 @@ python3 benchmarks/agent-eval.py agent-results.jsonl \
 ```
 
 Synthetic or replayed successes are not release evidence.
+
+Historical contract-refinement pilots and rejected help candidates are kept in
+the [experiment log](agent-eval/EXPERIMENTS.md). Those v0.2.2 results motivate
+the v0.3 decision rule but do not replace a fresh v0.3 release cohort.

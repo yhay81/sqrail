@@ -420,6 +420,8 @@ for signal_name in TERM INT; do
 done
 
 agent_help=$("$sqrail_bin" --agent-help)
+printf '%s\n' "$agent_help" | grep -q 'Names/types result: schema once'
+printf '%s\n' "$agent_help" | grep -q 'run once, and stop after success'
 printf '%s\n' "$agent_help" | grep -q 'SQL is one SELECT'
 printf '%s\n' "$agent_help" | grep -q -- '--max-rows'
 printf '%s\n' "$agent_help" | grep -q -- '--strict-schema'

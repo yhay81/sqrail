@@ -631,7 +631,7 @@ def context_prompt(context: str, context_files: dict[str, pathlib.Path]) -> str:
             "Real-world recovery context:\n"
             "A previous operator, in a different session, attempted "
             "`./rail run -t fact=missing.parquet 'SELECT * FROM fact'` and received "
-            "`{\"ok\":false,\"code\":\"INPUT_NOT_FOUND\"}`. Nothing was committed. "
+            '`{"ok":false,"code":"INPUT_NOT_FOUND"}`. Nothing was committed. '
             "Recover using the actual filenames in the current task. This is a fresh "
             "session, so the requirement to start with `./rail --help` still applies.\n\n"
         )
@@ -858,7 +858,9 @@ def extract_reported_model(events: list[dict[str, Any]], configured: str) -> str
 
 
 def model_selection_matches(configured: str, reported: str) -> bool:
-    normalize = lambda value: re.sub(r"[^a-z0-9]+", "", value.lower())
+    def normalize(value: str) -> str:
+        return re.sub(r"[^a-z0-9]+", "", value.lower())
+
     configured_normalized = normalize(configured)
     reported_normalized = normalize(reported)
     return (
@@ -898,9 +900,7 @@ def read_agy_transcript(
     if not log_path.is_file():
         return "", None
     log_text = log_path.read_text(encoding="utf-8", errors="replace")
-    conversation_ids = re.findall(
-        r"Created conversation ([0-9a-fA-F-]{36})", log_text
-    )
+    conversation_ids = re.findall(r"Created conversation ([0-9a-fA-F-]{36})", log_text)
     if not conversation_ids:
         return "", None
     conversation_id = conversation_ids[-1]
@@ -945,11 +945,16 @@ def is_help_invocation(arguments: list[str]) -> bool:
 
 
 def starts_with_help(invocations: list[list[str]]) -> bool:
-    return bool(invocations) and len(invocations[0]) == 1 and invocations[0][0] in {
-        "-h",
-        "-help",
-        "--help",
-    }
+    return (
+        bool(invocations)
+        and len(invocations[0]) == 1
+        and invocations[0][0]
+        in {
+            "-h",
+            "-help",
+            "--help",
+        }
+    )
 
 
 def sql_quote(value: pathlib.Path) -> str:
@@ -1003,9 +1008,7 @@ def schema_columns(path: pathlib.Path) -> dict[str, str]:
         if not isinstance(column, dict):
             continue
         name = column.get("name", column.get("column_name"))
-        kind = column.get(
-            "type", column.get("column_type", column.get("data_type"))
-        )
+        kind = column.get("type", column.get("column_type", column.get("data_type")))
         if isinstance(name, str) and isinstance(kind, str):
             columns[name] = kind.upper()
     return columns
@@ -1401,8 +1404,8 @@ def summarize(
         for (agent, arm, context), group in sorted(context_groups.items())
     ]
 
-    pairs: dict[tuple[str, str, str, int], dict[str, bool]] = (
-        collections.defaultdict(dict)
+    pairs: dict[tuple[str, str, str, int], dict[str, bool]] = collections.defaultdict(
+        dict
     )
     for record in records:
         key = (
@@ -1574,9 +1577,7 @@ def validate_inputs(
     claude_bin = (
         resolve_executable(args.claude_bin) if "claude" in agents else pathlib.Path()
     )
-    agy_bin = (
-        resolve_executable(args.agy_bin) if "gemini" in agents else pathlib.Path()
-    )
+    agy_bin = resolve_executable(args.agy_bin) if "gemini" in agents else pathlib.Path()
     agy_data_dir = args.agy_data_dir.expanduser().resolve()
     if "gemini" in agents and not agy_data_dir.is_dir():
         raise EvaluationError(f"Antigravity data directory is missing: {agy_data_dir}")
@@ -1638,9 +1639,7 @@ def main() -> int:
         profile.get("id") for profile in corpus.get("context_profiles", [])
     )
     if corpus_contexts != CONTEXT_PROFILES:
-        raise EvaluationError(
-            "runner context order does not match agent-tasks.json"
-        )
+        raise EvaluationError("runner context order does not match agent-tasks.json")
     agents = split_choices(
         args.agents, {"codex", "claude", "gemini", "local"}, "agents"
     )
@@ -1687,8 +1686,7 @@ def main() -> int:
     source_root = runner_source.parents[2]
 
     help_by_arm = {
-        arm: build_help(arm, sqrail_bin, duckdb_bin, sqrail_help_file)
-        for arm in arms
+        arm: build_help(arm, sqrail_bin, duckdb_bin, sqrail_help_file) for arm in arms
     }
     allocation_sha256 = hashlib.sha256(
         json.dumps(allocation, sort_keys=True).encode("utf-8")
@@ -1730,9 +1728,7 @@ def main() -> int:
             "claude": tool_version(claude_bin, "--version")
             if "claude" in agents
             else None,
-            "agy": tool_version(agy_bin, "--version")
-            if "gemini" in agents
-            else None,
+            "agy": tool_version(agy_bin, "--version") if "gemini" in agents else None,
         },
         "source": {
             **git_source_state(source_root),
@@ -1973,9 +1969,7 @@ def main() -> int:
             events, configured_model(args, run["agent"])
         )
         invocations = read_invocations(log_path)
-        infrastructure_error = infrastructure_failure(
-            exit_code, transcript, stderr
-        )
+        infrastructure_error = infrastructure_failure(exit_code, transcript, stderr)
         if infrastructure_error is not None:
             write_json(
                 run_dir / "infrastructure-error.json",
@@ -2006,8 +2000,7 @@ def main() -> int:
             for key, digest in input_digests.items()
         )
         context_unchanged = all(
-            context_files[role].is_file()
-            and sha256_file(context_files[role]) == digest
+            context_files[role].is_file() and sha256_file(context_files[role]) == digest
             for role, digest in context_digests.items()
         )
         success, safety_violation, score_details = score_task(

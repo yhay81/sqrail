@@ -246,6 +246,7 @@ void PrintAgentHelp() {
 	          << "           [--stats] [--strict-schema] [SQL|-]\n"
 	          << "sqrail --version\n"
 	          << "\n"
+	          << "Names/types result: schema once. Otherwise trust stated names/types, run once, and stop after success.\n"
 	          << "-t binds a file, Parquet directory, or glob; '-' reads SQL; '--' ends options.\n"
 	          << "Files union columns by name; --strict-schema requires exact schemas.\n"
 	          << "check emits columns, inputs, and plan without execution.\n"

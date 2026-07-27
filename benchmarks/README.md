@@ -134,7 +134,10 @@ To evaluate the agent-facing contract rather than engine execution, use the
 identity-concealed runner, [`agent-eval/run.py`](agent-eval/run.py), uses the
 eight-task [`agent-tasks.json`](agent-tasks.json) corpus, hides tool identity
 behind `./rail`, randomizes the crossed schedule, retains raw agent events, and
-scores every oracle before revealing the condition allocation.
+scores every oracle before revealing the condition allocation. It can cross
+tasks with clean, noisy-workspace, superseded-handoff, and prior-error contexts.
+The [contract experiment log](agent-eval/EXPERIMENTS.md) records low-cost-model
+pilots separately from v0.3 release evidence.
 
 The complementary v0.3 artifact gate uses the twelve-task
 [`agent-tasks-v0.3.json`](agent-tasks-v0.3.json) corpus. After recording
