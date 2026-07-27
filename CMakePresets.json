@@ -275,8 +275,7 @@
         "outputOnFailure": true
       },
       "environment": {
-        "SQRAIL_SMOKE_TRACE": "1",
-        "TSAN_OPTIONS": "halt_on_error=1:second_deadlock_stack=1"
+        "TSAN_OPTIONS": "halt_on_error=1:second_deadlock_stack=1:suppressions=${sourceDir}/tests/tsan-suppressions.txt"
       }
     },
     {
