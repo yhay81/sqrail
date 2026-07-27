@@ -28,9 +28,11 @@ zizmor --pedantic .
 ```
 
 Format C++ with the repository `.clang-format`. GitHub Actions additionally run
-CodeQL and audit every workflow with Actionlint and Zizmor. Visual Studio 2022
-contributors can use `windows-x64` or `windows-arm64`; the corresponding
-presets select the static MSVC runtime and the Release configuration.
+CodeQL and audit every workflow with Actionlint and Zizmor. The `windows-x64`
+preset follows the Windows 2025 hosted image and uses Visual Studio 2026 with
+a CMake version that provides the `Visual Studio 18 2026` generator; the Windows
+11 Arm64 runner continues to use Visual Studio 2022 through the `windows-arm64`
+preset. Both select the static MSVC runtime and the Release configuration.
 
 Behavioral changes must keep the cross-platform Python end-to-end suite
 portable. POSIX-only signal, mode, or filesystem assertions belong in the Bash
