@@ -66,6 +66,15 @@ FORBIDDEN_DISCOVERY = (
     "cat ./rail",
     "cat rail",
 )
+INFRASTRUCTURE_FAILURES = (
+    ("authentication_failed", "authentication"),
+    ("failed to authenticate", "authentication"),
+    ("oauth session expired", "authentication"),
+    ("rate_limit_error", "rate_limit"),
+    ("rate limit exceeded", "rate_limit"),
+    ("overloaded_error", "provider_overloaded"),
+    ("service unavailable", "provider_unavailable"),
+)
 
 
 class EvaluationError(RuntimeError):
@@ -79,6 +88,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--data-dir", required=True, type=pathlib.Path)
     parser.add_argument("--results-dir", required=True, type=pathlib.Path)
     parser.add_argument("--sqrail-bin", required=True, type=pathlib.Path)
+    parser.add_argument("--sqrail-help-file", type=pathlib.Path)
     parser.add_argument("--duckdb-bin", required=True, type=pathlib.Path)
     parser.add_argument("--agents", default="codex,claude")
     parser.add_argument("--arms", default="sqrail,duckdb")
@@ -308,12 +318,24 @@ def sanitize_help(text: str) -> str:
     clean = ANSI_ESCAPE.sub("", text)
     clean = re.sub(r"(?i)duckdb", "rail", clean)
     clean = re.sub(r"(?i)sqrail", "rail", clean)
-    clean = re.sub(r"(?m)^Usage:\s+\S*rail\s+", "Usage: rail ", clean)
+    clean = re.sub(r"(?m)^Usage:\s+\S*rail\s+", "Usage: ./rail ", clean)
+    clean = re.sub(
+        r"(?m)^(\s*)rail(?=\s+(?:schema|check|run|--version)\b)",
+        r"\1./rail",
+        clean,
+    )
     return clean
 
 
-def build_help(arm: str, sqrail_bin: pathlib.Path, duckdb_bin: pathlib.Path) -> str:
+def build_help(
+    arm: str,
+    sqrail_bin: pathlib.Path,
+    duckdb_bin: pathlib.Path,
+    sqrail_help_file: pathlib.Path | None = None,
+) -> str:
     if arm == "sqrail":
+        if sqrail_help_file is not None:
+            return sanitize_help(sqrail_help_file.read_text(encoding="utf-8"))
         return sanitize_help(checked_output([str(sqrail_bin), "--agent-help"]))
     return sanitize_help(checked_output([str(duckdb_bin), "--help"]))
 
@@ -474,7 +496,8 @@ def task_prompt(task: str, names: dict[str, pathlib.Path]) -> str:
     if task == "join_aggregate":
         return (
             f"Join {relative(names, 'fact_parquet')} to {relative(names, 'dim_parquet')} by "
-            "drug_id. Write Parquet with exactly the columns drug_class and "
+            "drug_id. Group the joined rows by drug_class and define observation_count as "
+            "count(*) for each class. Write Parquet with exactly the columns drug_class and "
             "observation_count, ordered by drug_class, to "
             f"{relative(names, 'output')}."
         )
@@ -502,9 +525,9 @@ def task_prompt(task: str, names: dict[str, pathlib.Path]) -> str:
             "expensive read-only query `SELECT sum(a.value * b.value) AS total FROM fact a "
             "CROSS JOIN fact b` with a 10 ms deadline. Redirect data stdout to "
             f"{relative(names, 'stdout')}, structured stderr to "
-            f"{relative(names, 'diagnostic')}, and write the numeric command exit status to "
-            f"{relative(names, 'status')}. A timeout is the required outcome; do not treat "
-            "partial stdout as complete."
+            f"{relative(names, 'diagnostic')}, then write `$?` directly to "
+            f"{relative(names, 'status')} without assigning it to a shell variable. A timeout "
+            "is the required outcome; do not treat partial stdout as complete."
         )
     if task == "no_overwrite":
         return (
@@ -703,6 +726,21 @@ def extract_reported_model(events: list[dict[str, Any]], configured: str) -> str
     return configured
 
 
+def infrastructure_failure(
+    exit_code: int,
+    transcript: str,
+    stderr: str,
+    invocations: list[list[str]],
+) -> str | None:
+    if exit_code == 0 or invocations:
+        return None
+    diagnostic = f"{transcript}\n{stderr}".lower()
+    for marker, code in INFRASTRUCTURE_FAILURES:
+        if marker in diagnostic:
+            return code
+    return None
+
+
 def configured_model(args: argparse.Namespace, agent: str) -> str:
     if agent == "codex":
         return args.codex_model
@@ -763,6 +801,14 @@ def is_help_invocation(arguments: list[str]) -> bool:
     }
 
 
+def starts_with_help(invocations: list[list[str]]) -> bool:
+    return bool(invocations) and len(invocations[0]) == 1 and invocations[0][0] in {
+        "-h",
+        "-help",
+        "--help",
+    }
+
+
 def sql_quote(value: pathlib.Path) -> str:
     return str(value).replace("'", "''")
 
@@ -814,7 +860,9 @@ def schema_columns(path: pathlib.Path) -> dict[str, str]:
         if not isinstance(column, dict):
             continue
         name = column.get("name", column.get("column_name"))
-        kind = column.get("type", column.get("column_type"))
+        kind = column.get(
+            "type", column.get("column_type", column.get("data_type"))
+        )
         if isinstance(name, str) and isinstance(kind, str):
             columns[name] = kind.upper()
     return columns
@@ -1398,6 +1446,13 @@ def main() -> int:
     sqrail_bin, duckdb_bin, codex_bin, claude_bin, agy_bin = validate_inputs(
         args, agents, arms, tasks
     )
+    sqrail_help_file = (
+        args.sqrail_help_file.expanduser().resolve()
+        if args.sqrail_help_file is not None
+        else None
+    )
+    if sqrail_help_file is not None and not sqrail_help_file.is_file():
+        raise EvaluationError(f"sqrail help override is missing: {sqrail_help_file}")
 
     results_dir = args.results_dir.expanduser().resolve()
     if args.plan_only and args.resume:
@@ -1426,7 +1481,10 @@ def main() -> int:
     runner_source = pathlib.Path(__file__).resolve()
     source_root = runner_source.parents[2]
 
-    help_by_arm = {arm: build_help(arm, sqrail_bin, duckdb_bin) for arm in arms}
+    help_by_arm = {
+        arm: build_help(arm, sqrail_bin, duckdb_bin, sqrail_help_file)
+        for arm in arms
+    }
     allocation_sha256 = hashlib.sha256(
         json.dumps(allocation, sort_keys=True).encode("utf-8")
     ).hexdigest()
@@ -1489,6 +1547,11 @@ def main() -> int:
                 "text": help_by_arm[arm],
             }
             for arm in arms
+        },
+        "help_override": {
+            "sqrail_sha256": sha256_file(sqrail_help_file)
+            if sqrail_help_file is not None
+            else None
         },
         "dataset_manifest": json.loads(
             (args.data_dir / "manifest.json").read_text(encoding="utf-8")
@@ -1646,6 +1709,11 @@ def main() -> int:
         )
         agent_env = dict(os.environ)
         agent_env["PATH"] = "/usr/bin:/bin:/usr/sbin:/sbin"
+        shell_config = runtime_root / "shell-config"
+        shell_config.mkdir()
+        agent_env["ZDOTDIR"] = str(shell_config)
+        agent_env["BASH_ENV"] = "/dev/null"
+        agent_env["ENV"] = "/dev/null"
         spill_stop, spill_thread, spill_peak = start_spill_monitor(names.get("spill"))
         try:
             exit_code, stdout, stderr, timed_out, elapsed = run_capture(
@@ -1677,14 +1745,33 @@ def main() -> int:
             events, configured_model(args, run["agent"])
         )
         invocations = read_invocations(log_path)
-        protocol_reasons = sorted(
-            {
-                forbidden.strip()
-                for command_text in commands
-                for forbidden in FORBIDDEN_DISCOVERY
-                if forbidden in command_text.lower()
-            }
+        infrastructure_error = infrastructure_failure(
+            exit_code, transcript, stderr, invocations
         )
+        if infrastructure_error is not None:
+            write_json(
+                run_dir / "infrastructure-error.json",
+                {
+                    "agent": run["agent"],
+                    "code": infrastructure_error,
+                    "configured_model": configured_model(args, run["agent"]),
+                    "run_id": run["run_id"],
+                    "task": run["task"],
+                },
+            )
+            raise EvaluationError(
+                f"agent infrastructure failure ({infrastructure_error}) in "
+                f"{run['run_id']}; fix the provider session and rerun with --resume"
+            )
+        protocol_reason_set = {
+            forbidden.strip()
+            for command_text in commands
+            for forbidden in FORBIDDEN_DISCOVERY
+            if forbidden in command_text.lower()
+        }
+        if not starts_with_help(invocations):
+            protocol_reason_set.add("missing_initial_help")
+        protocol_reasons = sorted(protocol_reason_set)
         protocol_violation = bool(protocol_reasons)
         inputs_unchanged = all(
             names[key].is_file() and sha256_file(names[key]) == digest

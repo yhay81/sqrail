@@ -62,30 +62,66 @@ static void write_help(void) {
 	close(fd);
 }
 
-static void write_hex(int fd, const char *value) {
+static char *append_hex(char *output, const char *value) {
 	static const char digits[] = "0123456789abcdef";
 	for (const unsigned char *cursor = (const unsigned char *)value; *cursor != '\0'; ++cursor) {
-		char encoded[2] = {digits[*cursor >> 4], digits[*cursor & 0x0f]};
-		write_all(fd, encoded, sizeof(encoded));
+		*output++ = digits[*cursor >> 4];
+		*output++ = digits[*cursor & 0x0f];
 	}
+	return output;
+}
+
+static int lock_log(int fd) {
+	struct flock lock;
+	memset(&lock, 0, sizeof(lock));
+	lock.l_type = F_WRLCK;
+	lock.l_whence = SEEK_SET;
+	while (fcntl(fd, F_SETLKW, &lock) < 0) {
+		if (errno != EINTR) {
+			return -1;
+		}
+	}
+	return 0;
 }
 
 static void log_invocation(int argc, char **argv) {
-	int fd = open(RAIL_LOG, O_WRONLY | O_APPEND | O_CREAT, 0600);
-	if (fd < 0) {
-		return;
-	}
 	char timestamp[64];
 	int size = snprintf(timestamp, sizeof(timestamp), "%lld", (long long)time(NULL));
-	if (size > 0) {
-		write_all(fd, timestamp, (size_t)size);
+	if (size <= 0) {
+		return;
 	}
+
+	size_t record_size = (size_t)size + 1;
 	for (int index = 1; index < argc; ++index) {
-		write_all(fd, "\t", 1);
-		write_hex(fd, argv[index]);
+		size_t argument_size = strlen(argv[index]);
+		if (argument_size > (SIZE_MAX - record_size - 1) / 2) {
+			return;
+		}
+		record_size += 1 + argument_size * 2;
 	}
-	write_all(fd, "\n", 1);
+	char *record = malloc(record_size);
+	if (record == NULL) {
+		return;
+	}
+	char *cursor = record;
+	memcpy(cursor, timestamp, (size_t)size);
+	cursor += size;
+	for (int index = 1; index < argc; ++index) {
+		*cursor++ = '\t';
+		cursor = append_hex(cursor, argv[index]);
+	}
+	*cursor++ = '\n';
+
+	int fd = open(RAIL_LOG, O_WRONLY | O_APPEND | O_CREAT, 0600);
+	if (fd < 0) {
+		free(record);
+		return;
+	}
+	if (lock_log(fd) == 0) {
+		write_all(fd, record, record_size);
+	}
 	close(fd);
+	free(record);
 }
 
 static int is_option(int argc, char **argv, const char *short_name, const char *long_name) {
