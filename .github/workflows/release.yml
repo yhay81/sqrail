@@ -196,14 +196,9 @@ jobs:
           if ("v$version" -ne $env:GITHUB_REF_NAME) { throw "tag and binary versions differ" }
           cmake --install "out/build/$env:SQRAIL_WINDOWS_PRESET" --config Release --prefix "dist/$env:PACKAGE_NAME" --component sqrail
           & "dist/$env:PACKAGE_NAME/bin/sqrail.exe" --version
-          $headers = (dumpbin /headers "dist/$env:PACKAGE_NAME/bin/sqrail.exe" | Out-String)
-          if ($headers -notmatch "$env:SQRAIL_WINDOWS_MACHINE machine") {
-            throw "release binary has the wrong Windows machine type"
-          }
-          $dependencies = (dumpbin /dependents "dist/$env:PACKAGE_NAME/bin/sqrail.exe" | Out-String)
-          if ($dependencies -match "VCRUNTIME|MSVCP") {
-            throw "MSVC runtime is dynamically linked"
-          }
+          & tools/verify-windows-binary.ps1 `
+            -Binary "dist/$env:PACKAGE_NAME/bin/sqrail.exe" `
+            -Machine "$env:SQRAIL_WINDOWS_MACHINE"
           $required = @(
             "dist/$env:PACKAGE_NAME/share/doc/sqrail/THIRD_PARTY_NOTICES.md",
             "dist/$env:PACKAGE_NAME/share/doc/sqrail/benchmarks/AGENT_EVALUATION.md",

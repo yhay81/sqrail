@@ -127,14 +127,9 @@ jobs:
           cmake --install "out/build/$env:SQRAIL_WINDOWS_PRESET" --config Release --prefix install --component sqrail
           & "install/bin/sqrail.exe" --version
           if ($LASTEXITCODE -ne 0) { throw "installed sqrail failed" }
-          $headers = (dumpbin /headers "install/bin/sqrail.exe" | Out-String)
-          if ($headers -notmatch "$env:SQRAIL_WINDOWS_MACHINE machine") {
-            throw "installed sqrail has the wrong Windows machine type"
-          }
-          $dependencies = (dumpbin /dependents "install/bin/sqrail.exe" | Out-String)
-          if ($dependencies -match "VCRUNTIME|MSVCP") {
-            throw "MSVC runtime is dynamically linked"
-          }
+          & tools/verify-windows-binary.ps1 `
+            -Binary "install/bin/sqrail.exe" `
+            -Machine "$env:SQRAIL_WINDOWS_MACHINE"
           $required = @(
             "install/share/doc/sqrail/THIRD_PARTY_NOTICES.md",
             "install/share/doc/sqrail/benchmarks/AGENT_EVALUATION.md",

@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+if [ "${SQRAIL_SMOKE_TRACE:-0}" = 1 ]; then
+  set -x
+fi
+
 sqrail_bin=${1:?sqrail binary path is required}
 test_dir=$(mktemp -d)
 trap 'rm -rf "$test_dir"' EXIT
