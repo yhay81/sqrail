@@ -87,6 +87,15 @@
       }
     },
     {
+      "name": "system",
+      "displayName": "Distribution build with system DuckDB",
+      "inherits": "release",
+      "cacheVariables": {
+        "SQRAIL_DUCKDB_PROVIDER": "SYSTEM",
+        "SQRAIL_STATIC_CPP_RUNTIME": false
+      }
+    },
+    {
       "name": "pgo-generate",
       "displayName": "Instrumented PGO training build",
       "inherits": "release",
@@ -153,6 +162,12 @@
       "jobs": 2
     },
     {
+      "name": "system",
+      "configurePreset": "system",
+      "targets": ["sqrail", "sqrail-json-test"],
+      "jobs": 2
+    },
+    {
       "name": "pgo-generate",
       "configurePreset": "pgo-generate",
       "targets": ["sqrail"],
@@ -204,6 +219,13 @@
       }
     },
     {
+      "name": "system",
+      "configurePreset": "system",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
       "name": "pgo-use",
       "configurePreset": "pgo-use",
       "output": {
@@ -242,6 +264,14 @@
         {"type": "configure", "name": "sanitize"},
         {"type": "build", "name": "sanitize"},
         {"type": "test", "name": "sanitize"}
+      ]
+    },
+    {
+      "name": "system",
+      "steps": [
+        {"type": "configure", "name": "system"},
+        {"type": "build", "name": "system"},
+        {"type": "test", "name": "system"}
       ]
     },
     {

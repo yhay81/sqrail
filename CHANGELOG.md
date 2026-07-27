@@ -5,6 +5,19 @@ versions follow semantic versioning.
 
 ## [Unreleased]
 
+### Added
+
+- a `SYSTEM` DuckDB provider and source-only distribution workflow suitable for
+  package managers such as Homebrew Core
+- Linux and macOS CI coverage for linking against the packaged DuckDB shared
+  library
+
+### Changed
+
+- version output to report the DuckDB library actually linked at runtime
+- third-party licence installation so system packages do not duplicate the
+  notices owned by their DuckDB dependency
+
 ## [0.2.1] - 2026-07-27
 
 ### Added

@@ -19,6 +19,7 @@ cmake --workflow --preset sanitize
 cmake --preset fuzz
 cmake --build --preset fuzz
 out/build/fuzz/sqrail-strict-json-fuzz -max_total_time=30
+CMAKE_PREFIX_PATH=/path/to/duckdb cmake --workflow --preset system
 shellcheck tests/*.sh benchmarks/*.sh
 actionlint
 zizmor --pedantic .

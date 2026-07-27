@@ -7,7 +7,6 @@ project(
   LANGUAGES CXX
 )
 
-include(FetchContent)
 include(GNUInstallDirs)
 include(CheckCXXCompilerFlag)
 include(CheckIPOSupported)
@@ -22,6 +21,13 @@ option(SQRAIL_ENABLE_HARDENING "Enable production compiler and linker hardening"
 option(SQRAIL_ENABLE_IPO "Enable whole-program interprocedural optimization" OFF)
 option(SQRAIL_ENABLE_SANITIZERS "Enable AddressSanitizer and UndefinedBehaviorSanitizer" OFF)
 option(SQRAIL_NATIVE_ARCH "Optimize for the build host CPU; never use for portable releases" OFF)
+set(
+  SQRAIL_DUCKDB_PROVIDER
+  "BUNDLED"
+  CACHE STRING
+  "DuckDB provider: BUNDLED fetches the pinned source; SYSTEM uses an installed DuckDB package"
+)
+set_property(CACHE SQRAIL_DUCKDB_PROVIDER PROPERTY STRINGS BUNDLED SYSTEM)
 set(SQRAIL_PGO_MODE "OFF" CACHE STRING "Clang PGO mode: OFF, GENERATE, or USE")
 set_property(CACHE SQRAIL_PGO_MODE PROPERTY STRINGS OFF GENERATE USE)
 set(
@@ -116,73 +122,106 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
   )
 endif()
 
-# sqrail deliberately ships one engine. DuckDB is pinned so the SQL behavior of
-# a release is reproducible. The human-readable version is kept separately from
-# the immutable source revision.
-set(DUCKDB_VERSION "v1.5.5" CACHE STRING "Pinned DuckDB release")
-set(
-  DUCKDB_REVISION
-  "d8cdaa33fda8df955cc76ef58a280f68f4cd43fa"
-  CACHE STRING
-  "Pinned DuckDB git revision"
-)
-set(BUILD_UNITTESTS OFF CACHE BOOL "" FORCE)
-set(BUILD_SHELL "${SQRAIL_BUILD_DUCKDB_SHELL}" CACHE BOOL "" FORCE)
-set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-set(BUILD_BENCHMARKS OFF CACHE BOOL "" FORCE)
-set(BUILD_EXTENSIONS "parquet;json" CACHE STRING "" FORCE)
-# DuckDB enables ASan and UBSan by default for Debug builds, but those flags are
-# scoped to its subdirectory and do not reach sqrail's final link step. Keep the
-# embedded engine's sanitizer switches off and let SQRAIL_ENABLE_SANITIZERS
-# instrument and link the entire process consistently.
-set(ENABLE_SANITIZER OFF CACHE BOOL "DuckDB sanitizer policy is managed by sqrail" FORCE)
-set(ENABLE_UBSAN OFF CACHE BOOL "DuckDB sanitizer policy is managed by sqrail" FORCE)
-set(ENABLE_THREAD_SANITIZER OFF CACHE BOOL "DuckDB sanitizer policy is managed by sqrail" FORCE)
-set(RELEASE_SANITIZER OFF CACHE BOOL "DuckDB sanitizer policy is managed by sqrail" FORCE)
+string(TOUPPER "${SQRAIL_DUCKDB_PROVIDER}" SQRAIL_DUCKDB_PROVIDER)
+if(NOT SQRAIL_DUCKDB_PROVIDER MATCHES "^(BUNDLED|SYSTEM)$")
+  message(FATAL_ERROR "SQRAIL_DUCKDB_PROVIDER must be BUNDLED or SYSTEM")
+endif()
 
-FetchContent_Declare(
-  duckdb
-  GIT_REPOSITORY "https://github.com/duckdb/duckdb.git"
-  GIT_TAG "${DUCKDB_REVISION}"
-  GIT_SHALLOW TRUE
-  GIT_PROGRESS TRUE
-)
-FetchContent_MakeAvailable(duckdb)
+if(SQRAIL_DUCKDB_PROVIDER STREQUAL "BUNDLED")
+  include(FetchContent)
 
-add_library(sqrail_json STATIC src/json.cpp)
-target_include_directories(sqrail_json PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
+  # Official sqrail releases deliberately pin one engine revision so their SQL
+  # behavior is reproducible. Distribution packages can instead select SYSTEM
+  # and track their packaged DuckDB dependency.
+  set(DUCKDB_VERSION "v1.5.5" CACHE STRING "Pinned DuckDB release")
+  set(
+    DUCKDB_REVISION
+    "d8cdaa33fda8df955cc76ef58a280f68f4cd43fa"
+    CACHE STRING
+    "Pinned DuckDB git revision"
+  )
+  set(BUILD_UNITTESTS OFF CACHE BOOL "" FORCE)
+  set(BUILD_SHELL "${SQRAIL_BUILD_DUCKDB_SHELL}" CACHE BOOL "" FORCE)
+  set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+  set(BUILD_BENCHMARKS OFF CACHE BOOL "" FORCE)
+  set(BUILD_EXTENSIONS "parquet;json" CACHE STRING "" FORCE)
+  # DuckDB enables ASan and UBSan by default for Debug builds, but those flags
+  # are scoped to its subdirectory and do not reach sqrail's final link step.
+  # Keep the embedded engine's switches off and let SQRAIL_ENABLE_SANITIZERS
+  # instrument and link the entire process consistently.
+  set(ENABLE_SANITIZER OFF CACHE BOOL "DuckDB sanitizer policy is managed by sqrail" FORCE)
+  set(ENABLE_UBSAN OFF CACHE BOOL "DuckDB sanitizer policy is managed by sqrail" FORCE)
+  set(ENABLE_THREAD_SANITIZER OFF CACHE BOOL "DuckDB sanitizer policy is managed by sqrail" FORCE)
+  set(RELEASE_SANITIZER OFF CACHE BOOL "DuckDB sanitizer policy is managed by sqrail" FORCE)
 
-add_executable(sqrail src/main.cpp)
-target_include_directories(sqrail SYSTEM PRIVATE "${duckdb_SOURCE_DIR}/src/include")
-target_link_libraries(sqrail PRIVATE sqrail_json)
-if(APPLE)
-  target_link_libraries(
-    sqrail
-    PRIVATE
+  FetchContent_Declare(
+    duckdb
+    GIT_REPOSITORY "https://github.com/duckdb/duckdb.git"
+    GIT_TAG "${DUCKDB_REVISION}"
+    GIT_SHALLOW TRUE
+    GIT_PROGRESS TRUE
+  )
+  FetchContent_MakeAvailable(duckdb)
+
+  set(SQRAIL_DUCKDB_INCLUDE_DIRS "${duckdb_SOURCE_DIR}/src/include")
+  if(APPLE)
+    set(
+      SQRAIL_DUCKDB_LIBRARIES
       duckdb_generated_extension_loader
       core_functions_extension
       parquet_extension
       json_extension
-  )
-else()
-  # GNU linkers resolve static archives from left to right. Put DuckDB before
-  # the generated extension loader; the extension targets add it again
-  # transitively to resolve symbols introduced by the extensions.
-  target_link_libraries(
-    sqrail
-    PRIVATE
+    )
+  else()
+    # GNU linkers resolve static archives from left to right. Put DuckDB before
+    # the generated extension loader; extension targets add it again
+    # transitively for symbols introduced by the extensions.
+    set(
+      SQRAIL_DUCKDB_LIBRARIES
       duckdb_static
       duckdb_generated_extension_loader
       core_functions_extension
       parquet_extension
       json_extension
-  )
+    )
+  endif()
+else()
+  if(SQRAIL_BUILD_DUCKDB_SHELL)
+    message(FATAL_ERROR "SQRAIL_BUILD_DUCKDB_SHELL requires SQRAIL_DUCKDB_PROVIDER=BUNDLED")
+  endif()
+
+  find_package(DuckDB CONFIG REQUIRED)
+  foreach(SQRAIL_REQUIRED_EXTENSION IN ITEMS core_functions parquet json)
+    if(NOT SQRAIL_REQUIRED_EXTENSION IN_LIST DuckDB_EXTENSIONS)
+      message(
+        FATAL_ERROR
+        "System DuckDB is missing required extension: ${SQRAIL_REQUIRED_EXTENSION}"
+      )
+    endif()
+  endforeach()
+  if(NOT TARGET duckdb)
+    message(FATAL_ERROR "System DuckDB package did not export the shared duckdb target")
+  endif()
+
+  set(SQRAIL_DUCKDB_INCLUDE_DIRS "${DuckDB_INCLUDE_DIRS}")
+  set(SQRAIL_DUCKDB_LIBRARIES duckdb)
+endif()
+
+add_library(sqrail_json STATIC src/json.cpp)
+target_include_directories(sqrail_json PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src")
+
+add_executable(sqrail src/main.cpp)
+target_include_directories(sqrail SYSTEM PRIVATE "${SQRAIL_DUCKDB_INCLUDE_DIRS}")
+target_link_libraries(sqrail PRIVATE sqrail_json ${SQRAIL_DUCKDB_LIBRARIES})
+if(SQRAIL_DUCKDB_PROVIDER STREQUAL "SYSTEM")
+  # Preserve non-default distribution prefixes (for example Linuxbrew) after
+  # `cmake --install` removes the build-tree RPATH.
+  set_property(TARGET sqrail PROPERTY INSTALL_RPATH_USE_LINK_PATH TRUE)
 endif()
 target_compile_definitions(
   sqrail
   PRIVATE
     SQRAIL_VERSION="${PROJECT_VERSION}"
-    SQRAIL_DUCKDB_VERSION="${DUCKDB_VERSION}"
 )
 
 function(sqrail_enable_project_warnings target)
@@ -273,15 +312,17 @@ install(
   DESTINATION "${CMAKE_INSTALL_DOCDIR}/benchmarks"
   COMPONENT sqrail
 )
-install(
-  DIRECTORY "${duckdb_SOURCE_DIR}/third_party/"
-  DESTINATION "${CMAKE_INSTALL_DOCDIR}/licenses/duckdb-third-party"
-  COMPONENT sqrail
-  FILES_MATCHING
-    PATTERN "LICENSE*"
-    PATTERN "COPYING*"
-    PATTERN "NOTICE*"
-)
+if(SQRAIL_DUCKDB_PROVIDER STREQUAL "BUNDLED")
+  install(
+    DIRECTORY "${duckdb_SOURCE_DIR}/third_party/"
+    DESTINATION "${CMAKE_INSTALL_DOCDIR}/licenses/duckdb-third-party"
+    COMPONENT sqrail
+    FILES_MATCHING
+      PATTERN "LICENSE*"
+      PATTERN "COPYING*"
+      PATTERN "NOTICE*"
+  )
+endif()
 
 if(SQRAIL_BUILD_TESTS)
   enable_testing()

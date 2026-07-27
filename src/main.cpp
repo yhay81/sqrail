@@ -984,7 +984,7 @@ int main(int argc, char **argv) {
 			return 0;
 		}
 		if (command == "--version" || command == "-V") {
-			std::cout << "sqrail " << SQRAIL_VERSION << " (DuckDB " << SQRAIL_DUCKDB_VERSION << ")\n";
+			std::cout << "sqrail " << SQRAIL_VERSION << " (DuckDB " << duckdb::DuckDB::LibraryVersion() << ")\n";
 			return 0;
 		}
 		if (command == "schema") {
