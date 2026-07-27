@@ -57,6 +57,11 @@ PROMPT_PATH_ROLES = {
     "success_stats": ("fact_parquet",),
 }
 
+TASK_SOURCE_ROLES = {
+    task: tuple(role for role in roles if role in ROLE_SOURCES)
+    for task, roles in PROMPT_PATH_ROLES.items()
+}
+
 EVALUATION_SOURCES = {
     "runner": Path(__file__).resolve(),
     "oracle": Path(__file__).with_name("agent_oracle.py").resolve(),
@@ -154,6 +159,13 @@ def prepare_session(arguments: argparse.Namespace) -> int:
     tasks = task_map(arguments.tasks)
     if arguments.task not in tasks:
         raise RunnerError(f"unknown task: {arguments.task}")
+    try:
+        prompt_path_roles = PROMPT_PATH_ROLES[arguments.task]
+        source_roles = TASK_SOURCE_ROLES[arguments.task]
+    except KeyError as error:
+        raise RunnerError(
+            f"task has no prompt-path contract: {arguments.task}"
+        ) from error
     if not arguments.sqrail.is_file() or not arguments.duckdb.is_file():
         raise RunnerError("sqrail and DuckDB executables must exist")
     data = arguments.data.resolve()
@@ -171,7 +183,8 @@ def prepare_session(arguments: argparse.Namespace) -> int:
     paths: dict[str, str] = {}
     sources: dict[str, str] = {}
     input_digests: dict[str, str] = {}
-    for role, source_relative in ROLE_SOURCES.items():
+    for role in source_roles:
+        source_relative = ROLE_SOURCES[role]
         source = data / source_relative
         if not source.is_file():
             raise RunnerError(f"dataset input is missing: {source_relative}")
@@ -203,12 +216,6 @@ def prepare_session(arguments: argparse.Namespace) -> int:
     if help_result.returncode != 0:
         raise RunnerError(f"cannot capture {arguments.arm} help")
 
-    try:
-        prompt_path_roles = PROMPT_PATH_ROLES[arguments.task]
-    except KeyError as error:
-        raise RunnerError(
-            f"task has no prompt-path contract: {arguments.task}"
-        ) from error
     path_lines = "\n".join(f"- {role}: {paths[role]}" for role in prompt_path_roles)
     wrapper_help = (
         "\nFor this DuckDB-only deadline task, the runner provides a built-in "

@@ -158,6 +158,21 @@ class AgentRunnerTest(unittest.TestCase):
             },
         )
 
+    def test_sessions_copy_only_task_inputs(self) -> None:
+        self.assertEqual(RUNNER.TASK_SOURCE_ROLES["schema_discovery"], ("fact_csv",))
+        self.assertEqual(
+            RUNNER.TASK_SOURCE_ROLES["join_aggregate"],
+            ("fact_parquet", "dim_parquet"),
+        )
+        self.assertEqual(
+            RUNNER.TASK_SOURCE_ROLES["schema_evolution"],
+            ("evolution_a_parquet", "evolution_b_parquet"),
+        )
+        for task, source_roles in RUNNER.TASK_SOURCE_ROLES.items():
+            with self.subTest(task=task):
+                self.assertTrue(source_roles)
+                self.assertTrue(set(source_roles).issubset(RUNNER.ROLE_SOURCES))
+
 
 if __name__ == "__main__":
     unittest.main()

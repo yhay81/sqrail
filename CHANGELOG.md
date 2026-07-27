@@ -56,6 +56,8 @@ versions follow semantic versioning.
   evaluator digests for later verification
 - the DuckDB timeout-recovery comparison now applies and verifies its exact
   10 ms deadline without requiring a platform `timeout` executable
+- artifact sessions now copy only the independent read-only inputs required by
+  their task instead of duplicating the full benchmark dataset
 
 ## [0.2.2] - 2026-07-27
 
