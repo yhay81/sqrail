@@ -15,7 +15,12 @@ ROOT = Path(__file__).resolve().parents[1]
 BENCHMARKS = ROOT / "benchmarks"
 sys.path.insert(0, str(BENCHMARKS))
 
-from agent_oracle import OracleError, verify_attempt  # noqa: E402
+from agent_oracle import (  # noqa: E402
+    OracleError,
+    duration_seconds,
+    requested_timeout,
+    verify_attempt,
+)
 
 
 TASKS_PATH = BENCHMARKS / "agent-tasks-v0.3.json"
@@ -239,6 +244,19 @@ class AgentOracleTest(unittest.TestCase):
                 Path(sys.executable),
                 Path(sys.executable),
             )
+
+    def test_timeout_duration_is_recomputed_from_recorded_arguments(self) -> None:
+        self.assertEqual(duration_seconds("10ms"), 0.01)
+        self.assertEqual(duration_seconds("0.01s"), 0.01)
+        self.assertIsNone(duration_seconds("--signal=TERM"))
+        duckdb_record = {
+            "invocations": [{"argv": ["timeout", "10ms", "duckdb", "-c", "SELECT 1"]}]
+        }
+        sqrail_record = {
+            "invocations": [{"argv": ["sqrail", "run", "--timeout=10ms", "SELECT 1"]}]
+        }
+        self.assertEqual(requested_timeout(duckdb_record, "duckdb"), 0.01)
+        self.assertEqual(requested_timeout(sqrail_record, "sqrail"), 0.01)
 
 
 if __name__ == "__main__":

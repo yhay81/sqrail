@@ -54,6 +54,8 @@ versions follow semantic versioning.
 - artifact-gate prompts now expose every oracle-specific requirement without
   advertising irrelevant output paths, and bind the runner, oracle, and
   evaluator digests for later verification
+- the DuckDB timeout-recovery comparison now applies and verifies its exact
+  10 ms deadline without requiring a platform `timeout` executable
 
 ## [0.2.2] - 2026-07-27
 

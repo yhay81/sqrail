@@ -87,6 +87,7 @@
         "duckdb_nonzero": true,
         "output_absent": true,
         "required_arguments": ["cross join"],
+        "timeout_seconds": 0.01,
         "max_wall_seconds": 5
       }
     },

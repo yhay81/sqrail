@@ -222,6 +222,12 @@ executes model-produced argument arrays without a shell. The independent
 oracle recomputes task results from the retained stdout, stderr, files,
 snapshots, dataset, and pinned binaries.
 
+For the DuckDB timeout-recovery arm, the runner interprets only the documented
+`["timeout", "10ms", "duckdb", ...]` command-plan form itself. This keeps the
+10 ms deadline portable and reproducible without depending on an unpinned
+platform `timeout` executable. The oracle independently checks the requested
+duration and the non-zero result.
+
 Prepare and execute each attempt with:
 
 ```sh

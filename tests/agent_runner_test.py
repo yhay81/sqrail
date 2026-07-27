@@ -81,6 +81,22 @@ class AgentRunnerTest(unittest.TestCase):
         with self.assertRaises(RUNNER.RunnerError):
             RUNNER.validate_candidate(candidate, "duckdb", "schema_discovery")
 
+    def test_timeout_wrapper_is_self_contained_and_bounded(self) -> None:
+        command, duration = RUNNER.unwrap_timeout(
+            ["gtimeout", "10ms", "/pinned/duckdb", "-c", "SELECT 1"]
+        )
+        self.assertEqual(command, ["/pinned/duckdb", "-c", "SELECT 1"])
+        self.assertEqual(duration, 0.01)
+        command, duration = RUNNER.unwrap_timeout(
+            ["timeout", "0.01s", "/pinned/duckdb", "-c", "SELECT 1"]
+        )
+        self.assertEqual(command[0], "/pinned/duckdb")
+        self.assertEqual(duration, 0.01)
+        with self.assertRaises(RUNNER.RunnerError):
+            RUNNER.unwrap_timeout(["timeout", "6s", "/pinned/duckdb"])
+        with self.assertRaises(RUNNER.RunnerError):
+            RUNNER.unwrap_timeout(["timeout", "--signal=TERM", "/pinned/duckdb"])
+
     def test_input_copy_is_independent_and_read_only(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

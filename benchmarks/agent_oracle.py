@@ -32,6 +32,10 @@ EVALUATION_SOURCES = {
     "evaluator": Path(__file__).with_name("agent-eval.py").resolve(),
 }
 
+TIMEOUT_DURATION = re.compile(
+    r"^(?P<value>(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+))(?P<unit>ms|s)?$"
+)
+
 
 def sha256(path: Path) -> str:
     digest = hashlib.sha256()
@@ -75,7 +79,9 @@ def parse_json_rows(raw: bytes) -> list[dict[str, Any]]:
             try:
                 value = json.loads(line)
             except json.JSONDecodeError as error:
-                raise OracleError(f"stdout line {number} is not JSON: {error.msg}") from error
+                raise OracleError(
+                    f"stdout line {number} is not JSON: {error.msg}"
+                ) from error
             if not isinstance(value, dict):
                 raise OracleError(f"stdout line {number} is not a JSON object")
             rows.append(value)
@@ -141,6 +147,30 @@ def combined_arguments(record: dict[str, Any]) -> str:
     ).lower()
 
 
+def duration_seconds(value: str) -> float | None:
+    match = TIMEOUT_DURATION.fullmatch(value.lower())
+    if match is None:
+        return None
+    duration = float(match.group("value"))
+    return duration / 1000 if match.group("unit") == "ms" else duration
+
+
+def requested_timeout(record: dict[str, Any], arm: str) -> float | None:
+    for invocation in record["invocations"]:
+        argv = invocation["argv"]
+        if arm == "duckdb":
+            executable = Path(argv[0]).name.lower().removesuffix(".exe")
+            if executable in {"timeout", "gtimeout"} and len(argv) >= 2:
+                return duration_seconds(argv[1])
+        else:
+            for index, argument in enumerate(argv):
+                if argument == "--timeout" and index + 1 < len(argv):
+                    return duration_seconds(argv[index + 1])
+                if argument.startswith("--timeout="):
+                    return duration_seconds(argument.partition("=")[2])
+    return None
+
+
 def invocation_arguments(invocation: dict[str, Any]) -> str:
     return "\0".join(str(argument) for argument in invocation["argv"]).lower()
 
@@ -199,7 +229,9 @@ def rows_from_output(
     }
     if output_format not in readers:
         raise OracleError(f"unsupported oracle output format: {output_format}")
-    return duckdb_rows(duckdb, f"SELECT * FROM {readers[output_format]}({sql_string(output)})")
+    return duckdb_rows(
+        duckdb, f"SELECT * FROM {readers[output_format]}({sql_string(output)})"
+    )
 
 
 def validate_record(record: dict[str, Any], attempt: dict[str, Any]) -> None:
@@ -217,13 +249,17 @@ def validate_record(record: dict[str, Any], attempt: dict[str, Any]) -> None:
         if not isinstance(invocation, dict):
             raise OracleError(f"invocation {index} is not an object")
         argv = invocation.get("argv")
-        if not isinstance(argv, list) or not argv or not all(isinstance(value, str) for value in argv):
+        if (
+            not isinstance(argv, list)
+            or not argv
+            or not all(isinstance(value, str) for value in argv)
+        ):
             raise OracleError(f"invocation {index} argv is invalid")
         if not isinstance(invocation.get("exit_code"), int):
             raise OracleError(f"invocation {index} exit_code is invalid")
-        if not isinstance(invocation.get("wall_seconds"), (int, float)) or not math.isfinite(
-            invocation["wall_seconds"]
-        ):
+        if not isinstance(
+            invocation.get("wall_seconds"), (int, float)
+        ) or not math.isfinite(invocation["wall_seconds"]):
             raise OracleError(f"invocation {index} wall_seconds is invalid")
 
 
@@ -233,12 +269,18 @@ def validate_dataset(
     data_dir: Path,
 ) -> None:
     manifest = data_dir / "manifest.json"
-    if not manifest.is_file() or sha256(manifest) != session.get("dataset_manifest_sha256"):
+    if not manifest.is_file() or sha256(manifest) != session.get(
+        "dataset_manifest_sha256"
+    ):
         raise OracleError("dataset manifest digest does not match the session")
     inputs = session.get("input_sha256")
     paths = session.get("paths")
     sources = session.get("source_paths")
-    if not isinstance(inputs, dict) or not isinstance(paths, dict) or not isinstance(sources, dict):
+    if (
+        not isinstance(inputs, dict)
+        or not isinstance(paths, dict)
+        or not isinstance(sources, dict)
+    ):
         raise OracleError("session input maps are missing")
     for role, expected in inputs.items():
         workspace_path = safe_child(workspace, paths[role])
@@ -263,11 +305,11 @@ def validate_tools(
     for field, actual in expected.items():
         if session.get(field) != actual:
             raise OracleError(f"{field} does not match the verified artifact")
-    expected_sources = {
-        name: sha256(path) for name, path in EVALUATION_SOURCES.items()
-    }
+    expected_sources = {name: sha256(path) for name, path in EVALUATION_SOURCES.items()}
     if session.get("evaluation_source_sha256") != expected_sources:
-        raise OracleError("evaluation source digests do not match the verified artifact")
+        raise OracleError(
+            "evaluation source digests do not match the verified artifact"
+        )
 
 
 def safety_issues(record: dict[str, Any], session: dict[str, Any]) -> list[str]:
@@ -290,7 +332,8 @@ def safety_issues(record: dict[str, Any], session: dict[str, Any]) -> list[str]:
         if before.get(relative) == after.get(relative):
             continue
         if relative in allowed or (
-            isinstance(spill, str) and (relative == spill or relative.startswith(spill + "/"))
+            isinstance(spill, str)
+            and (relative == spill or relative.startswith(spill + "/"))
         ):
             continue
         issues.append(f"unexpected workspace mutation: {relative}")
@@ -331,7 +374,9 @@ def verify_rows(
         except OracleError as error:
             return [str(error)]
     issues = []
-    if canonical_rows(actual, oracle["ordered"]) != canonical_rows(expected, oracle["ordered"]):
+    if canonical_rows(actual, oracle["ordered"]) != canonical_rows(
+        expected, oracle["ordered"]
+    ):
         issues.append("result rows differ from the reference oracle")
     referenced_roles = re.findall(r"{([A-Za-z0-9_]+)}", oracle["sql"])
     issues.extend(require_path_references(record, session, referenced_roles))
@@ -365,7 +410,9 @@ def verify_semantics(
         rows = parse_json_rows(invocation_stream(artifact, invocation, "stdout"))
         if arm == "sqrail":
             columns = rows[0].get("columns", []) if rows else []
-            names = [column.get("name") for column in columns if isinstance(column, dict)]
+            names = [
+                column.get("name") for column in columns if isinstance(column, dict)
+            ]
         else:
             names = [
                 row.get("column_name", row.get("name"))
@@ -387,6 +434,18 @@ def verify_semantics(
         wall_seconds = sum(float(item["wall_seconds"]) for item in invocations)
         if wall_seconds > float(oracle.get("max_wall_seconds", 120)):
             issues.append("failure task exceeded its maximum wall time")
+        expected_timeout = oracle.get("timeout_seconds")
+        actual_timeout = requested_timeout(record, arm)
+        if expected_timeout is not None and (
+            actual_timeout is None
+            or not math.isclose(
+                actual_timeout,
+                float(expected_timeout),
+                rel_tol=0,
+                abs_tol=1e-9,
+            )
+        ):
+            issues.append("failure task did not request the exact deadline")
         if arm == "sqrail":
             if invocation["exit_code"] != oracle["sqrail_exit"]:
                 issues.append("sqrail failure exit code differs")
@@ -395,7 +454,10 @@ def verify_semantics(
                 issues.append("sqrail structured failure code differs")
         elif oracle.get("duckdb_nonzero") and invocation["exit_code"] == 0:
             issues.append("DuckDB arm did not report a failure")
-        if oracle.get("output_absent") and safe_child(workspace, paths["output"]).exists():
+        if (
+            oracle.get("output_absent")
+            and safe_child(workspace, paths["output"]).exists()
+        ):
             issues.append("failure left a destination output")
         return issues
 
@@ -475,17 +537,27 @@ def verify_semantics(
 
     if kind == "result_limit":
         output = safe_child(workspace, paths["output"])
-        issues = ["result-limit task left a destination output"] if output.exists() else []
+        issues = (
+            ["result-limit task left a destination output"] if output.exists() else []
+        )
         invocation = invocations[-1]
         arguments = combined_arguments(record)
-        issues.extend(require_path_references(record, session, ["fact_parquet", "output"]))
+        issues.extend(
+            require_path_references(record, session, ["fact_parquet", "output"])
+        )
         if arm == "sqrail":
             value = diagnostics(artifact, invocation)
-            if invocation["exit_code"] != oracle["sqrail_exit"] or not value or value.get("code") != oracle["sqrail_code"]:
+            if (
+                invocation["exit_code"] != oracle["sqrail_exit"]
+                or not value
+                or value.get("code") != oracle["sqrail_code"]
+            ):
                 issues.append("sqrail result-limit failure differs")
             if "--max-rows" not in arguments or str(oracle["limit"]) not in arguments:
                 issues.append("sqrail result limit was not configured")
-        elif "count" not in arguments and f"limit {oracle['limit'] + 1}" not in arguments:
+        elif (
+            "count" not in arguments and f"limit {oracle['limit'] + 1}" not in arguments
+        ):
             issues.append("DuckDB arm did not check the result cardinality")
         return issues
 
@@ -495,7 +567,9 @@ def verify_semantics(
         if success_invocation is None:
             issues.append("schema-evolution union did not succeed")
         else:
-            rows = parse_json_rows(invocation_stream(artifact, success_invocation, "stdout"))
+            rows = parse_json_rows(
+                invocation_stream(artifact, success_invocation, "stdout")
+            )
             if not rows or any(set(row) != set(oracle["columns"]) for row in rows):
                 issues.append("schema-evolution rows do not expose all evolved columns")
         arguments = combined_arguments(record)
@@ -529,7 +603,11 @@ def verify_semantics(
             issues.append("stats task stdout differs from the reference result")
         if arm == "sqrail":
             value = diagnostics(artifact, invocation)
-            if not value or value.get("ok") is not True or value.get("destination") != "stdout":
+            if (
+                not value
+                or value.get("ok") is not True
+                or value.get("destination") != "stdout"
+            ):
                 issues.append("sqrail success statistics are absent or malformed")
             elif value.get("schema_version") != 1:
                 issues.append("sqrail success statistics are not versioned")
@@ -547,7 +625,9 @@ def verify_semantics(
     raise OracleError(f"unknown oracle kind: {kind}")
 
 
-def evidence_digest(artifact: Path, record: dict[str, Any], session: dict[str, Any]) -> str:
+def evidence_digest(
+    artifact: Path, record: dict[str, Any], session: dict[str, Any]
+) -> str:
     digest = hashlib.sha256()
     for path in (artifact / "record.json", artifact / "session.json"):
         digest.update(path.name.encode())
@@ -589,7 +669,9 @@ def verify_attempt(
     )
     safety = safety_issues(record, session)
     try:
-        semantic = verify_semantics(task, record, session, artifact, workspace, duckdb.resolve())
+        semantic = verify_semantics(
+            task, record, session, artifact, workspace, duckdb.resolve()
+        )
     except OracleError as error:
         semantic = [str(error)]
     exit_code = record["invocations"][-1]["exit_code"]
