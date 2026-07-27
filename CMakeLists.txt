@@ -51,7 +51,10 @@ if(MSVC)
     "Use the self-contained static MSVC runtime"
     FORCE
   )
-  add_compile_options(/utf-8)
+  # MSVC otherwise reports __cplusplus as C++98 even in /std:c++20 mode.
+  # DuckDB uses that macro to select std::uncaught_exceptions(), which is the
+  # only available overload in the current Windows Arm64 standard library.
+  add_compile_options(/utf-8 /Zc:__cplusplus)
 endif()
 
 string(TOUPPER "${SQRAIL_PGO_MODE}" SQRAIL_PGO_MODE)
