@@ -115,11 +115,6 @@ if(SQRAIL_ENABLE_HARDENING AND CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
     )
   endif()
 endif()
-if(SQRAIL_ENABLE_HARDENING AND MSVC)
-  add_compile_options(/sdl /guard:cf)
-  add_link_options(/DYNAMICBASE /NXCOMPAT /guard:cf)
-endif()
-
 if(SQRAIL_ENABLE_SANITIZERS)
   if(NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
     message(FATAL_ERROR "SQRAIL_ENABLE_SANITIZERS requires Clang or GCC")
@@ -297,14 +292,29 @@ function(sqrail_enable_project_warnings target)
   endif()
 endfunction()
 
+function(sqrail_enable_project_hardening target)
+  if(SQRAIL_ENABLE_HARDENING AND MSVC)
+    # Keep /sdl scoped to sqrail. Applying it directory-wide also promotes
+    # warnings inside the pinned DuckDB dependency to errors; MSVC ARM64 emits
+    # C4146 for valid unsigned arithmetic in DuckDB.
+    target_compile_options("${target}" PRIVATE /sdl /guard:cf)
+  endif()
+endfunction()
+
 sqrail_enable_project_warnings(sqrail_json)
 sqrail_enable_project_warnings(sqrail_cli)
 sqrail_enable_project_warnings(sqrail)
+sqrail_enable_project_hardening(sqrail_json)
+sqrail_enable_project_hardening(sqrail_cli)
+sqrail_enable_project_hardening(sqrail)
 
 if(SQRAIL_ENABLE_HARDENING AND CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
   if(UNIX AND NOT APPLE)
     target_link_options(sqrail PRIVATE -Wl,-z,relro,-z,now)
   endif()
+endif()
+if(SQRAIL_ENABLE_HARDENING AND MSVC)
+  target_link_options(sqrail PRIVATE /DYNAMICBASE /NXCOMPAT /guard:cf)
 endif()
 
 if(SQRAIL_ENABLE_CLANG_TIDY)
