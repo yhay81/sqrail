@@ -225,4 +225,4 @@ test "$("$sqrail_bin" run -t race="$test_dir/race.parquet" \
 agent_help=$("$sqrail_bin" --agent-help)
 printf '%s\n' "$agent_help" | grep -q 'SQL is one SELECT'
 test "$(printf '%s\n' "$agent_help" | wc -w | tr -d ' ')" -le 130
-"$sqrail_bin" --version | grep -q '^sqrail 0.2.1 (DuckDB v1.5.5)$'
+"$sqrail_bin" --version | grep -Eq '^sqrail 0\.2\.1 \(DuckDB v[0-9]+\.[0-9]+\.[0-9]+([.-][^)]*)?\)$'

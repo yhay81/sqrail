@@ -88,16 +88,32 @@ Requirements:
 - CMake 3.25+
 - Ninja
 - a C++20 compiler
-- Git or network access during the first configure
 - Python 3 for the smoke-test JSON assertions
+- Git and network access for the first `BUNDLED` configure, or an installed
+  DuckDB CMake package for a `SYSTEM` build
 
-DuckDB v1.5.5 is fetched at an immutable commit during configure. Only one query
-engine is linked into the resulting executable.
+The default `BUNDLED` provider fetches DuckDB v1.5.5 at an immutable commit
+during the first configure and statically links it. This is the provider used
+for official sqrail releases:
 
 ```sh
 cmake --workflow --preset dev
 cmake --workflow --preset release
 ```
+
+Distribution packages can build entirely from the release source archive and
+link an installed DuckDB package instead. The package must export DuckDB's CMake
+configuration with the `core_functions`, `parquet`, and `json` extensions:
+
+```sh
+CMAKE_PREFIX_PATH=/path/to/duckdb cmake --workflow --preset system
+cmake --install out/build/system --prefix out/install/system --component sqrail
+```
+
+`CMAKE_PREFIX_PATH` may be set to the DuckDB package prefix when it is outside
+the platform's default search path. The system provider links DuckDB's shared
+library, reports its actual runtime version, and does not install a second copy
+of DuckDB's bundled licences.
 
 The repository also supplies `strict`, `sanitize`, `fuzz`, `native`,
 `pgo-generate`, and `pgo-use` presets. The pinned Ubuntu 24.04/LLVM 18
@@ -154,5 +170,6 @@ DuckDB engine is faster than itself.
 
 ## License
 
-MIT. Release binaries statically link DuckDB; see
+MIT. Official release binaries statically link DuckDB; distribution packages
+may link a packaged DuckDB shared library. See
 [Third-party notices](THIRD_PARTY_NOTICES.md).
