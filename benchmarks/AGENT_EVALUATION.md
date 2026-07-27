@@ -7,11 +7,11 @@ engine than DuckDB.
 
 ## Experimental design
 
-The primary experiment is a 2 × 2 crossed design:
+The current experiment is a 3 × 2 crossed design:
 
 | Factor | Levels |
 |---|---|
-| Agent | Codex with `gpt-5.6-sol`; Claude Code with `claude-fable-5` |
+| Agent | Codex with `gpt-5.6-luna`; Claude Code with `claude-sonnet-5`; Antigravity CLI (`agy`) with `Gemini 3.6 Flash (High)` |
 | Data CLI | sqrail; DuckDB CLI built from the same DuckDB version |
 
 Every agent, tool, task, and repetition runs in a fresh session and working
@@ -73,7 +73,7 @@ BENCH_ROWS=1000000 BENCH_DIM_ROWS=100000 \
   build-agent-eval/_deps/duckdb-build/duckdb
 ```
 
-Before spending model budget, materialize and inspect the randomized 160-run
+Before spending model budget, materialize and inspect the randomized 240-run
 plan:
 
 ```sh
@@ -82,6 +82,12 @@ python3 benchmarks/agent-eval/run.py \
   --results-dir benchmark-results-agent-plan \
   --sqrail-bin build-agent-eval/sqrail \
   --duckdb-bin build-agent-eval/_deps/duckdb-build/duckdb \
+  --agents codex,claude,gemini \
+  --codex-model gpt-5.6-luna \
+  --codex-effort high \
+  --claude-model claude-sonnet-5 \
+  --claude-effort high \
+  --agy-model 'Gemini 3.6 Flash (High)' \
   --repetitions 5 \
   --plan-only
 ```
@@ -94,10 +100,13 @@ python3 benchmarks/agent-eval/run.py \
   --results-dir benchmark-results-agent \
   --sqrail-bin build-agent-eval/sqrail \
   --duckdb-bin build-agent-eval/_deps/duckdb-build/duckdb \
-  --codex-model gpt-5.6-sol \
-  --codex-effort xhigh \
-  --claude-model fable \
-  --claude-effort max \
+  --agents codex,claude,gemini \
+  --codex-model gpt-5.6-luna \
+  --codex-effort high \
+  --claude-model claude-sonnet-5 \
+  --claude-effort high \
+  --claude-max-budget-usd 1.0 \
+  --agy-model 'Gemini 3.6 Flash (High)' \
   --repetitions 5
 ```
 
@@ -107,9 +116,12 @@ and any changed model, prompt, help, dataset, limit, or schedule causes a hard
 failure instead of silently mixing cohorts.
 
 The Claude CLI reports the resolved model identifier in each transcript; the
-runner records that value rather than assuming the alias stayed fixed. Both
-agent CLIs must already be authenticated. The runner never reads or records
-credentials.
+runner records that value rather than assuming the alias stayed fixed. Agy
+records the selected Gemini model label and shell calls in its structured
+Antigravity transcript; the runner copies that transcript for protocol
+auditing and removes the separate runtime log, which can contain account
+metadata. All selected agent CLIs must already be authenticated. The runner
+never reads or records credentials.
 
 A one-repetition, smaller-data run is useful only as a harness pilot:
 
@@ -124,6 +136,12 @@ python3 benchmarks/agent-eval/run.py \
   --results-dir benchmark-results-agent-pilot \
   --sqrail-bin build-agent-eval/sqrail \
   --duckdb-bin build-agent-eval/_deps/duckdb-build/duckdb \
+  --agents codex,claude,gemini \
+  --codex-model gpt-5.6-luna \
+  --codex-effort high \
+  --claude-model claude-sonnet-5 \
+  --claude-effort high \
+  --agy-model 'Gemini 3.6 Flash (High)' \
   --repetitions 1
 ```
 
@@ -136,7 +154,8 @@ Each run retains:
 
 - the exact prompt, opaque condition, randomized schedule, and seed;
 - agent and data-tool CLI versions, resolved model ID, and reasoning effort;
-- raw agent event transcript and runner stderr;
+- raw agent event transcript (including Agy's structured Antigravity
+  transcript) and runner stderr;
 - input/output token counts when the provider reports them;
 - wall time, agent exit, timeout state, help calls, and data-tool calls;
 - artifact byte counts and SHA-256 digests;
@@ -148,10 +167,10 @@ hard-linked when possible and checked byte-for-byte after every run.
 `SUMMARY.md` are sufficient to audit the aggregate result. Preserve the
 generated dataset manifest and the exact source commit. `environment.json`
 binds resume compatibility to SHA-256 digests of the runner, launcher, task
-corpus, all dataset files, both data CLIs, and both agent CLIs. The generated
-summary reports overall and per-task rates, 95% Wilson intervals, paired outcome
-counts, and the exact McNemar test for discordant sqrail/DuckDB outcomes.
-Provider cost is reported only when the CLI supplies it.
+corpus, all dataset files, both data CLIs, and every selected agent CLI. The
+generated summary reports overall and per-task rates, 95% Wilson intervals,
+paired outcome counts, and the exact McNemar test for discordant sqrail/DuckDB
+outcomes. Provider cost is reported only when the CLI supplies it.
 
 An attempt succeeds only when the final artifact passes the hidden row-count,
 logical-checksum, ordering, resource, exit-code, diagnostic, and preservation

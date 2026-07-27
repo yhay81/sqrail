@@ -96,6 +96,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--claude-effort", default="max")
     parser.add_argument("--claude-max-budget-usd", type=float, default=2.0)
     parser.add_argument("--claude-max-turns", type=int, default=16)
+    parser.add_argument("--agy-bin", type=pathlib.Path, default=pathlib.Path("agy"))
+    parser.add_argument("--agy-model", default="Gemini 3.6 Flash (High)")
+    parser.add_argument(
+        "--agy-data-dir",
+        type=pathlib.Path,
+        default=pathlib.Path("~/.gemini/antigravity-cli"),
+    )
     parser.add_argument("--plan-only", action="store_true")
     parser.add_argument("--resume", action="store_true")
     return parser.parse_args()
@@ -535,6 +542,8 @@ def agent_command(
     prompt: str,
     codex_bin: pathlib.Path,
     claude_bin: pathlib.Path,
+    agy_bin: pathlib.Path,
+    agy_log_path: pathlib.Path,
 ) -> list[str]:
     if agent == "codex":
         return [
@@ -555,30 +564,44 @@ def agent_command(
             "--json",
             prompt,
         ]
+    if agent == "claude":
+        return [
+            str(claude_bin),
+            "-p",
+            "--safe-mode",
+            "--no-session-persistence",
+            "--setting-sources",
+            "",
+            "--tools",
+            "Bash",
+            "--allowedTools",
+            "Bash",
+            "--permission-mode",
+            "bypassPermissions",
+            "--model",
+            args.claude_model,
+            "--effort",
+            args.claude_effort,
+            "--max-turns",
+            str(args.claude_max_turns),
+            "--max-budget-usd",
+            str(args.claude_max_budget_usd),
+            "--output-format",
+            "stream-json",
+            "--verbose",
+            prompt,
+        ]
     return [
-        str(claude_bin),
-        "-p",
-        "--safe-mode",
-        "--no-session-persistence",
-        "--setting-sources",
-        "",
-        "--tools",
-        "Bash",
-        "--allowedTools",
-        "Bash",
-        "--permission-mode",
-        "bypassPermissions",
+        str(agy_bin),
+        "--new-project",
+        "--dangerously-skip-permissions",
         "--model",
-        args.claude_model,
-        "--effort",
-        args.claude_effort,
-        "--max-turns",
-        str(args.claude_max_turns),
-        "--max-budget-usd",
-        str(args.claude_max_budget_usd),
-        "--output-format",
-        "stream-json",
-        "--verbose",
+        args.agy_model,
+        "--print-timeout",
+        f"{args.max_seconds}s",
+        "--log-file",
+        str(agy_log_path),
+        "--print",
         prompt,
     ]
 
@@ -616,6 +639,19 @@ def extract_commands(events: list[dict[str, Any]]) -> list[str]:
                 commands.append(" ".join(str(part) for part in command))
             elif isinstance(command, str):
                 commands.append(command)
+        tool_calls = event.get("tool_calls")
+        if isinstance(tool_calls, list):
+            for tool_call in tool_calls:
+                if not isinstance(tool_call, dict):
+                    continue
+                if tool_call.get("name") != "run_command":
+                    continue
+                tool_args = tool_call.get("args")
+                if not isinstance(tool_args, dict):
+                    continue
+                command_line = tool_args.get("CommandLine")
+                if isinstance(command_line, str):
+                    commands.append(command_line)
         message = event.get("message")
         if not isinstance(message, dict):
             continue
@@ -665,6 +701,40 @@ def extract_reported_model(events: list[dict[str, Any]], configured: str) -> str
             if isinstance(model, str):
                 return model
     return configured
+
+
+def configured_model(args: argparse.Namespace, agent: str) -> str:
+    if agent == "codex":
+        return args.codex_model
+    if agent == "claude":
+        return args.claude_model
+    return args.agy_model
+
+
+def read_agy_transcript(
+    log_path: pathlib.Path, data_dir: pathlib.Path
+) -> tuple[str, str | None]:
+    if not log_path.is_file():
+        return "", None
+    log_text = log_path.read_text(encoding="utf-8", errors="replace")
+    conversation_ids = re.findall(
+        r"Created conversation ([0-9a-fA-F-]{36})", log_text
+    )
+    if not conversation_ids:
+        return "", None
+    conversation_id = conversation_ids[-1]
+    transcript_path = (
+        data_dir
+        / "brain"
+        / conversation_id
+        / ".system_generated"
+        / "logs"
+        / "transcript_full.jsonl"
+    )
+    if not transcript_path.is_file():
+        return "", conversation_id
+    transcript = transcript_path.read_text(encoding="utf-8", errors="replace")
+    return transcript, conversation_id
 
 
 def read_invocations(path: pathlib.Path) -> list[list[str]]:
@@ -1241,7 +1311,13 @@ def validate_inputs(
     agents: list[str],
     arms: list[str],
     tasks: list[str],
-) -> tuple[pathlib.Path, pathlib.Path, pathlib.Path, pathlib.Path]:
+) -> tuple[
+    pathlib.Path,
+    pathlib.Path,
+    pathlib.Path,
+    pathlib.Path,
+    pathlib.Path,
+]:
     if args.repetitions <= 0:
         raise EvaluationError("--repetitions must be positive")
     if args.max_seconds <= 0:
@@ -1258,11 +1334,17 @@ def validate_inputs(
     claude_bin = (
         resolve_executable(args.claude_bin) if "claude" in agents else pathlib.Path()
     )
+    agy_bin = (
+        resolve_executable(args.agy_bin) if "gemini" in agents else pathlib.Path()
+    )
+    agy_data_dir = args.agy_data_dir.expanduser().resolve()
+    if "gemini" in agents and not agy_data_dir.is_dir():
+        raise EvaluationError(f"Antigravity data directory is missing: {agy_data_dir}")
     if not arms:
         raise EvaluationError("at least one arm is required")
     if not tasks:
         raise EvaluationError("at least one task is required")
-    return sqrail_bin, duckdb_bin, codex_bin, claude_bin
+    return sqrail_bin, duckdb_bin, codex_bin, claude_bin, agy_bin
 
 
 def comparable_environment(environment: dict[str, Any]) -> dict[str, Any]:
@@ -1310,10 +1392,10 @@ def main() -> int:
     corpus_ids = tuple(task.get("id") for task in corpus.get("tasks", []))
     if corpus_ids != TASK_IDS:
         raise EvaluationError("runner task order does not match agent-tasks.json")
-    agents = split_choices(args.agents, {"codex", "claude"}, "agents")
+    agents = split_choices(args.agents, {"codex", "claude", "gemini"}, "agents")
     arms = split_choices(args.arms, {"sqrail", "duckdb"}, "arms")
     tasks = split_choices(args.tasks, set(TASK_IDS), "tasks")
-    sqrail_bin, duckdb_bin, codex_bin, claude_bin = validate_inputs(
+    sqrail_bin, duckdb_bin, codex_bin, claude_bin, agy_bin = validate_inputs(
         args, agents, arms, tasks
     )
 
@@ -1366,6 +1448,11 @@ def main() -> int:
                 "max_budget_usd_per_run": args.claude_max_budget_usd,
                 "max_turns": args.claude_max_turns,
             },
+            "gemini": {
+                "configured": args.agy_model,
+                "effort": "encoded in the configured Agy model label",
+                "runtime": "agy",
+            },
         },
         "runner_versions": {
             "codex": tool_version(codex_bin, "--version")
@@ -1373,6 +1460,9 @@ def main() -> int:
             else None,
             "claude": tool_version(claude_bin, "--version")
             if "claude" in agents
+            else None,
+            "agy": tool_version(agy_bin, "--version")
+            if "gemini" in agents
             else None,
         },
         "source": {
@@ -1385,6 +1475,7 @@ def main() -> int:
             "duckdb": sha256_file(duckdb_bin),
             "codex": sha256_file(codex_bin) if "codex" in agents else None,
             "claude": sha256_file(claude_bin) if "claude" in agents else None,
+            "agy": sha256_file(agy_bin) if "gemini" in agents else None,
         },
         "concealed_tool_versions": {
             "sqrail": tool_version(sqrail_bin, "--version"),
@@ -1524,9 +1615,12 @@ def main() -> int:
         )
         help_path = private / "help.txt"
         log_path = private / "invocations.log"
+        agy_log_path = private / "agy.log"
         help_path.write_text(help_by_arm[arm], encoding="utf-8")
         help_path.chmod(0o400)
         log_path.touch(mode=0o600)
+        if run["agent"] == "gemini":
+            agy_log_path.touch(mode=0o600)
         prompt = full_prompt(run["task"], names)
         (run_dir / "prompt.txt").write_text(prompt, encoding="utf-8")
         target = sqrail_bin if arm == "sqrail" else duckdb_bin
@@ -1547,6 +1641,8 @@ def main() -> int:
             prompt=prompt,
             codex_bin=codex_bin,
             claude_bin=claude_bin,
+            agy_bin=agy_bin,
+            agy_log_path=agy_log_path,
         )
         agent_env = dict(os.environ)
         agent_env["PATH"] = "/usr/bin:/bin:/usr/sbin:/sbin"
@@ -1563,14 +1659,22 @@ def main() -> int:
             if spill_thread is not None:
                 spill_thread.join(timeout=2)
             private.chmod(0o700)
-        (run_dir / "transcript.jsonl").write_text(stdout, encoding="utf-8")
+        transcript = stdout
+        agy_conversation_id = None
+        if run["agent"] == "gemini":
+            (run_dir / "agent-stdout.txt").write_text(stdout, encoding="utf-8")
+            transcript, agy_conversation_id = read_agy_transcript(
+                agy_log_path, args.agy_data_dir.expanduser().resolve()
+            )
+            if agy_log_path.is_file():
+                agy_log_path.unlink()
+        (run_dir / "transcript.jsonl").write_text(transcript, encoding="utf-8")
         (run_dir / "runner-stderr.txt").write_text(stderr, encoding="utf-8")
-        events = read_events(stdout)
+        events = read_events(transcript)
         commands = extract_commands(events)
         usage = extract_usage(events)
         reported_model = extract_reported_model(
-            events,
-            args.codex_model if run["agent"] == "codex" else args.claude_model,
+            events, configured_model(args, run["agent"])
         )
         invocations = read_invocations(log_path)
         protocol_reasons = sorted(
@@ -1606,9 +1710,8 @@ def main() -> int:
         record = {
             **run,
             "model": reported_model,
-            "configured_model": (
-                args.codex_model if run["agent"] == "codex" else args.claude_model
-            ),
+            "configured_model": configured_model(args, run["agent"]),
+            "agy_conversation_id": agy_conversation_id,
             "success": success,
             "safety_violation": safety_violation,
             "protocol_violation": protocol_violation,
