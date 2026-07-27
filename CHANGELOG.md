@@ -5,6 +5,28 @@ versions follow semantic versioning.
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-07-27
+
+### Added
+
+- a 12-workload benchmark matrix across scans, aggregations, joins, sorting,
+  distinct, windows, and streaming format conversion
+- bounded multi-memory benchmark runs, generation capacity guards, and an
+  eight-task agent evaluation protocol
+- a CI developer build that verifies the final executable link step
+
+### Changed
+
+- strict JSON streaming to read DuckDB vectors directly, reducing 10M-row
+  Parquet-to-JSONL elapsed time by 63% while retaining RFC 8259 normalization
+- the development container to the current major C++ image definition
+- GitHub Pages actions to their current major releases
+
+### Fixed
+
+- sanitizer ownership between sqrail and embedded DuckDB so debug and
+  sanitizer builds instrument and link the complete process consistently
+
 ## [0.2.0] - 2026-07-26
 
 ### Added
@@ -40,5 +62,7 @@ versions follow semantic versioning.
 - Linux and macOS release archives for x86-64 and Arm64
 - SHA-256 checksums and build-provenance attestations
 
+[Unreleased]: https://github.com/yhay81/sqrail/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/yhay81/sqrail/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/yhay81/sqrail/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/yhay81/sqrail/releases/tag/v0.1.0

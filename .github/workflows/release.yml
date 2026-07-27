@@ -61,6 +61,8 @@ jobs:
           ${STRIP_COMMAND} "dist/${package_name}/bin/sqrail"
           "dist/${package_name}/bin/sqrail" --version
           test -f "dist/${package_name}/share/doc/sqrail/THIRD_PARTY_NOTICES.md"
+          test -f "dist/${package_name}/share/doc/sqrail/benchmarks/AGENT_EVALUATION.md"
+          test -f "dist/${package_name}/share/doc/sqrail/benchmarks/agent-tasks.json"
           test -f "dist/${package_name}/share/doc/sqrail/licenses/duckdb-third-party/zstd/LICENSE"
           test "$(find "dist/${package_name}" -type f \( -name '*.a' -o -name '*.h' -o -name '*.hpp' \) | wc -l)" -eq 0
           if [ "$(uname -s)" = Linux ]; then
