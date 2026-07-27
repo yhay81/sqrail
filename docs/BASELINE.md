@@ -113,3 +113,28 @@ The spill sampler runs every 10 ms, so its maximum is a lower bound. DuckDB's
 memory setting limits its buffer manager rather than total process RSS. The
 committed `run-out-of-core.sh` harness refuses to replace results and validates
 the output row count and logical checksum.
+
+## v0.2.1 strict JSON streaming optimization
+
+The expanded matrix exposed a frontend bottleneck that query-engine tuning
+cannot fix: converting 10,000,000 Parquet rows to strict JSONL spent most of its
+time materializing one DuckDB `Value` and one `std::string` per row. The revised
+path reads DuckDB's unified vector buffer directly and allocates only for rows
+that contain a non-finite token requiring RFC 8259 normalization.
+
+The before and after binaries used the same Release/IPO build tree, Apple Clang
+21, DuckDB commit `d8cdaa33f`, 512 MB memory limit, two threads, and an 8 GiB
+explicit spill cap. Each result is the mean of five runs after one warmup.
+
+| 10M-row Parquet-to-JSONL path | Mean | Relative to old sqrail |
+|---|---:|---:|
+| DuckDB CLI `COPY` | 2.207 s | 3.35x faster |
+| sqrail before vector fast path | 7.398 s | baseline |
+| sqrail after vector fast path | 2.728 s | 2.71x faster |
+
+All three outputs contained 10,000,000 rows and the same logical checksum
+`13911955137382488891`. The optimized sqrail path remains 23.6% slower than
+DuckDB's direct JSON `COPY`; that comparison is not semantics-equivalent when
+data contains NaN or infinities, because DuckDB emits bare non-standard tokens
+while sqrail maps them to `null`. Unit and smoke tests verify the strict
+conversion for scalar and nested non-finite values.

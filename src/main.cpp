@@ -19,6 +19,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <system_error>
 #include <thread>
 #include <unordered_set>
@@ -713,7 +714,7 @@ uint64_t StreamJson(duckdb::Connection &connection, const std::string &sql, cons
 			buffer.clear();
 		}
 	};
-	const auto append = [&](const std::string &value) {
+	const auto append = [&](const std::string_view value) {
 		if (buffer.size() + value.size() > buffer_capacity) {
 			flush();
 		}
@@ -732,12 +733,26 @@ uint64_t StreamJson(duckdb::Connection &connection, const std::string &sql, cons
 		if (!chunk) {
 			break;
 		}
+		duckdb::UnifiedVectorFormat vector_format;
+		chunk->data[0].ToUnifiedFormat(chunk->size(), vector_format);
+		const auto *values = duckdb::UnifiedVectorFormat::GetData<duckdb::string_t>(vector_format);
 		for (duckdb::idx_t row = 0; row < chunk->size(); ++row) {
 			if (array && rows != 0) {
 				buffer.push_back(',');
 			}
-			const auto value = chunk->GetValue(0, row);
-			append(value.IsNull() ? "null" : sqrail::StrictJson(value.GetValue<std::string>()));
+			const auto index = vector_format.sel->get_index(row);
+			if (!vector_format.validity.RowIsValid(index)) {
+				append("null");
+			} else {
+				const auto &value = values[index];
+				const std::string_view json(value.GetData(), value.GetSize());
+				if (json.find("NaN") == std::string_view::npos &&
+				    json.find("Infinity") == std::string_view::npos) {
+					append(json);
+				} else {
+					append(sqrail::StrictJson(std::string(json)));
+				}
+			}
 			if (!array) {
 				buffer.push_back('\n');
 			}
