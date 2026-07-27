@@ -16,9 +16,11 @@ how an agent can learn the addition without making `--agent-help` ambiguous.
 cmake --workflow --preset dev
 cmake --workflow --preset strict
 cmake --workflow --preset sanitize
+cmake --workflow --preset thread
 cmake --preset fuzz
 cmake --build --preset fuzz
 out/build/fuzz/sqrail-strict-json-fuzz -max_total_time=30
+out/build/fuzz/sqrail-cli-fuzz -max_total_time=30
 CMAKE_PREFIX_PATH=/path/to/duckdb cmake --workflow --preset system
 shellcheck tests/*.sh benchmarks/*.sh
 actionlint
@@ -26,7 +28,15 @@ zizmor --pedantic .
 ```
 
 Format C++ with the repository `.clang-format`. GitHub Actions additionally run
-CodeQL and audit every workflow with Actionlint and Zizmor.
+CodeQL and audit every workflow with Actionlint and Zizmor. The `windows-x64`
+preset follows the Windows 2025 hosted image and uses Visual Studio 2026 with
+a CMake version that provides the `Visual Studio 18 2026` generator; the Windows
+11 Arm64 runner continues to use Visual Studio 2022 through the `windows-arm64`
+preset. Both select the static MSVC runtime and the Release configuration.
+
+Behavioral changes must keep the cross-platform Python end-to-end suite
+portable. POSIX-only signal, mode, or filesystem assertions belong in the Bash
+smoke suite or behind an explicit platform condition.
 
 ## Performance changes
 

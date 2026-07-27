@@ -11,7 +11,9 @@ Performance claims are accepted only when the benchmark is:
 
 The committed [benchmark harness](../benchmarks/README.md) enforces matching
 row counts and logical checksums, records hyperfine timing data, and performs a
-separate peak-RSS run on Linux or macOS.
+separate peak-RSS run on Linux or macOS. Its versioned environment manifest
+records binary and dataset digests, compiler, git state, CPU, RAM, storage,
+architecture, locale, and cache-state evidence.
 
 The full matrix runner executes every workload at each declared memory budget.
 Outputs are deleted after their checksum is recorded by default, bounding disk
@@ -26,11 +28,16 @@ low-memory comparison.
 - wall-clock time
 - CPU time
 - peak resident set size
-- bytes read and written
+- filesystem I/O counters where the host tool exposes comparable units
 - temporary spill bytes
 - output bytes and checksum
 - executable size
 - cold-start latency
+
+The default harness records warm-cache or first-run-uncontrolled cohorts.
+`cold-controlled` is accepted only with a non-empty description of the external
+page-cache control mechanism. First-run timing without that evidence is never
+reported as cold-cache performance.
 
 ## Initial workload matrix
 

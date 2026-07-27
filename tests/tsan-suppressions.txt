@@ -1,0 +1,5 @@
+# DuckDB's bundled jemalloc uses allocator metadata access patterns that TSan
+# reports while worker threads flush their caches. DuckDB's own TSan workflow
+# suppresses this third-party path; the duckdb-src name matches FetchContent's
+# checkout layout while keeping sqrail and the rest of DuckDB visible.
+race:*duckdb-src/third_party/jemalloc/*

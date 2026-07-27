@@ -32,7 +32,7 @@
     <main id="main">
       <section class="hero" aria-labelledby="hero-title">
         <div class="hero-copy">
-          <p class="eyebrow"><span>v0.2.2</span> Agent-native data CLI</p>
+          <p class="eyebrow"><span>v0.3.0</span> Agent-native data CLI</p>
           <h1 id="hero-title">SQL in.<br><em>Files out.</em></h1>
           <p class="lede">
             A small, non-interactive command for agents that already write SQL.
@@ -91,10 +91,12 @@
         </div>
         <div class="code-panel">
           <button class="copy-button" type="button" data-copy-target="contract-code">Copy</button>
-          <pre id="contract-code"><code>sqrail schema FILE...
-sqrail check [-t NAME=PATH]... [--timeout 30s] SQL
+          <pre id="contract-code"><code>sqrail schema [--max-input-files N] [--strict-schema] FILE...
+sqrail check [-t NAME=PATH]... [--max-rows N]
+             [--max-input-files N] [--max-sql-bytes SIZE] SQL
 sqrail run [-t NAME=PATH]... [-o FILE] [--memory 1GB]
-           [--threads 2] [--spill DIR] SQL
+           [--timeout 30s] [--max-rows N] [--max-output-bytes SIZE]
+           [--max-input-files N] [--max-sql-bytes SIZE] [--stats] SQL
 
 # Learn everything an agent needs:
 sqrail --agent-help</code></pre>
@@ -145,7 +147,8 @@ sqrail --agent-help</code></pre>
           <ul>
             <li>One read-only SELECT, VALUES, or WITH query</li>
             <li>Strict JSONL rows and JSON diagnostics</li>
-            <li>Memory, thread, timeout, and private spill controls</li>
+            <li>Memory, thread, deadline, spill, row, output, input, and SQL caps</li>
+            <li>Schema evolution by name, with opt-in strict validation</li>
           </ul>
         </div>
       </section>
@@ -158,7 +161,7 @@ sqrail --agent-help</code></pre>
           <button class="copy-button copy-button-large" type="button" data-copy-target="install-code">Copy</button>
         </div>
         <p>
-          macOS and Linux · Apple Silicon, Arm64, and x86-64 · MIT licensed
+          Linux, macOS, and Windows · Arm64 and x86-64 · MIT licensed
         </p>
       </section>
     </main>

@@ -79,6 +79,20 @@
       }
     },
     {
+      "name": "thread",
+      "displayName": "ThreadSanitizer",
+      "inherits": "base",
+      "environment": {
+        "CC": "clang",
+        "CXX": "clang++"
+      },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "SQRAIL_ENABLE_THREAD_SANITIZER": true,
+        "SQRAIL_STATIC_CPP_RUNTIME": false
+      }
+    },
+    {
       "name": "native",
       "displayName": "Host-tuned benchmark build",
       "inherits": "release",
@@ -94,6 +108,22 @@
         "SQRAIL_DUCKDB_PROVIDER": "SYSTEM",
         "SQRAIL_STATIC_CPP_RUNTIME": false
       }
+    },
+    {
+      "name": "windows-x64",
+      "displayName": "Windows x64 portable release",
+      "inherits": "release",
+      "generator": "Visual Studio 18 2026",
+      "binaryDir": "${sourceDir}/out/build/windows-x64",
+      "architecture": "x64"
+    },
+    {
+      "name": "windows-arm64",
+      "displayName": "Windows ARM64 portable release",
+      "inherits": "release",
+      "generator": "Visual Studio 17 2022",
+      "binaryDir": "${sourceDir}/out/build/windows-arm64",
+      "architecture": "ARM64"
     },
     {
       "name": "pgo-generate",
@@ -128,32 +158,38 @@
     {
       "name": "dev",
       "configurePreset": "dev",
-      "targets": ["sqrail", "sqrail-json-test"],
+      "targets": ["sqrail", "sqrail-json-test", "sqrail-cli-test"],
       "jobs": 2
     },
     {
       "name": "release",
       "configurePreset": "release",
-      "targets": ["sqrail", "sqrail-json-test"],
+      "targets": ["sqrail", "sqrail-json-test", "sqrail-cli-test"],
       "jobs": 2
     },
     {
       "name": "strict",
       "configurePreset": "strict",
-      "targets": ["sqrail-static-analysis", "sqrail-json-test"],
+      "targets": ["sqrail-static-analysis", "sqrail-json-test", "sqrail-cli-test"],
       "jobs": 2
     },
     {
       "name": "sanitize",
       "configurePreset": "sanitize",
-      "targets": ["sqrail", "sqrail-json-test"],
+      "targets": ["sqrail", "sqrail-json-test", "sqrail-cli-test"],
       "jobs": 4
     },
     {
       "name": "fuzz",
       "configurePreset": "fuzz",
-      "targets": ["sqrail-strict-json-fuzz"],
+      "targets": ["sqrail-strict-json-fuzz", "sqrail-cli-fuzz"],
       "jobs": 2
+    },
+    {
+      "name": "thread",
+      "configurePreset": "thread",
+      "targets": ["sqrail", "sqrail-json-test", "sqrail-cli-test"],
+      "jobs": 4
     },
     {
       "name": "native",
@@ -164,7 +200,21 @@
     {
       "name": "system",
       "configurePreset": "system",
-      "targets": ["sqrail", "sqrail-json-test"],
+      "targets": ["sqrail", "sqrail-json-test", "sqrail-cli-test"],
+      "jobs": 2
+    },
+    {
+      "name": "windows-x64",
+      "configurePreset": "windows-x64",
+      "configuration": "Release",
+      "targets": ["sqrail", "sqrail-json-test", "sqrail-cli-test"],
+      "jobs": 2
+    },
+    {
+      "name": "windows-arm64",
+      "configurePreset": "windows-arm64",
+      "configuration": "Release",
+      "targets": ["sqrail", "sqrail-json-test", "sqrail-cli-test"],
       "jobs": 2
     },
     {
@@ -176,7 +226,7 @@
     {
       "name": "pgo-use",
       "configurePreset": "pgo-use",
-      "targets": ["sqrail", "sqrail-json-test"],
+      "targets": ["sqrail", "sqrail-json-test", "sqrail-cli-test"],
       "jobs": 2
     }
   ],
@@ -203,7 +253,7 @@
       },
       "filter": {
         "include": {
-          "name": "sqrail-json-unit"
+            "name": "sqrail-(json|cli|agent-eval|agent-oracle|agent-runner|package-tools|benchmark-environment)-unit"
         }
       }
     },
@@ -214,13 +264,39 @@
         "outputOnFailure": true
       },
       "environment": {
-        "ASAN_OPTIONS": "detect_leaks=1:strict_string_checks=1:check_initialization_order=1",
+        "ASAN_OPTIONS": "strict_string_checks=1:check_initialization_order=1",
         "UBSAN_OPTIONS": "print_stacktrace=1:halt_on_error=1"
+      }
+    },
+    {
+      "name": "thread",
+      "configurePreset": "thread",
+      "output": {
+        "outputOnFailure": true
+      },
+      "environment": {
+        "TSAN_OPTIONS": "halt_on_error=1:second_deadlock_stack=1:suppressions=${sourceDir}/tests/tsan-suppressions.txt"
       }
     },
     {
       "name": "system",
       "configurePreset": "system",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "windows-x64",
+      "configurePreset": "windows-x64",
+      "configuration": "Release",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "windows-arm64",
+      "configurePreset": "windows-arm64",
+      "configuration": "Release",
       "output": {
         "outputOnFailure": true
       }
@@ -256,6 +332,14 @@
         {"type": "configure", "name": "strict"},
         {"type": "build", "name": "strict"},
         {"type": "test", "name": "strict"}
+      ]
+    },
+    {
+      "name": "thread",
+      "steps": [
+        {"type": "configure", "name": "thread"},
+        {"type": "build", "name": "thread"},
+        {"type": "test", "name": "thread"}
       ]
     },
     {

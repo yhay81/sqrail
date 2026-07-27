@@ -42,7 +42,8 @@ name=file bindings -> DuckDB -> JSONL stdout or one output file
    committed with an atomic no-replace hard link only after the query succeeds.
 
 7. **Resource use is part of the public contract**
-   Memory, parallelism, and spill location can be stated at invocation time.
+   Memory, parallelism, spill location, deadline, and final row count can be
+   stated at invocation time.
 
 8. **Lightweight is multidimensional**
    We measure compressed size, installed size, cold start, idle RSS, peak RSS,

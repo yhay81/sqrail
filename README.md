@@ -30,32 +30,47 @@ SQL
 brew install yhay81/tap/sqrail
 ```
 
-Prebuilt archives for Linux and macOS on x86-64 and Arm64 are published on the
-[Releases](https://github.com/yhay81/sqrail/releases) page. Each release includes
-`SHA256SUMS` and GitHub build-provenance attestations.
+The v0.3 release workflow produces prebuilt archives for Linux, macOS, and
+Windows on x86-64 and Arm64 for the
+[Releases](https://github.com/yhay81/sqrail/releases) page. Each v0.3 release includes
+`SHA256SUMS`, an SPDX SBOM, and GitHub build-provenance and SBOM attestations.
 
 Extract the archive and place `bin/sqrail` on `PATH`. No language runtime,
 package manager, daemon, or database server is required. Linux archives target
-glibc 2.35 or newer and statically include the C++ runtime.
+glibc 2.35 or newer and statically include the C++ runtime. Windows archives
+statically include the MSVC runtime and require a UTF-8-capable Windows 10/11 or
+Windows Server release. The tested platform tiers are documented in
+[Platform support](docs/PLATFORMS.md).
 
 ## Contract
 
 ```text
-sqrail schema FILE...
-sqrail check [-t NAME=PATH]... [--memory SIZE] [--threads N] [--timeout DURATION] [SQL|-]
+sqrail schema [--memory SIZE] [--threads N] [--timeout DURATION]
+              [--max-input-files N] [--strict-schema] FILE...
+sqrail check [-t NAME=PATH]... [--memory SIZE] [--threads N]
+             [--timeout DURATION] [--max-rows N] [--max-input-files N]
+             [--max-sql-bytes SIZE] [--strict-schema] [SQL|-]
 sqrail run [-t NAME=PATH]... [-o FILE] [--memory SIZE] [--threads N]
-           [--spill DIR [--max-spill SIZE]] [--timeout DURATION] [SQL|-]
+           [--spill DIR [--max-spill SIZE]] [--timeout DURATION]
+           [--max-rows N] [--max-output-bytes SIZE] [--max-input-files N]
+           [--max-sql-bytes SIZE] [--stats] [--strict-schema] [SQL|-]
 ```
 
 - `schema` returns one JSON object per input path.
 - `check` validates SQL and returns its JSON physical plan without execution.
 - `-t NAME=PATH` binds a file, glob, or partitioned Parquet directory.
+- Multi-file inputs union evolving columns by name; `--strict-schema` requires
+  identical names, order, and types.
 - `-` reads SQL from stdin and avoids shell-quoting large queries.
 - SQL must parse as exactly one `SELECT`, `VALUES`, or `WITH` query.
 - Without `-o`, rows are streamed as JSONL to stdout.
 - With `-o`, the format follows the output extension.
 - Existing outputs are never overwritten, and failed queries do not leave a
   partial destination file.
+- `--max-rows` fails when the final result exceeds a declared row count.
+- `--max-output-bytes`, `--max-input-files`, and `--max-sql-bytes` bound the
+  other attacker- or agent-controlled dimensions.
+- `--stats` emits machine-readable success metrics on stderr.
 - Diagnostics are a single JSON object on stderr.
 - Row order is undefined unless the SQL contains `ORDER BY`.
 - No configuration file is read.
@@ -115,7 +130,7 @@ the platform's default search path. The system provider links DuckDB's shared
 library, reports its actual runtime version, and does not install a second copy
 of DuckDB's bundled licences.
 
-The repository also supplies `strict`, `sanitize`, `fuzz`, `native`,
+The repository also supplies `strict`, `sanitize`, `thread`, `fuzz`, `native`,
 `pgo-generate`, and `pgo-use` presets. The pinned Ubuntu 24.04/LLVM 18
 development container runs the developer workflow on creation. Then:
 
@@ -123,6 +138,9 @@ development container runs the developer workflow on creation. Then:
 ./out/build/release/sqrail schema data.csv
 ./out/build/release/sqrail run -t data=data.csv 'SELECT count(*) AS rows FROM data'
 ```
+
+The complete pre-tag criteria are in the
+[v0.3 release gate](docs/V0.3_RELEASE.md).
 
 ## Resource controls
 
@@ -133,6 +151,11 @@ sqrail run \
   --spill /fast-nvme/sqrail-spill \
   --max-spill 100GB \
   --timeout 10m \
+  --max-rows 1000000 \
+  --max-output-bytes 4GiB \
+  --max-input-files 10000 \
+  --max-sql-bytes 1MiB \
+  --stats \
   -t data='warehouse/**/*.parquet' \
   -o result.parquet \
   - < query.sql
@@ -143,8 +166,14 @@ RSS limit. sqrail disables insertion-order preservation by default so unordered
 file transformations can use less memory. A unique, owner-only workspace is
 created beneath `--spill` for each process and removed after the database
 closes; sibling files are never exposed to SQL. `--max-spill` caps temporary
-storage, and `--timeout` interrupts DuckDB planning or execution after the
-deadline.
+storage, and `--timeout` sets an absolute command deadline. `--max-rows`
+detects an oversized final result after at most one extra
+row and prevents a file destination from being committed. `--stats` reports
+rows, bytes, elapsed milliseconds, resolved input-file count, and destination
+on stderr after success. Deadlines begin before input expansion and cover
+recursive discovery, schema inference, planning, execution, and
+output finalization. The remaining caps fail with structured diagnostics and
+remove private file outputs.
 
 ## Safety boundary
 

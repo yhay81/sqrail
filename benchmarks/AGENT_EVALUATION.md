@@ -169,3 +169,56 @@ Before expanding the CLI, the full sqrail cohort should achieve:
 Treat lower token use, wall time, or fewer calls as a product advantage only
 when task success and safety are non-inferior. Five repetitions are an
 engineering gate, not enough on their own for a broad statistical claim.
+
+## Complementary v0.3 artifact gate
+
+The identity-concealed harness above remains the comparative experiment and
+uses [`agent-tasks.json`](agent-tasks.json). The v0.3 release gate adds four
+contract-specific cases—check metadata, result limits, schema evolution, and
+structured statistics—in a separate twelve-task corpus:
+[`agent-tasks-v0.3.json`](agent-tasks-v0.3.json).
+
+`agent-run.py` prepares randomized workspaces, copies inputs read-only, binds
+the task corpus and exact sqrail/DuckDB hashes, filters inherited environment
+secrets, rejects external paths and URIs, and executes model-produced argument
+arrays without a shell. The independent oracle recomputes task results from
+the retained stdout, stderr, files, snapshots, dataset, and pinned binaries.
+
+Prepare and execute each attempt with:
+
+```sh
+python3 benchmarks/agent-run.py prepare \
+  --artifact-root agent-artifacts \
+  --artifact-id run-001-sqrail-join-1 \
+  --data benchmark-data \
+  --sqrail build-agent-eval/sqrail \
+  --duckdb build-agent-eval/_deps/duckdb-build/duckdb \
+  --model provider/model-version \
+  --arm sqrail \
+  --task join_aggregate \
+  --run-id run-001 \
+  --attempt 1
+
+python3 benchmarks/agent-run.py execute \
+  --artifact-root agent-artifacts \
+  --artifact-id run-001-sqrail-join-1 \
+  --candidate candidate.json \
+  --data benchmark-data \
+  --sqrail build-agent-eval/sqrail \
+  --duckdb build-agent-eval/_deps/duckdb-build/duckdb \
+  >> agent-results.jsonl
+```
+
+After at least five paired, independent repetitions per model, arm, and task,
+recompute all evidence and apply the release gate:
+
+```sh
+python3 benchmarks/agent-eval.py agent-results.jsonl \
+  --artifacts agent-artifacts \
+  --data benchmark-data \
+  --sqrail build-agent-eval/sqrail \
+  --duckdb build-agent-eval/_deps/duckdb-build/duckdb \
+  > agent-evaluation-report.json
+```
+
+Synthetic or replayed successes are not release evidence.
