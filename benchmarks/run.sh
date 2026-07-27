@@ -97,13 +97,15 @@ run_case() {
   for engine in duckdb sqrail; do
     export BENCH_OUTPUT="$result_dir/outputs/${case_name}-${engine}.${output_format}"
     result_json="$result_dir/hyperfine/${case_name}-${engine}.json"
+    printf -v prepare_command '%q %q' "$script_dir/prepare-output.sh" "$BENCH_OUTPUT"
+    printf -v engine_command '%q %q' "$script_dir/run-engine.sh" "$engine"
 
     hyperfine \
       --warmup "$warmup" \
       --runs "$runs" \
-      --prepare "$script_dir/prepare-output.sh '$BENCH_OUTPUT'" \
+      --prepare "$prepare_command" \
       --export-json "$result_json" \
-      "$script_dir/run-engine.sh $engine"
+      "$engine_command"
 
     "$script_dir/prepare-output.sh" "$BENCH_OUTPUT"
     rss=$(
