@@ -155,18 +155,29 @@ Requirements:
 - CMake 3.25+
 - Ninja
 - a C++20 compiler
-- Python 3 for the smoke-test JSON assertions
-- Git and network access for the first `BUNDLED` configure, or an installed
-  DuckDB CMake package for a `SYSTEM` build
+- Git and network access for the first `BUNDLED` or native-test configure, or an
+  installed DuckDB CMake package for a production-only `SYSTEM` build
+
+The native C++ unit suite does not require Python:
+
+```sh
+cmake --workflow --preset core
+```
 
 The default `BUNDLED` provider fetches DuckDB v1.5.5 at an immutable commit
-during the first configure and statically links it. This is the provider used
-for official sqrail releases:
+during the first configure and statically links it. Native tests similarly
+fetch Catch2 v3.15.3 at an immutable commit, but it is never linked into the
+sqrail binary. This is the provider used for official sqrail releases:
 
 ```sh
 cmake --workflow --preset dev
 cmake --workflow --preset release
 ```
+
+The repository development presets enable the complete Python integration,
+agent-evaluation, and release-tool suites in addition to the native tests.
+Python 3 is required for those full workflows, not for a production-only build
+or the `core` workflow. See the [testing architecture](docs/TESTING.md).
 
 Distribution packages can build entirely from the release source archive and
 link an installed DuckDB package instead. The package must export DuckDB's CMake
@@ -182,8 +193,8 @@ the platform's default search path. The system provider links DuckDB's shared
 library, reports its actual runtime version, and does not install a second copy
 of DuckDB's bundled licences.
 
-The repository also supplies `strict`, `sanitize`, `thread`, `fuzz`, `native`,
-`pgo-generate`, and `pgo-use` presets. The pinned Ubuntu 24.04/LLVM 18
+The repository also supplies `core`, `strict`, `sanitize`, `thread`, `fuzz`,
+`native`, `pgo-generate`, and `pgo-use` presets. The pinned Ubuntu 24.04/LLVM 18
 development container runs the developer workflow on creation. Then:
 
 ```sh

@@ -4,8 +4,8 @@
   "private": true,
   "description": "Validation and Cloudflare deployment tooling for the sqrail documentation site",
   "scripts": {
-    "format": "prettier --write .htmlvalidate.json package.json README.md docs/README.md docs/AGENT_INTEGRATION.md docs/DEPLOYMENT.md site/index.html site/docs/index.html site/404.html site/styles.css site/app.js wrangler.jsonc",
-    "format:check": "prettier --check .htmlvalidate.json package.json README.md docs/README.md docs/AGENT_INTEGRATION.md docs/DEPLOYMENT.md site/index.html site/docs/index.html site/404.html site/styles.css site/app.js wrangler.jsonc",
+    "format": "prettier --write .htmlvalidate.json package.json README.md docs/README.md docs/AGENT_INTEGRATION.md docs/DEPLOYMENT.md docs/TESTING.md site/index.html site/docs/index.html site/404.html site/styles.css site/app.js wrangler.jsonc",
+    "format:check": "prettier --check .htmlvalidate.json package.json README.md docs/README.md docs/AGENT_INTEGRATION.md docs/DEPLOYMENT.md docs/TESTING.md site/index.html site/docs/index.html site/404.html site/styles.css site/app.js wrangler.jsonc",
     "site:html": "html-validate \"site/**/*.html\"",
     "site:js": "node --check site/app.js",
     "site:check": "npm run format:check && npm run site:html && npm run site:js && npm run cloudflare:check",

@@ -230,8 +230,8 @@ jobs:
       - name: Size
         run: ls -lh install/bin/sqrail
 
-  debug-build:
-    name: Developer debug build
+  core-tests:
+    name: Native C++ tests without Python
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -242,11 +242,13 @@ jobs:
         env:
           CC: clang-18
           CXX: clang++-18
-        run: cmake --preset dev
+        run: >-
+          cmake --preset core
+          -DCMAKE_DISABLE_FIND_PACKAGE_Python3=TRUE
       - name: Build
-        run: cmake --build --preset dev
+        run: cmake --build --preset core
       - name: Test
-        run: ctest --preset dev
+        run: ctest --preset core
 
   static-analysis:
     name: Clang static analysis
