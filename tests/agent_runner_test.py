@@ -110,6 +110,17 @@ class AgentRunnerTest(unittest.TestCase):
             if os.name != "nt":
                 self.assertEqual(destination.stat().st_mode & 0o222, 0)
 
+    def test_tool_help_uses_portable_executable_name(self) -> None:
+        executable = Path("private") / "build" / "bin" / "duckdb"
+        invoked_path = str(executable.resolve())
+        raw = (
+            f"\x1b[1mUsage: \x1b[32m{invoked_path}\x1b[0m [OPTIONS] FILENAME\n"
+        ).encode("utf-8")
+        help_text = RUNNER.portable_tool_help(raw, executable, "duckdb")
+        self.assertEqual(help_text, "Usage: duckdb [OPTIONS] FILENAME\n")
+        self.assertNotIn(invoked_path, help_text)
+        self.assertNotIn("\x1b", help_text)
+
     def test_task_prompts_expose_oracle_specific_requirements(self) -> None:
         corpus = json.loads(
             (ROOT / "benchmarks" / "agent-tasks-v0.3.json").read_text(encoding="utf-8")
