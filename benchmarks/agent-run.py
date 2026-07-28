@@ -71,6 +71,7 @@ EVALUATION_SOURCES = {
 TIMEOUT_DURATION = re.compile(
     r"^(?P<value>(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+))(?P<unit>ms|s)?$"
 )
+ANSI_ESCAPE = re.compile(r"\x1b(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
 
 
 def parse_args() -> argparse.Namespace:
@@ -154,6 +155,11 @@ def copy_read_only(source: Path, destination: Path) -> None:
     destination.chmod(stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
 
 
+def portable_tool_help(raw: bytes, executable: Path, logical_name: str) -> str:
+    text = ANSI_ESCAPE.sub("", raw.decode("utf-8", errors="replace"))
+    return text.replace(str(executable.resolve()), logical_name)
+
+
 def prepare_session(arguments: argparse.Namespace) -> int:
     artifact_id = validate_artifact_id(arguments.artifact_id)
     tasks = task_map(arguments.tasks)
@@ -215,6 +221,7 @@ def prepare_session(arguments: argparse.Namespace) -> int:
     )
     if help_result.returncode != 0:
         raise RunnerError(f"cannot capture {arguments.arm} help")
+    tool_help = portable_tool_help(help_result.stdout, selected, arguments.arm)
 
     path_lines = "\n".join(f"- {role}: {paths[role]}" for role in prompt_path_roles)
     wrapper_help = (
@@ -240,8 +247,8 @@ def prepare_session(arguments: argparse.Namespace) -> int:
         "attempt": arguments.attempt,
         "prompt": prompt,
         "prompt_path_roles": list(prompt_path_roles),
-        "tool_help": help_result.stdout.decode("utf-8", errors="replace"),
-        "tool_help_sha256": hashlib.sha256(help_result.stdout).hexdigest(),
+        "tool_help": tool_help,
+        "tool_help_sha256": hashlib.sha256(tool_help.encode("utf-8")).hexdigest(),
         "sqrail_sha256": sha256(arguments.sqrail.resolve()),
         "duckdb_sha256": sha256(arguments.duckdb.resolve()),
         "task_corpus_sha256": sha256(arguments.tasks.resolve()),
