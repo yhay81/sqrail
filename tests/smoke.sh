@@ -435,4 +435,4 @@ printf '%s\n' "$agent_help" | grep -q -- '--max-input-files'
 printf '%s\n' "$agent_help" | grep -q -- '--max-sql-bytes'
 printf '%s\n' "$agent_help" | grep -q 'check emits columns'
 test "$(printf '%s\n' "$agent_help" | wc -w | tr -d ' ')" -le 170
-"$sqrail_bin" --version | grep -Eq '^sqrail 0\.3\.0 \(DuckDB v[0-9]+\.[0-9]+\.[0-9]+([.-][^)]*)?\)$'
+"$sqrail_bin" --version | grep -Eq '^sqrail 0\.3\.1 \(DuckDB v[0-9]+\.[0-9]+\.[0-9]+([.-][^)]*)?\)$'
