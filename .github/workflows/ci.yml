@@ -22,6 +22,23 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - name: Check documentation links
+        uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
+        with:
+          args: >-
+            --root-dir "${{ github.workspace }}/site"
+            --no-progress
+            --include-fragments=anchor-only
+            --accept "100..=103,200..=299,429"
+            --extensions "md,html,txt,xml,yml,yaml"
+            "./**/*.md"
+            "./site/**/*.html"
+            "./site/*.txt"
+            "./site/*.xml"
+            "./.github/**/*.yml"
+          fail: true
+          failIfEmpty: true
+          token: ${{ github.token }}
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 24
