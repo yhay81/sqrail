@@ -1,0 +1,127 @@
+name: "Bug report"
+description: "Report incorrect output, a crash, or behavior that violates sqrail's contract"
+title: "[Bug]: "
+labels:
+  - "bug"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for helping improve sqrail. Please provide a minimal, sanitized reproduction.
+
+        **Security vulnerabilities do not belong in public issues.** Use [private vulnerability reporting](https://github.com/yhay81/sqrail/security/advisories/new) instead.
+
+  - type: checkboxes
+    id: initial_checks
+    attributes:
+      label: "Initial checks"
+      options:
+        - label: "I searched existing issues and did not find the same problem."
+          required: true
+        - label: "I read the relevant part of the [CLI contract](https://github.com/yhay81/sqrail/blob/main/docs/CONTRACT.md)."
+          required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: "sqrail version"
+      description: "Paste the output of `sqrail --version`."
+      placeholder: "sqrail 0.3.0 (DuckDB v1.5.5)"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: installation
+    attributes:
+      label: "Installation method"
+      options:
+        - "Homebrew"
+        - "GitHub release archive"
+        - "Built from source with bundled DuckDB"
+        - "Built from source with system DuckDB"
+        - "Other"
+    validations:
+      required: true
+
+  - type: input
+    id: platform
+    attributes:
+      label: "Platform"
+      description: "Include the operating system, version, and CPU architecture."
+      placeholder: "macOS 15.5, arm64"
+    validations:
+      required: true
+
+  - type: textarea
+    id: command
+    attributes:
+      label: "Command"
+      description: "Paste the exact sqrail command with secrets and private paths removed."
+      render: "shell"
+    validations:
+      required: true
+
+  - type: textarea
+    id: sql
+    attributes:
+      label: "SQL"
+      description: "Paste the smallest SQL statement that reproduces the problem."
+      render: "sql"
+    validations:
+      required: true
+
+  - type: textarea
+    id: input_shape
+    attributes:
+      label: "Input shape"
+      description: "Describe format, schema, row count, file count, compression, and any relevant sample rows. Prefer synthetic data."
+      placeholder: "Two Parquet files, 12 columns, approximately 1M rows each..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: observed
+    attributes:
+      label: "Observed behavior"
+      description: "What happened? Include exit code and whether any output file was created."
+    validations:
+      required: true
+
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: "Structured diagnostic"
+      description: "Paste sqrail's JSON object from stderr, if available."
+      render: "json"
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: "Expected behavior"
+      description: "What should have happened instead?"
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: "Minimal reproduction"
+      description: "List every step needed to reproduce the problem from a clean environment."
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional_context
+    attributes:
+      label: "Additional context"
+      description: "Add checksums, comparisons with DuckDB, logs, or other useful evidence."
+
+  - type: checkboxes
+    id: final_checks
+    attributes:
+      label: "Community checks"
+      options:
+        - label: "I removed credentials, personal information, proprietary data, and other secrets."
+          required: true
+        - label: "I agree to follow the [Code of Conduct](https://github.com/yhay81/sqrail/blob/main/CODE_OF_CONDUCT.md)."
+          required: true

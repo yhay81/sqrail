@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: "Report a security vulnerability"
+    url: "https://github.com/yhay81/sqrail/security/advisories/new"
+    about: "Privately report a suspected vulnerability. Do not disclose it in a public issue."
+  - name: "Read the documentation"
+    url: "https://yhay81.github.io/sqrail/"
+    about: "Review the quick start, contract, safety boundary, and benchmark evidence."
