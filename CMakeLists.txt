@@ -12,7 +12,10 @@ include(GNUInstallDirs)
 include(CheckCXXCompilerFlag)
 include(CheckIPOSupported)
 
-option(SQRAIL_BUILD_TESTS "Enable sqrail smoke tests" ON)
+option(SQRAIL_BUILD_TESTS "Build native C++ unit tests" ON)
+option(SQRAIL_BUILD_INTEGRATION_TESTS "Enable Python and shell CLI integration tests" OFF)
+option(SQRAIL_BUILD_AGENT_TESTS "Enable Python agent-evaluation tests" OFF)
+option(SQRAIL_BUILD_RELEASE_TOOL_TESTS "Enable Python release-tool tests" OFF)
 option(SQRAIL_BUILD_FUZZERS "Build coverage-guided fuzz targets" OFF)
 option(SQRAIL_BUILD_DUCKDB_SHELL "Build the pinned DuckDB CLI for benchmarks" OFF)
 option(SQRAIL_WARNINGS_AS_ERRORS "Treat sqrail compiler warnings as errors" OFF)
@@ -423,17 +426,70 @@ if(SQRAIL_DUCKDB_PROVIDER STREQUAL "BUNDLED")
   )
 endif()
 
-if(SQRAIL_BUILD_TESTS)
+if(
+  SQRAIL_BUILD_TESTS
+  OR SQRAIL_BUILD_INTEGRATION_TESTS
+  OR SQRAIL_BUILD_AGENT_TESTS
+  OR SQRAIL_BUILD_RELEASE_TOOL_TESTS
+)
   enable_testing()
-  find_package(Python3 COMPONENTS Interpreter REQUIRED)
+endif()
+
+if(SQRAIL_BUILD_TESTS)
+  include(FetchContent)
+  set(
+    SQRAIL_CATCH2_REVISION
+    "8b08d4d79514f45f7e4ce2a607ac9c94e920d1bb"
+    CACHE STRING
+    "Pinned Catch2 v3.15.3 git revision"
+  )
+  set(CATCH_BUILD_TESTING OFF CACHE BOOL "" FORCE)
+  set(CATCH_INSTALL_DOCS OFF CACHE BOOL "" FORCE)
+  set(CATCH_INSTALL_EXTRAS OFF CACHE BOOL "" FORCE)
+  FetchContent_Declare(
+    Catch2
+    GIT_REPOSITORY "https://github.com/catchorg/Catch2.git"
+    GIT_TAG "${SQRAIL_CATCH2_REVISION}"
+    GIT_SHALLOW TRUE
+    GIT_PROGRESS TRUE
+  )
+  FetchContent_MakeAvailable(Catch2)
+  # Keep project-wide clang-tidy and warnings-as-errors focused on sqrail
+  # sources. Catch2 has its own upstream analysis policy.
+  set_target_properties(Catch2 Catch2WithMain PROPERTIES SYSTEM TRUE)
+
   add_executable(sqrail-json-test tests/json_test.cpp)
-  target_link_libraries(sqrail-json-test PRIVATE sqrail_json)
+  target_link_libraries(sqrail-json-test PRIVATE sqrail_json Catch2::Catch2WithMain)
   sqrail_enable_project_warnings(sqrail-json-test)
   add_executable(sqrail-cli-test tests/cli_test.cpp)
-  target_link_libraries(sqrail-cli-test PRIVATE sqrail_cli)
+  target_link_libraries(sqrail-cli-test PRIVATE sqrail_cli Catch2::Catch2WithMain)
   sqrail_enable_project_warnings(sqrail-cli-test)
-  add_test(NAME sqrail-json-unit COMMAND sqrail-json-test)
-  add_test(NAME sqrail-cli-unit COMMAND sqrail-cli-test)
+
+  list(APPEND CMAKE_MODULE_PATH "${catch2_SOURCE_DIR}/extras")
+  include(Catch)
+  catch_discover_tests(
+    sqrail-json-test
+    TEST_PREFIX "sqrail-json-unit/"
+    DISCOVERY_MODE PRE_TEST
+    PROPERTIES TIMEOUT 120
+  )
+  catch_discover_tests(
+    sqrail-cli-test
+    TEST_PREFIX "sqrail-cli-unit/"
+    DISCOVERY_MODE PRE_TEST
+    PROPERTIES TIMEOUT 120
+  )
+endif()
+
+if(
+  SQRAIL_BUILD_INTEGRATION_TESTS
+  OR SQRAIL_BUILD_AGENT_TESTS
+  OR SQRAIL_BUILD_RELEASE_TOOL_TESTS
+)
+  find_package(Python3 COMPONENTS Interpreter REQUIRED)
+endif()
+
+if(SQRAIL_BUILD_AGENT_TESTS)
   add_test(
     NAME sqrail-agent-eval-unit
     COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/agent_eval_test.py"
@@ -447,13 +503,39 @@ if(SQRAIL_BUILD_TESTS)
     COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/agent_runner_test.py"
   )
   add_test(
-    NAME sqrail-package-tools-unit
-    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/package_tools_test.py"
-  )
-  add_test(
     NAME sqrail-benchmark-environment-unit
     COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/benchmark_environment_test.py"
   )
+  if(UNIX)
+    add_test(
+      NAME sqrail-blind-agent-eval-unit
+      COMMAND
+        "${Python3_EXECUTABLE}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/blind_agent_eval_test.py"
+    )
+  endif()
+  set(
+    SQRAIL_AGENT_TESTS
+    sqrail-agent-eval-unit
+    sqrail-agent-oracle-unit
+    sqrail-agent-runner-unit
+    sqrail-benchmark-environment-unit
+  )
+  if(UNIX)
+    list(APPEND SQRAIL_AGENT_TESTS sqrail-blind-agent-eval-unit)
+  endif()
+  set_tests_properties(${SQRAIL_AGENT_TESTS} PROPERTIES TIMEOUT 120)
+endif()
+
+if(SQRAIL_BUILD_RELEASE_TOOL_TESTS)
+  add_test(
+    NAME sqrail-package-tools-unit
+    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/package_tools_test.py"
+  )
+  set_tests_properties(sqrail-package-tools-unit PROPERTIES TIMEOUT 120)
+endif()
+
+if(SQRAIL_BUILD_INTEGRATION_TESTS)
   add_test(
     NAME sqrail-cross-platform
     COMMAND
@@ -463,33 +545,13 @@ if(SQRAIL_BUILD_TESTS)
   )
   if(UNIX)
     add_test(
-      NAME sqrail-blind-agent-eval-unit
-      COMMAND
-        "${Python3_EXECUTABLE}"
-        "${CMAKE_CURRENT_SOURCE_DIR}/tests/blind_agent_eval_test.py"
-    )
-    add_test(
       NAME sqrail-smoke
       COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/tests/smoke.sh" "$<TARGET_FILE:sqrail>"
     )
   endif()
-  set_tests_properties(
-    sqrail-json-unit
-    sqrail-cli-unit
-    sqrail-agent-eval-unit
-    sqrail-agent-oracle-unit
-    sqrail-agent-runner-unit
-    sqrail-package-tools-unit
-    sqrail-benchmark-environment-unit
-    sqrail-cross-platform
-    PROPERTIES TIMEOUT 120
-  )
+  set_tests_properties(sqrail-cross-platform PROPERTIES TIMEOUT 120)
   if(UNIX)
-    set_tests_properties(
-      sqrail-blind-agent-eval-unit
-      sqrail-smoke
-      PROPERTIES TIMEOUT 120
-    )
+    set_tests_properties(sqrail-smoke PROPERTIES TIMEOUT 120)
   endif()
 endif()
 

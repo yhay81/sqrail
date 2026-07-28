@@ -34,6 +34,7 @@ how an agent can learn the addition without making `--agent-help` ambiguous.
 ## Build and test
 
 ```sh
+cmake --workflow --preset core
 cmake --workflow --preset dev
 cmake --workflow --preset strict
 cmake --workflow --preset sanitize
@@ -55,9 +56,12 @@ a CMake version that provides the `Visual Studio 18 2026` generator; the Windows
 11 Arm64 runner continues to use Visual Studio 2022 through the `windows-arm64`
 preset. Both select the static MSVC runtime and the Release configuration.
 
-Behavioral changes must keep the cross-platform Python end-to-end suite
-portable. POSIX-only signal, mode, or filesystem assertions belong in the Bash
-smoke suite or behind an explicit platform condition.
+The `core` workflow runs Catch2-based native unit tests without Python. The
+other development workflows enable every optional suite. Behavioral changes
+must keep the cross-platform Python end-to-end suite portable. POSIX-only
+signal, mode, or filesystem assertions belong in the Bash smoke suite or behind
+an explicit platform condition. The boundaries and CMake options are documented
+in [docs/TESTING.md](docs/TESTING.md).
 
 ## Performance changes
 

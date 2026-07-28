@@ -18,9 +18,28 @@
       }
     },
     {
+      "name": "full-tests",
+      "hidden": true,
+      "inherits": "base",
+      "cacheVariables": {
+        "SQRAIL_BUILD_INTEGRATION_TESTS": true,
+        "SQRAIL_BUILD_AGENT_TESTS": true,
+        "SQRAIL_BUILD_RELEASE_TOOL_TESTS": true
+      }
+    },
+    {
+      "name": "core",
+      "displayName": "Native C++ tests without Python",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "SQRAIL_ENABLE_HARDENING": true
+      }
+    },
+    {
       "name": "dev",
       "displayName": "Developer debug build",
-      "inherits": "base",
+      "inherits": "full-tests",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
         "SQRAIL_ENABLE_HARDENING": true
@@ -29,7 +48,7 @@
     {
       "name": "release",
       "displayName": "Portable hardened release",
-      "inherits": "base",
+      "inherits": "full-tests",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
         "SQRAIL_ENABLE_HARDENING": true,
@@ -52,7 +71,7 @@
     {
       "name": "sanitize",
       "displayName": "ASan and UBSan",
-      "inherits": "base",
+      "inherits": "full-tests",
       "environment": {
         "CC": "clang",
         "CXX": "clang++"
@@ -75,13 +94,16 @@
         "CMAKE_BUILD_TYPE": "RelWithDebInfo",
         "SQRAIL_BUILD_FUZZERS": true,
         "SQRAIL_BUILD_TESTS": false,
+        "SQRAIL_BUILD_INTEGRATION_TESTS": false,
+        "SQRAIL_BUILD_AGENT_TESTS": false,
+        "SQRAIL_BUILD_RELEASE_TOOL_TESTS": false,
         "SQRAIL_STATIC_CPP_RUNTIME": false
       }
     },
     {
       "name": "thread",
       "displayName": "ThreadSanitizer",
-      "inherits": "base",
+      "inherits": "full-tests",
       "environment": {
         "CC": "clang",
         "CXX": "clang++"
@@ -155,6 +177,12 @@
     }
   ],
   "buildPresets": [
+    {
+      "name": "core",
+      "configurePreset": "core",
+      "targets": ["sqrail", "sqrail-json-test", "sqrail-cli-test"],
+      "jobs": 2
+    },
     {
       "name": "dev",
       "configurePreset": "dev",
@@ -231,6 +259,13 @@
     }
   ],
   "testPresets": [
+    {
+      "name": "core",
+      "configurePreset": "core",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
     {
       "name": "dev",
       "configurePreset": "dev",
@@ -310,6 +345,14 @@
     }
   ],
   "workflowPresets": [
+    {
+      "name": "core",
+      "steps": [
+        {"type": "configure", "name": "core"},
+        {"type": "build", "name": "core"},
+        {"type": "test", "name": "core"}
+      ]
+    },
     {
       "name": "dev",
       "steps": [

@@ -19,6 +19,7 @@
 | reproduce the published measurement | [Measured baseline](BASELINE.md)                   |
 | build or release v0.3               | [v0.3 release gate](V0.3_RELEASE.md)               |
 | validate or deploy the website      | [Documentation deployment](DEPLOYMENT.md)          |
+| understand or run the test suites   | [Testing architecture](TESTING.md)                 |
 | understand the original design      | [Concept](CONCEPT.md) / [日本語](CONCEPT.ja.md)    |
 | report a vulnerability              | [Security policy](../SECURITY.md)                  |
 | contribute a change                 | [Contributing guide](../CONTRIBUTING.md)           |
