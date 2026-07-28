@@ -454,6 +454,9 @@ if(SQRAIL_BUILD_TESTS)
     GIT_PROGRESS TRUE
   )
   FetchContent_MakeAvailable(Catch2)
+  # Keep project-wide clang-tidy and warnings-as-errors focused on sqrail
+  # sources. Catch2 has its own upstream analysis policy.
+  set_target_properties(Catch2 Catch2WithMain PROPERTIES SYSTEM TRUE)
 
   add_executable(sqrail-json-test tests/json_test.cpp)
   target_link_libraries(sqrail-json-test PRIVATE sqrail_json Catch2::Catch2WithMain)
