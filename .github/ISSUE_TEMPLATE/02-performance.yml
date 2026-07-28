@@ -1,0 +1,122 @@
+name: "Performance report"
+description: "Share a reproducible runtime, throughput, or peak-memory problem"
+title: "[Performance]: "
+labels:
+  - "performance"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Performance work is correctness work. Reports must compare equivalent outputs and include enough detail for another person to repeat the measurement.
+
+        Please review the [benchmark policy](https://github.com/yhay81/sqrail/blob/main/docs/BENCHMARKS.md) before submitting.
+
+  - type: checkboxes
+    id: initial_checks
+    attributes:
+      label: "Initial checks"
+      options:
+        - label: "I searched existing issues and did not find the same performance problem."
+          required: true
+        - label: "I verified that the compared commands produce logically equivalent results."
+          required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: "sqrail version"
+      description: "Paste the output of `sqrail --version`."
+      placeholder: "sqrail 0.3.0 (DuckDB v1.5.5)"
+    validations:
+      required: true
+
+  - type: input
+    id: platform
+    attributes:
+      label: "Environment"
+      description: "Include OS, architecture, CPU, memory, storage, filesystem, and installation method."
+      placeholder: "Ubuntu 24.04, x86-64, 8 cores, 32 GiB RAM, local NVMe..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: workload
+    attributes:
+      label: "Dataset and workload"
+      description: "Describe the generator or source, format, compression, schema, rows, bytes, and file count. Do not share sensitive data."
+    validations:
+      required: true
+
+  - type: textarea
+    id: command
+    attributes:
+      label: "sqrail command"
+      description: "Include all resource controls and input bindings."
+      render: "shell"
+    validations:
+      required: true
+
+  - type: textarea
+    id: sql
+    attributes:
+      label: "SQL"
+      render: "sql"
+    validations:
+      required: true
+
+  - type: textarea
+    id: protocol
+    attributes:
+      label: "Measurement protocol"
+      description: "Explain warm-up, cold/warm cache state, run count, concurrency, background load, and measurement tools."
+      placeholder: "One warm-up followed by 10 measured runs with hyperfine 1.19..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: results
+    attributes:
+      label: "Results"
+      description: "Provide raw timings, distribution or variance, throughput, and peak RSS. Attach raw hyperfine JSON when available."
+      placeholder: "Median 2.31 s; min 2.28 s; max 2.38 s; peak RSS 412 MiB..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: stats
+    attributes:
+      label: "sqrail stats"
+      description: "Paste stderr from a successful run with `--stats`, if applicable."
+      render: "json"
+
+  - type: textarea
+    id: baseline
+    attributes:
+      label: "Baseline"
+      description: "Describe the DuckDB CLI, previous sqrail version, or other equivalent baseline, including its exact command and version."
+    validations:
+      required: true
+
+  - type: textarea
+    id: correctness
+    attributes:
+      label: "Correctness verification"
+      description: "Provide row counts, logical checksums, or another method showing that outputs are equivalent."
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: "Additional evidence"
+      description: "Add profiler output, query plans, flame graphs, or a link to a minimal public reproducer."
+
+  - type: checkboxes
+    id: final_checks
+    attributes:
+      label: "Community checks"
+      options:
+        - label: "I removed credentials, personal information, proprietary data, and other secrets."
+          required: true
+        - label: "I agree to follow the [Code of Conduct](https://github.com/yhay81/sqrail/blob/main/CODE_OF_CONDUCT.md)."
+          required: true

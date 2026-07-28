@@ -1,0 +1,62 @@
+name: "Usage question"
+description: "Ask for help using sqrail or understanding its supported boundary"
+title: "[Question]: "
+labels:
+  - "question"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Questions are welcome. A small, sanitized example makes it easier for the community to give a precise answer.
+
+        For suspected vulnerabilities, use [private vulnerability reporting](https://github.com/yhay81/sqrail/security/advisories/new), not this form.
+
+  - type: checkboxes
+    id: initial_checks
+    attributes:
+      label: "Initial checks"
+      options:
+        - label: "I searched existing issues and read `sqrail --agent-help`."
+          required: true
+        - label: "I checked the [README](https://github.com/yhay81/sqrail#readme) and [CLI contract](https://github.com/yhay81/sqrail/blob/main/docs/CONTRACT.md)."
+          required: true
+
+  - type: textarea
+    id: goal
+    attributes:
+      label: "Goal"
+      description: "What result are you trying to produce?"
+    validations:
+      required: true
+
+  - type: textarea
+    id: attempted
+    attributes:
+      label: "What have you tried?"
+      description: "Include a sanitized command, SQL, input shape, and any diagnostic output."
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: "Version and platform"
+      description: "Include `sqrail --version`, operating system, and architecture when relevant."
+
+  - type: textarea
+    id: question
+    attributes:
+      label: "Question"
+      description: "What specifically is unclear or blocking you?"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: final_checks
+    attributes:
+      label: "Community checks"
+      options:
+        - label: "I removed credentials, personal information, proprietary data, and other secrets."
+          required: true
+        - label: "I agree to follow the [Code of Conduct](https://github.com/yhay81/sqrail/blob/main/CODE_OF_CONDUCT.md)."
+          required: true

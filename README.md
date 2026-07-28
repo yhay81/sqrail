@@ -200,6 +200,14 @@ The objective is DuckDB-class execution without a second runtime and with a
 smaller, deterministic agent-facing contract—not a claim that the embedded
 DuckDB engine is faster than itself.
 
+## Community
+
+Questions, careful bug reports, reproducible performance evidence, documentation
+improvements, and focused patches are welcome. Start with the
+[support guide](SUPPORT.md), then read the
+[contribution guide](CONTRIBUTING.md). Everyone participating in the project
+must follow the [Code of Conduct](CODE_OF_CONDUCT.md). Report suspected
+vulnerabilities privately through the [security policy](SECURITY.md).
 
 ## License
 

@@ -1,0 +1,84 @@
+name: "Feature proposal"
+description: "Propose a focused change to sqrail's public agent-facing contract"
+title: "[Feature]: "
+labels:
+  - "enhancement"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        sqrail deliberately has one engine, one SQL dialect, no natural-language layer, no daemon, and no configuration file. Strong proposals keep the command surface small and teachable.
+
+  - type: checkboxes
+    id: initial_checks
+    attributes:
+      label: "Initial checks"
+      options:
+        - label: "I searched existing issues and did not find the same proposal."
+          required: true
+        - label: "I checked whether ordinary DuckDB SQL or an existing sqrail option already solves this."
+          required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: "Problem"
+      description: "Describe the concrete agent or user workflow that is difficult today. Focus on the problem, not the desired implementation."
+    validations:
+      required: true
+
+  - type: textarea
+    id: current_workaround
+    attributes:
+      label: "Current workaround"
+      description: "Show how the task is handled now and why that is insufficient."
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: "Proposed contract"
+      description: "Describe the smallest CLI or output-contract change that solves the problem. Include an example command."
+    validations:
+      required: true
+
+  - type: textarea
+    id: agent_learnability
+    attributes:
+      label: "Agent learnability"
+      description: "Explain how this fits in `--agent-help` without making its decision rule ambiguous or substantially longer."
+    validations:
+      required: true
+
+  - type: textarea
+    id: safety_performance
+    attributes:
+      label: "Safety and performance"
+      description: "Identify effects on read-only guarantees, filesystem access, resource bounds, determinism, binary size, memory, and throughput."
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: "Alternatives considered"
+      description: "Include DuckDB SQL, shell composition, or another focused tool where relevant."
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: "Evidence of demand"
+      description: "Add real examples, repeated agent failures, benchmarks, or links that show the problem is worth expanding the contract."
+
+  - type: checkboxes
+    id: final_checks
+    attributes:
+      label: "Community checks"
+      options:
+        - label: "I am willing to help refine the contract, tests, or documentation."
+          required: false
+        - label: "I agree to follow the [Code of Conduct](https://github.com/yhay81/sqrail/blob/main/CODE_OF_CONDUCT.md)."
+          required: true

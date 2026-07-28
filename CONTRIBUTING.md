@@ -3,6 +3,27 @@
 sqrail welcomes focused bug reports, reproducible performance evidence, and
 small changes that preserve its narrow agent-facing contract.
 
+Every contribution matters: a minimal reproducer, a documentation correction,
+an unfamiliar platform report, a benchmark, or a focused patch can all improve
+the project. You do not need permission to open an issue or submit a small pull
+request. Please follow the [Code of Conduct](CODE_OF_CONDUCT.md), and use the
+[support guide](SUPPORT.md) to choose the right reporting path.
+
+## Your first contribution
+
+1. Search open issues and pull requests to avoid duplicate work.
+2. For a non-trivial change, open a feature proposal before investing heavily
+   so the public contract and scope can be discussed early.
+3. Fork the repository, branch from the current `main`, and keep one logical
+   change per branch.
+4. Add tests or reproducible evidence, run the relevant checks below, and open a
+   pull request using the repository template.
+
+Issues labeled
+[`good first issue`](https://github.com/yhay81/sqrail/labels/good%20first%20issue)
+have bounded scope suitable for a first contribution. If an issue is unclear,
+asking a focused question is useful work too.
+
 ## Before proposing a feature
 
 The project deliberately has one engine, one SQL dialect, no natural-language
@@ -55,3 +76,9 @@ output is a correctness failure.
   change.
 - Confirm that `git diff --check`, the smoke test, ShellCheck, Actionlint, and
   Zizmor pass.
+
+Reviews focus on the documented contract, correctness, safety, portability,
+performance evidence, and whether an agent can learn the interface reliably.
+Feedback should explain the technical reason and, where possible, a concrete
+path forward. Contributions remain credited in Git history; substantial
+user-visible changes may also be acknowledged in release notes.
