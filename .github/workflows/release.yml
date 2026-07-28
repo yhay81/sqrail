@@ -291,9 +291,29 @@ jobs:
           --title "sqrail ${GITHUB_REF_NAME}"
           --generate-notes
           --draft
-      - name: Publish and verify immutable release
+      - name: Publish immutable release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release edit "${GITHUB_REF_NAME}" --draft=false --latest
+      - name: Verify immutable release attestation
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release edit "${GITHUB_REF_NAME}" --draft=false --latest
-          gh release verify "${GITHUB_REF_NAME}"
+          max_attempts=7
+          for ((attempt = 1; attempt <= max_attempts; attempt++)); do
+            if gh release verify "${GITHUB_REF_NAME}"; then
+              exit 0
+            fi
+
+            if ((attempt == max_attempts)); then
+              echo "::error::Release attestation was not verifiable after ${max_attempts} attempts"
+              exit 1
+            fi
+
+            delay=$((1 << attempt))
+            if ((delay > 30)); then
+              delay=30
+            fi
+            echo "::notice::Release attestation is not available yet; retrying in ${delay}s"
+            sleep "$delay"
+          done
