@@ -20,9 +20,10 @@ Cloudflare Workers Static Assets serves the contents of `site/`. The
 The custom domain is configured as a Worker origin. Cloudflare manages its DNS
 record and TLS certificate.
 
-GitHub Pages may remain available as a fallback preview, but it is not the
-canonical origin. Canonical, Open Graph, sitemap, and agent-discovery URLs all
-use `https://sqrails.yhay81.com`.
+GitHub Pages is intentionally disabled. Keeping a second public deployment
+would create a stale-documentation risk and an ambiguous canonical URL.
+Canonical, Open Graph, sitemap, repository, and agent-discovery URLs all use
+`https://sqrails.yhay81.com`.
 
 ## Validate locally
 

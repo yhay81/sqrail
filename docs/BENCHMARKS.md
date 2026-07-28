@@ -41,14 +41,14 @@ reported as cold-cache performance.
 
 ## Initial workload matrix
 
-| Class | Required cases |
-|---|---|
-| Scan | CSV and Parquet; selective narrow and non-selective wide projection |
-| Filter | selective and non-selective |
-| Aggregate | low and high cardinality |
-| Join | small-large and large-large |
-| Blocking | sort, distinct, and window |
-| Conversion | CSV to Parquet and Parquet to JSONL |
+| Class      | Required cases                                                      |
+| ---------- | ------------------------------------------------------------------- |
+| Scan       | CSV and Parquet; selective narrow and non-selective wide projection |
+| Filter     | selective and non-selective                                         |
+| Aggregate  | low and high cardinality                                            |
+| Join       | small-large and large-large                                         |
+| Blocking   | sort, distinct, and window                                          |
+| Conversion | CSV to Parquet and Parquet to JSONL                                 |
 
 Each workload is run at 512 MB, 1 GB, and 4 GB where the operating system and
 dataset size make the budget meaningful.

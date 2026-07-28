@@ -1,0 +1,3 @@
+# Python is used only for repository tests, benchmarks, and release tooling.
+# The shipped CLI and its runtime are C++.
+*.py linguist-detectable=false
