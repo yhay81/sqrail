@@ -10,3 +10,5 @@
 __pycache__/
 *.py[cod]
 .DS_Store
+/.wrangler/
+/node_modules/

@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
+  <title id="title">sqrail — SQL in. Files out.</title>
+  <desc id="desc">Dark technical grid with acid-green rails and the sqrail wordmark.</desc>
+  <defs>
+    <pattern id="grid" width="64" height="64" patternUnits="userSpaceOnUse">
+      <path d="M64 0H0V64" fill="none" stroke="#ffffff" stroke-opacity=".045"/>
+    </pattern>
+    <linearGradient id="rail" x1="0" x2="1">
+      <stop offset="0" stop-color="#caff3d" stop-opacity="0"/>
+      <stop offset=".28" stop-color="#caff3d"/>
+      <stop offset="1" stop-color="#caff3d" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="glow" x="-200%" y="-200%" width="500%" height="500%">
+      <feGaussianBlur stdDeviation="10"/>
+    </filter>
+  </defs>
+  <rect width="1200" height="630" fill="#090a09"/>
+  <rect width="1200" height="630" fill="url(#grid)"/>
+  <path d="M518 92L1230 474" stroke="url(#rail)" stroke-width="1"/>
+  <path d="M440 526L1190 232" stroke="url(#rail)" stroke-width="1" opacity=".45"/>
+  <circle cx="872" cy="282" r="5" fill="#caff3d" filter="url(#glow)"/>
+  <circle cx="872" cy="282" r="3" fill="#caff3d"/>
+  <g transform="translate(72 72)">
+    <path d="M0 0H29M0 14H29M10 7H29" fill="none" stroke="#caff3d" stroke-width="3"/>
+    <text x="43" y="15" fill="#f1f0e8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="23" font-weight="700" letter-spacing="-1">sqrail</text>
+  </g>
+  <text x="66" y="383" fill="#f1f0e8" font-family="Helvetica Neue, Arial, sans-serif" font-size="144" font-weight="600" letter-spacing="-12">sqrail</text>
+  <text x="75" y="466" fill="#f1f0e8" font-family="Helvetica Neue, Arial, sans-serif" font-size="48" font-weight="500" letter-spacing="-2">SQL in. <tspan fill="#caff3d">Files out.</tspan></text>
+  <text x="78" y="530" fill="#92978e" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="18" font-weight="600" letter-spacing="2">ONE READ-ONLY QUERY AT A TIME</text>
+  <rect x="987" y="73" width="141" height="38" fill="#caff3d"/>
+  <text x="1005" y="98" fill="#090a09" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="14" font-weight="700">AGENT-NATIVE</text>
+</svg>

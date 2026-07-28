@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://sqrails.yhay81.com/sitemap.xml
