@@ -1,14 +1,45 @@
-# sqrail
+<div align="center">
+  <a href="https://sqrails.yhay81.com">
+    <img
+      src="site/social-card.svg"
+      width="720"
+      alt="sqrail — SQL in. Files out."
+    >
+  </a>
 
-**SQL in, files out.**
+  <p>
+    <strong>One bounded, read-only SQL query over local files.</strong><br>
+    A small CLI for coding agents that already know the SQL.
+  </p>
 
-sqrail is a small, non-interactive CLI for coding agents that already know how
-to write SQL. It executes one read-only DuckDB query over local CSV, TSV, JSON,
-and Parquet files through a deliberately narrow command surface.
+  <p>
+    <a href="https://github.com/yhay81/sqrail/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/yhay81/sqrail/actions/workflows/ci.yml/badge.svg"></a>
+    <a href="https://github.com/yhay81/sqrail/releases/latest"><img alt="Release" src="https://img.shields.io/github/v/release/yhay81/sqrail?display_name=tag&sort=semver"></a>
+    <a href="https://github.com/yhay81/sqrail/blob/main/LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-caff3d?labelColor=111311"></a>
+    <a href="https://github.com/yhay81/sqrail"><img alt="C++20" src="https://img.shields.io/badge/C%2B%2B-20-caff3d?labelColor=111311"></a>
+  </p>
 
-It is not a natural-language interface, an agent framework, or a new query
-engine. The model writes the SQL. sqrail provides predictable file binding,
-streamed execution, bounded resources, and machine-readable output.
+  <p>
+    <a href="https://sqrails.yhay81.com">Website</a>
+    ·
+    <a href="https://sqrails.yhay81.com/docs/">3-minute guide</a>
+    ·
+    <a href="docs/CONTRACT.md">Contract</a>
+    ·
+    <a href="docs/BENCHMARKS.md">Benchmarks</a>
+    ·
+    <a href="SECURITY.md">Security</a>
+    ·
+    <a href="CONTRIBUTING.md">Contributing</a>
+  </p>
+</div>
+
+---
+
+sqrail is not a natural-language interface, an agent framework, or a new query
+engine. The model writes SQL. sqrail embeds DuckDB and supplies the missing
+execution boundary: canonical file binding, streamed results, explicit resource
+limits, atomic output, and machine-readable diagnostics.
 
 ```sh
 sqrail run \
@@ -23,6 +54,22 @@ GROUP BY d.name
 ORDER BY total DESC
 SQL
 ```
+
+## Why sqrail
+
+| Need                              | sqrail's answer                                                   |
+| --------------------------------- | ----------------------------------------------------------------- |
+| A model already writes SQL        | Keep SQL as the only query language                               |
+| Tool instructions consume context | Learn the complete interface with `sqrail --agent-help`           |
+| File access should be intentional | Allowlist only explicitly bound inputs                            |
+| Agent work must be bounded        | Cap memory, threads, time, spill, rows, bytes, files, and SQL     |
+| Pipelines need stable I/O         | Stream JSONL; emit one JSON diagnostic; use documented exit codes |
+| Failed output must be harmless    | Write privately, commit atomically, never overwrite               |
+
+The interface has three verbs: `schema` when names and types are unknown,
+`check` to plan without execution, and `run` to execute once. See the
+[3-minute guide](https://sqrails.yhay81.com/docs/) or give an agent the canonical
+[170-word help](https://sqrails.yhay81.com/agent-help.txt).
 
 ## Install
 
@@ -87,16 +134,17 @@ sqrail --agent-help
 
 The 170-word v0.3 help includes a one-action decision rule and explicit stop
 condition. The low-cost-model experiments that motivated that rule are recorded
-in the [agent experiment log](benchmarks/agent-eval/EXPERIMENTS.md).
+in the [agent experiment log](benchmarks/agent-eval/EXPERIMENTS.md). Integration
+patterns are collected in [Agent integration](docs/AGENT_INTEGRATION.md).
 
 ## Supported files
 
-| Input | Output |
-|---|---|
-| CSV, `.csv.gz`, `.csv.zst` | CSV, `.csv.gz`, `.csv.zst` |
-| TSV, `.tsv.gz`, `.tsv.zst` | TSV, `.tsv.gz`, `.tsv.zst` |
+| Input                                        | Output                                       |
+| -------------------------------------------- | -------------------------------------------- |
+| CSV, `.csv.gz`, `.csv.zst`                   | CSV, `.csv.gz`, `.csv.zst`                   |
+| TSV, `.tsv.gz`, `.tsv.zst`                   | TSV, `.tsv.gz`, `.tsv.zst`                   |
 | JSON, JSONL, NDJSON, optionally `.gz`/`.zst` | JSON, JSONL, NDJSON, optionally `.gz`/`.zst` |
-| Parquet file, glob, or partitioned directory | Parquet |
+| Parquet file, glob, or partitioned directory | Parquet                                      |
 
 Externally compressed Parquet and bzip2/xz streams are deliberately rejected.
 
@@ -208,6 +256,10 @@ improvements, and focused patches are welcome. Start with the
 [contribution guide](CONTRIBUTING.md). Everyone participating in the project
 must follow the [Code of Conduct](CODE_OF_CONDUCT.md). Report suspected
 vulnerabilities privately through the [security policy](SECURITY.md).
+
+The [documentation index](docs/README.md) maps each question to its normative
+source. Please treat benchmark numbers as hardware-specific observations unless
+the linked harness and equivalent-work checks support a broader claim.
 
 ## License
 

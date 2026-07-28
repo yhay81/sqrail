@@ -1,0 +1,22 @@
+sqrail runs read-only SQL over CSV, TSV, JSON, and Parquet.
+
+sqrail schema [--memory SIZE] [--threads N] [--timeout DURATION]
+              [--max-input-files N] [--strict-schema] FILE...
+sqrail check [-t NAME=PATH]... [--memory SIZE] [--threads N] [--timeout DURATION]
+             [--max-rows N] [--max-input-files N] [--max-sql-bytes SIZE]
+             [--strict-schema] [SQL|-]
+sqrail run [-t NAME=PATH]... [-o FILE] [--memory SIZE] [--threads N]
+           [--spill DIR [--max-spill SIZE]] [--timeout DURATION] [--max-rows N]
+           [--max-output-bytes SIZE] [--max-input-files N] [--max-sql-bytes SIZE]
+           [--stats] [--strict-schema] [SQL|-]
+sqrail --version
+
+Names/types result: schema once. Otherwise trust stated names/types, run once, and stop after success.
+-t binds a file, Parquet directory, or glob; '-' reads SQL; '--' ends options.
+Files union columns by name; --strict-schema requires exact schemas.
+check emits columns, inputs, and plan without execution.
+No -o: JSONL stdout. -o: extension selects format.
+Limits fail closed; --stats writes versioned success JSON to stderr.
+Text supports .gz/.zst. Outputs are private, atomic, never overwritten.
+SQL is one SELECT, VALUES, or WITH; order needs ORDER BY.
+Errors are one stderr JSON. Exit: 0 success, 2 usage, 3 input, 4 SQL, 5 output, 70 internal.

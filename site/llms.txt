@@ -1,0 +1,25 @@
+# sqrail
+
+> sqrail is a small, read-only SQL-on-files CLI for coding agents.
+
+Canonical documentation: https://sqrails.yhay81.com/docs/
+Source: https://github.com/yhay81/sqrail
+Releases: https://github.com/yhay81/sqrail/releases
+License: MIT
+
+## Agent rule
+
+If names and types are unknown, run `sqrail schema FILE...` once.
+Otherwise trust the stated schema, run one query, and stop after success.
+
+## Interface
+
+Use `sqrail --agent-help`, or fetch:
+https://sqrails.yhay81.com/agent-help.txt
+
+## Normative references
+
+- CLI contract: https://github.com/yhay81/sqrail/blob/main/docs/CONTRACT.md
+- Agent integration: https://github.com/yhay81/sqrail/blob/main/docs/AGENT_INTEGRATION.md
+- Security boundary: https://github.com/yhay81/sqrail/blob/main/SECURITY.md
+- Benchmark policy: https://github.com/yhay81/sqrail/blob/main/docs/BENCHMARKS.md

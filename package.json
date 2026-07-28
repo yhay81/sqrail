@@ -1,0 +1,23 @@
+{
+  "name": "sqrail-site",
+  "version": "0.3.0",
+  "private": true,
+  "description": "Validation and Cloudflare deployment tooling for the sqrail documentation site",
+  "scripts": {
+    "format": "prettier --write .htmlvalidate.json package.json README.md docs/README.md docs/AGENT_INTEGRATION.md docs/DEPLOYMENT.md site/index.html site/docs/index.html site/404.html site/styles.css site/app.js wrangler.jsonc",
+    "format:check": "prettier --check .htmlvalidate.json package.json README.md docs/README.md docs/AGENT_INTEGRATION.md docs/DEPLOYMENT.md site/index.html site/docs/index.html site/404.html site/styles.css site/app.js wrangler.jsonc",
+    "site:html": "html-validate \"site/**/*.html\"",
+    "site:js": "node --check site/app.js",
+    "site:check": "npm run format:check && npm run site:html && npm run site:js && npm run cloudflare:check",
+    "cloudflare:check": "wrangler deploy --dry-run",
+    "deploy:cloudflare": "wrangler deploy"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "devDependencies": {
+    "html-validate": "11.5.7",
+    "prettier": "3.9.6",
+    "wrangler": "4.114.0"
+  }
+}
