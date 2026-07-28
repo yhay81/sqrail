@@ -100,13 +100,15 @@ already been emitted, stdout may contain a valid partial JSONL prefix. Use
 ## Resource controls
 
 - `--memory SIZE` accepts a positive decimal number followed by `B`, `KB`, `MB`,
-  `GB`, `TB`, `KiB`, `MiB`, `GiB`, or `TiB`.
+  `GB`, `TB`, `KiB`, `MiB`, `GiB`, or `TiB`. Common `K`, `M`, `G`, and `T`
+  short forms are also accepted for DuckDB resource limits.
 - `--threads N` accepts an integer from 1 through 1024.
 - `--spill DIR` creates the root when necessary, then creates a unique,
   owner-only process workspace beneath it as DuckDB's temporary directory.
   Existing sibling files are not allowlisted, and the workspace is removed
   after DuckDB closes.
-- `--max-spill SIZE` requires `--spill` and caps DuckDB temporary storage.
+- `--max-spill SIZE` requires `--spill`, accepts the same resource-size syntax
+  as `--memory`, and caps DuckDB temporary storage.
 - `--timeout DURATION` accepts a positive duration from `1ms` through 7 days
   using `ms`, `s`, or `m`. Its absolute deadline begins when command handling
   starts and covers input discovery, schema inference, planning, execution,
@@ -115,17 +117,20 @@ already been emitted, stdout may contain a valid partial JSONL prefix. Use
   requests at most `N + 1` final rows and returns `RESULT_LIMIT` if the extra row
   exists. A file destination is not committed after this failure. Streaming
   stdout may already contain a valid prefix of at most `N` rows.
-- `--max-output-bytes SIZE` accepts the same byte-size units and interrupts
-  file output after it grows beyond the cap. Its decimal part may have at most
-  six digits and is converted to an exact integer byte count by truncating any
-  sub-byte remainder. JSONL stdout is checked before each buffered write. File
-  destinations are never committed on
+- `--max-output-bytes SIZE` accepts the explicit `B`, `KB`, `MB`, `GB`, `TB`,
+  `KiB`, `MiB`, `GiB`, and `TiB` byte-size units and interrupts file output
+  after it grows beyond the cap. The `K`/`M`/`G`/`T` resource shorthands are
+  deliberately excluded from exact byte caps. Its decimal part may have at
+  most six digits and is converted to an exact integer byte count by
+  truncating any sub-byte remainder. JSONL stdout is checked before each
+  buffered write. File destinations are never committed on
   `OUTPUT_LIMIT`; stdout may already contain a valid prefix.
 - `--max-input-files N` accepts an integer from 1 through 1000000000 and stops
   recursive directory or glob expansion as soon as the cumulative count
   exceeds the cap.
-- `--max-sql-bytes SIZE` uses the same exact byte-size syntax and bounds either
-  the positional SQL string or incremental stdin reads before parsing.
+- `--max-sql-bytes SIZE` uses the same exact byte-size syntax as
+  `--max-output-bytes` and bounds either the positional SQL string or
+  incremental stdin reads before parsing.
 
 `check` accepts `--memory`, `--threads`, `--timeout`, `--max-rows`,
 `--max-input-files`, `--max-sql-bytes`, and `--strict-schema`, but not output,

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import os
 import sys
 import tempfile
@@ -60,7 +61,9 @@ class AgentRunnerTest(unittest.TestCase):
             )
         candidate = self.candidate("duckdb", "-json")
         candidate["invocations"][0]["stdin"] = "COPY (SELECT 1) TO '/tmp/out.parquet'"
-        with self.assertRaisesRegex(RUNNER.RunnerError, "stdin contains an absolute path"):
+        with self.assertRaisesRegex(
+            RUNNER.RunnerError, "stdin contains an absolute path"
+        ):
             RUNNER.validate_candidate(candidate, "duckdb")
 
     def test_timeout_wrapper_is_limited_to_duckdb_timeout_task(self) -> None:
@@ -78,6 +81,22 @@ class AgentRunnerTest(unittest.TestCase):
         with self.assertRaises(RUNNER.RunnerError):
             RUNNER.validate_candidate(candidate, "duckdb", "schema_discovery")
 
+    def test_timeout_wrapper_is_self_contained_and_bounded(self) -> None:
+        command, duration = RUNNER.unwrap_timeout(
+            ["gtimeout", "10ms", "/pinned/duckdb", "-c", "SELECT 1"]
+        )
+        self.assertEqual(command, ["/pinned/duckdb", "-c", "SELECT 1"])
+        self.assertEqual(duration, 0.01)
+        command, duration = RUNNER.unwrap_timeout(
+            ["timeout", "0.01s", "/pinned/duckdb", "-c", "SELECT 1"]
+        )
+        self.assertEqual(command[0], "/pinned/duckdb")
+        self.assertEqual(duration, 0.01)
+        with self.assertRaises(RUNNER.RunnerError):
+            RUNNER.unwrap_timeout(["timeout", "6s", "/pinned/duckdb"])
+        with self.assertRaises(RUNNER.RunnerError):
+            RUNNER.unwrap_timeout(["timeout", "--signal=TERM", "/pinned/duckdb"])
+
     def test_input_copy_is_independent_and_read_only(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -90,6 +109,69 @@ class AgentRunnerTest(unittest.TestCase):
             self.assertNotEqual(destination.read_bytes(), source.read_bytes())
             if os.name != "nt":
                 self.assertEqual(destination.stat().st_mode & 0o222, 0)
+
+    def test_task_prompts_expose_oracle_specific_requirements(self) -> None:
+        corpus = json.loads(
+            (ROOT / "benchmarks" / "agent-tasks-v0.3.json").read_text(encoding="utf-8")
+        )
+        tasks = {task["id"]: task for task in corpus["tasks"]}
+        requirements = {
+            "join_aggregate": ("drug_class", "observation_count"),
+            "timeout_recovery": ("cross join", "10 ms"),
+            "check_metadata": ("drug_id", "observations"),
+            "success_stats": ("column rows",),
+        }
+        for task_id, required_phrases in requirements.items():
+            prompt = tasks[task_id]["prompt"].lower()
+            with self.subTest(task=task_id):
+                for phrase in required_phrases:
+                    self.assertIn(phrase, prompt)
+        self.assertEqual(
+            tasks["timeout_recovery"]["oracle"]["required_arguments"],
+            ["cross join"],
+        )
+
+    def test_prompt_paths_hide_irrelevant_destinations(self) -> None:
+        stdout_tasks = {
+            "schema_discovery",
+            "selective_jsonl",
+            "check_metadata",
+            "schema_evolution",
+            "success_stats",
+        }
+        for task_id in stdout_tasks:
+            with self.subTest(task=task_id):
+                self.assertNotIn("output", RUNNER.PROMPT_PATH_ROLES[task_id])
+        self.assertEqual(
+            RUNNER.PROMPT_PATH_ROLES["bounded_sort"],
+            ("fact_parquet", "output", "spill"),
+        )
+        self.assertEqual(
+            set(RUNNER.PROMPT_PATH_ROLES),
+            {
+                task["id"]
+                for task in json.loads(
+                    (ROOT / "benchmarks" / "agent-tasks-v0.3.json").read_text(
+                        encoding="utf-8"
+                    )
+                )["tasks"]
+            },
+        )
+
+    def test_sessions_copy_only_task_inputs(self) -> None:
+        self.assertEqual(RUNNER.TASK_SOURCE_ROLES["schema_discovery"], ("fact_csv",))
+        self.assertEqual(
+            RUNNER.TASK_SOURCE_ROLES["join_aggregate"],
+            ("fact_parquet", "dim_parquet"),
+        )
+        self.assertEqual(
+            RUNNER.TASK_SOURCE_ROLES["schema_evolution"],
+            ("evolution_a_parquet", "evolution_b_parquet"),
+        )
+        for task, source_roles in RUNNER.TASK_SOURCE_ROLES.items():
+            with self.subTest(task=task):
+                self.assertTrue(source_roles)
+                self.assertTrue(set(source_roles).issubset(RUNNER.ROLE_SOURCES))
 
 
 if __name__ == "__main__":

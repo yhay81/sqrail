@@ -85,6 +85,10 @@ An agent can learn the complete interface with:
 sqrail --agent-help
 ```
 
+The 170-word v0.3 help includes a one-action decision rule and explicit stop
+condition. The low-cost-model experiments that motivated that rule are recorded
+in the [agent experiment log](benchmarks/agent-eval/EXPERIMENTS.md).
+
 ## Supported files
 
 | Input | Output |

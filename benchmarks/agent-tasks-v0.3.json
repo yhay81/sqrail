@@ -34,7 +34,7 @@
     },
     {
       "id": "join_aggregate",
-      "prompt": "Join fact.parquet to dim.parquet by drug_id and write Parquet containing observation count by drug_class ordered by drug_class.",
+      "prompt": "Join fact.parquet to dim.parquet by drug_id. Group by drug_class and name count(*) observation_count. Write Parquet with exactly the columns drug_class and observation_count, ordered by drug_class.",
       "oracle": {
         "kind": "rows",
         "source": "output",
@@ -79,14 +79,15 @@
     },
     {
       "id": "timeout_recovery",
-      "prompt": "Run a deliberately expensive read-only query with a 10 ms deadline and report the structured timeout failure without treating partial stdout as complete.",
+      "prompt": "Using fact.parquet as the fact table, run the deliberately expensive read-only query SELECT sum(a.value * b.value) AS total FROM fact a CROSS JOIN fact b with a 10 ms deadline. Report the structured timeout failure without treating partial stdout as complete.",
       "oracle": {
         "kind": "failure",
         "sqrail_exit": 4,
         "sqrail_code": "QUERY_TIMEOUT",
         "duckdb_nonzero": true,
         "output_absent": true,
-        "required_arguments": ["range"],
+        "required_arguments": ["cross join"],
+        "timeout_seconds": 0.01,
         "max_wall_seconds": 5
       }
     },
@@ -101,7 +102,7 @@
     },
     {
       "id": "check_metadata",
-      "prompt": "Validate, but do not execute, a count by drug_id over fact.parquet. Return the machine-readable result columns, input-file count, and physical plan.",
+      "prompt": "Validate, but do not execute, a count by drug_id over fact.parquet, naming count(*) observations. Return the machine-readable result columns drug_id and observations, input-file count, and physical plan.",
       "oracle": {
         "kind": "check",
         "columns": ["drug_id", "observations"]
@@ -119,7 +120,7 @@
     },
     {
       "id": "schema_evolution",
-      "prompt": "Read the schema-evolution Parquet directory as one table and return both evolved value columns with null filling. Then verify that strict-schema mode rejects the same dataset.",
+      "prompt": "Read the schema-evolution Parquet directory as one table and return id, old_value, and new_value with null filling as JSON Lines on stdout. Then verify that strict-schema mode rejects the same dataset.",
       "oracle": {
         "kind": "schema_evolution",
         "columns": ["id", "old_value", "new_value"],
@@ -128,7 +129,7 @@
     },
     {
       "id": "success_stats",
-      "prompt": "Count fact.parquet rows and capture the structured success statistics without mixing them into JSON Lines stdout.",
+      "prompt": "Count fact.parquet rows as JSON Lines on stdout, naming the result column rows, and capture the structured success statistics on stderr without mixing them into stdout.",
       "oracle": {
         "kind": "stats",
         "sql": "SELECT count(*) AS rows FROM read_parquet({fact_parquet})"

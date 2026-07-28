@@ -118,16 +118,17 @@ uint64_t ParsePositiveInteger(const std::string &raw, const std::string &option,
 }
 
 std::string ParseSize(const std::string &raw, const std::string &option, const std::string &code) {
-	static const std::regex size_pattern("^[0-9]+([.][0-9]+)?(B|KB|MB|GB|TB|KiB|MiB|GiB|TiB)$", std::regex::icase);
+	static const std::regex size_pattern("^[0-9]+([.][0-9]+)?(B|K|M|G|T|KB|MB|GB|TB|KiB|MiB|GiB|TiB)$",
+	                                     std::regex::icase);
 	if (!std::regex_match(raw, size_pattern)) {
-		throw SqrailError(EXIT_USAGE, code, option + " must be a size such as 512MB or 2GB");
+		throw SqrailError(EXIT_USAGE, code, option + " must be a size such as 512M, 512MB, or 2GiB");
 	}
 	try {
 		if (std::stod(raw) <= 0) {
 			throw SqrailError(EXIT_USAGE, code, option + " must be greater than zero");
 		}
 	} catch (const std::invalid_argument &) {
-		throw SqrailError(EXIT_USAGE, code, option + " must be a size such as 512MB or 2GB");
+		throw SqrailError(EXIT_USAGE, code, option + " must be a size such as 512M, 512MB, or 2GiB");
 	} catch (const std::out_of_range &) {
 		throw SqrailError(EXIT_USAGE, code, option + " value is too large");
 	}

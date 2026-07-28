@@ -233,27 +233,29 @@ int Schema(int argc, char **argv) {
 }
 
 void PrintAgentHelp() {
-	std::cout << "sqrail runs read-only SQL over CSV, TSV, JSON, and Parquet.\n"
-	          << "\n"
-	          << "sqrail schema [--memory SIZE] [--threads N] [--timeout DURATION]\n"
-	          << "              [--max-input-files N] [--strict-schema] FILE...\n"
-	          << "sqrail check [-t NAME=PATH]... [--memory SIZE] [--threads N] [--timeout DURATION]\n"
-	          << "             [--max-rows N] [--max-input-files N] [--max-sql-bytes SIZE]\n"
-	          << "             [--strict-schema] [SQL|-]\n"
-	          << "sqrail run [-t NAME=PATH]... [-o FILE] [--memory SIZE] [--threads N]\n"
-	          << "           [--spill DIR [--max-spill SIZE]] [--timeout DURATION] [--max-rows N]\n"
-	          << "           [--max-output-bytes SIZE] [--max-input-files N] [--max-sql-bytes SIZE]\n"
-	          << "           [--stats] [--strict-schema] [SQL|-]\n"
-	          << "sqrail --version\n"
-	          << "\n"
-	          << "-t binds a file, Parquet directory, or glob; '-' reads SQL; '--' ends options.\n"
-	          << "Files union columns by name; --strict-schema requires exact schemas.\n"
-	          << "check emits columns, inputs, and plan without execution.\n"
-	          << "No -o: JSONL stdout. -o: extension selects format.\n"
-	          << "Limits fail closed; --stats writes versioned success JSON to stderr.\n"
-	          << "Text supports .gz/.zst. Outputs are private, atomic, never overwritten.\n"
-	          << "SQL is one SELECT, VALUES, or WITH; order needs ORDER BY.\n"
-	          << "Errors are one stderr JSON. Exit: 0 success, 2 usage, 3 input, 4 SQL, 5 output, 70 internal.\n";
+	std::cout
+	    << "sqrail runs read-only SQL over CSV, TSV, JSON, and Parquet.\n"
+	    << "\n"
+	    << "sqrail schema [--memory SIZE] [--threads N] [--timeout DURATION]\n"
+	    << "              [--max-input-files N] [--strict-schema] FILE...\n"
+	    << "sqrail check [-t NAME=PATH]... [--memory SIZE] [--threads N] [--timeout DURATION]\n"
+	    << "             [--max-rows N] [--max-input-files N] [--max-sql-bytes SIZE]\n"
+	    << "             [--strict-schema] [SQL|-]\n"
+	    << "sqrail run [-t NAME=PATH]... [-o FILE] [--memory SIZE] [--threads N]\n"
+	    << "           [--spill DIR [--max-spill SIZE]] [--timeout DURATION] [--max-rows N]\n"
+	    << "           [--max-output-bytes SIZE] [--max-input-files N] [--max-sql-bytes SIZE]\n"
+	    << "           [--stats] [--strict-schema] [SQL|-]\n"
+	    << "sqrail --version\n"
+	    << "\n"
+	    << "Names/types result: schema once. Otherwise trust stated names/types, run once, and stop after success.\n"
+	    << "-t binds a file, Parquet directory, or glob; '-' reads SQL; '--' ends options.\n"
+	    << "Files union columns by name; --strict-schema requires exact schemas.\n"
+	    << "check emits columns, inputs, and plan without execution.\n"
+	    << "No -o: JSONL stdout. -o: extension selects format.\n"
+	    << "Limits fail closed; --stats writes versioned success JSON to stderr.\n"
+	    << "Text supports .gz/.zst. Outputs are private, atomic, never overwritten.\n"
+	    << "SQL is one SELECT, VALUES, or WITH; order needs ORDER BY.\n"
+	    << "Errors are one stderr JSON. Exit: 0 success, 2 usage, 3 input, 4 SQL, 5 output, 70 internal.\n";
 }
 
 void PrintHumanHelp() {

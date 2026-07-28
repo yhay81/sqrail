@@ -4,4 +4,9 @@
 /.cache/
 /benchmark-data*/
 /benchmark-results*/
+/agent-artifacts*/
+/agent-results*.jsonl
+/agent-evaluation*.json
+__pycache__/
+*.py[cod]
 .DS_Store

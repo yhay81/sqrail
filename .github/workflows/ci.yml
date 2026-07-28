@@ -71,6 +71,7 @@ jobs:
           test -f install/share/doc/sqrail/benchmarks/agent-tasks-v0.3.json
           test -x install/share/doc/sqrail/benchmarks/agent-eval/run.py
           test -f install/share/doc/sqrail/benchmarks/agent-eval/launcher.c
+          test -f install/share/doc/sqrail/benchmarks/agent-eval/EXPERIMENTS.md
           test -x install/share/doc/sqrail/benchmarks/agent-eval.py
           test -x install/share/doc/sqrail/benchmarks/agent-run.py
           test -f install/share/doc/sqrail/benchmarks/agent_oracle.py

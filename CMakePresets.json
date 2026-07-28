@@ -253,7 +253,7 @@
       },
       "filter": {
         "include": {
-            "name": "sqrail-(json|cli|agent-eval|agent-oracle|agent-runner|package-tools|benchmark-environment)-unit"
+            "name": "sqrail-(json|cli|agent-eval|blind-agent-eval|agent-oracle|agent-runner|package-tools|benchmark-environment)-unit"
         }
       }
     },

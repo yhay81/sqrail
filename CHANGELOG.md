@@ -42,6 +42,8 @@ versions follow semantic versioning.
   binary/dataset digests, host resources, compiler, and git state
 - the compact agent contract to document result guards, statistics, schema
   evolution, and option termination
+- DuckDB resource limits to accept common `K`, `M`, `G`, and `T` size suffixes
+  in addition to the documented SI and IEC forms
 
 ### Fixed
 
@@ -49,6 +51,13 @@ versions follow semantic versioning.
   spill artifacts
 - closed stdout pipes now produce a structured `STDOUT_WRITE` failure instead
   of bypassing cleanup through `SIGPIPE`
+- artifact-gate prompts now expose every oracle-specific requirement without
+  advertising irrelevant output paths, and bind the runner, oracle, and
+  evaluator digests for later verification
+- the DuckDB timeout-recovery comparison now applies and verifies its exact
+  10 ms deadline without requiring a platform `timeout` executable
+- artifact sessions now copy only the independent read-only inputs required by
+  their task instead of duplicating the full benchmark dataset
 
 ## [0.2.2] - 2026-07-27
 

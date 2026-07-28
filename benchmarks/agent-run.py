@@ -42,6 +42,36 @@ OUTPUT_FORMATS = {
     "result_limit": ".parquet",
 }
 
+PROMPT_PATH_ROLES = {
+    "schema_discovery": ("fact_csv",),
+    "selective_jsonl": ("fact_parquet",),
+    "join_aggregate": ("fact_parquet", "dim_parquet", "output"),
+    "csv_to_parquet": ("fact_csv", "output"),
+    "parquet_to_jsonl": ("fact_parquet", "output"),
+    "bounded_sort": ("fact_parquet", "output", "spill"),
+    "timeout_recovery": ("fact_parquet",),
+    "no_overwrite": ("fact_parquet", "output"),
+    "check_metadata": ("fact_parquet",),
+    "result_limit": ("fact_parquet", "output"),
+    "schema_evolution": ("evolution_a_parquet", "evolution_b_parquet"),
+    "success_stats": ("fact_parquet",),
+}
+
+TASK_SOURCE_ROLES = {
+    task: tuple(role for role in roles if role in ROLE_SOURCES)
+    for task, roles in PROMPT_PATH_ROLES.items()
+}
+
+EVALUATION_SOURCES = {
+    "runner": Path(__file__).resolve(),
+    "oracle": Path(__file__).with_name("agent_oracle.py").resolve(),
+    "evaluator": Path(__file__).with_name("agent-eval.py").resolve(),
+}
+
+TIMEOUT_DURATION = re.compile(
+    r"^(?P<value>(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+))(?P<unit>ms|s)?$"
+)
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
@@ -51,7 +81,9 @@ def parse_args() -> argparse.Namespace:
     prepare.add_argument("--artifact-root", type=Path, required=True)
     prepare.add_argument("--artifact-id", required=True)
     prepare.add_argument("--data", type=Path, required=True)
-    prepare.add_argument("--tasks", type=Path, default=Path(__file__).with_name("agent-tasks-v0.3.json"))
+    prepare.add_argument(
+        "--tasks", type=Path, default=Path(__file__).with_name("agent-tasks-v0.3.json")
+    )
     prepare.add_argument("--sqrail", type=Path, required=True)
     prepare.add_argument("--duckdb", type=Path, required=True)
     prepare.add_argument("--model", required=True)
@@ -60,12 +92,16 @@ def parse_args() -> argparse.Namespace:
     prepare.add_argument("--run-id", required=True)
     prepare.add_argument("--attempt", type=int, choices=(1, 2), required=True)
 
-    execute = subparsers.add_parser("execute", help="execute a model-produced command plan")
+    execute = subparsers.add_parser(
+        "execute", help="execute a model-produced command plan"
+    )
     execute.add_argument("--artifact-root", type=Path, required=True)
     execute.add_argument("--artifact-id", required=True)
     execute.add_argument("--candidate", type=Path, required=True)
     execute.add_argument("--data", type=Path, required=True)
-    execute.add_argument("--tasks", type=Path, default=Path(__file__).with_name("agent-tasks-v0.3.json"))
+    execute.add_argument(
+        "--tasks", type=Path, default=Path(__file__).with_name("agent-tasks-v0.3.json")
+    )
     execute.add_argument("--sqrail", type=Path, required=True)
     execute.add_argument("--duckdb", type=Path, required=True)
     execute.add_argument("--command-timeout", type=float, default=120.0)
@@ -123,6 +159,13 @@ def prepare_session(arguments: argparse.Namespace) -> int:
     tasks = task_map(arguments.tasks)
     if arguments.task not in tasks:
         raise RunnerError(f"unknown task: {arguments.task}")
+    try:
+        prompt_path_roles = PROMPT_PATH_ROLES[arguments.task]
+        source_roles = TASK_SOURCE_ROLES[arguments.task]
+    except KeyError as error:
+        raise RunnerError(
+            f"task has no prompt-path contract: {arguments.task}"
+        ) from error
     if not arguments.sqrail.is_file() or not arguments.duckdb.is_file():
         raise RunnerError("sqrail and DuckDB executables must exist")
     data = arguments.data.resolve()
@@ -140,7 +183,8 @@ def prepare_session(arguments: argparse.Namespace) -> int:
     paths: dict[str, str] = {}
     sources: dict[str, str] = {}
     input_digests: dict[str, str] = {}
-    for role, source_relative in ROLE_SOURCES.items():
+    for role in source_roles:
+        source_relative = ROLE_SOURCES[role]
         source = data / source_relative
         if not source.is_file():
             raise RunnerError(f"dataset input is missing: {source_relative}")
@@ -172,13 +216,18 @@ def prepare_session(arguments: argparse.Namespace) -> int:
     if help_result.returncode != 0:
         raise RunnerError(f"cannot capture {arguments.arm} help")
 
-    path_lines = "\n".join(
-        f"- {role}: {relative}" for role, relative in paths.items()
+    path_lines = "\n".join(f"- {role}: {paths[role]}" for role in prompt_path_roles)
+    wrapper_help = (
+        "\nFor this DuckDB-only deadline task, the runner provides a built-in "
+        'wrapper with argv ["timeout", "10ms", "duckdb", ...].'
+        if arguments.arm == "duckdb" and arguments.task == "timeout_recovery"
+        else ""
     )
     prompt = (
         tasks[arguments.task]["prompt"]
         + "\n\nUse these attempt-specific relative paths:\n"
         + path_lines
+        + wrapper_help
         + "\nReturn a JSON command plan matching candidate-schema.json; do not use a shell."
     )
     session = {
@@ -190,11 +239,15 @@ def prepare_session(arguments: argparse.Namespace) -> int:
         "task": arguments.task,
         "attempt": arguments.attempt,
         "prompt": prompt,
+        "prompt_path_roles": list(prompt_path_roles),
         "tool_help": help_result.stdout.decode("utf-8", errors="replace"),
         "tool_help_sha256": hashlib.sha256(help_result.stdout).hexdigest(),
         "sqrail_sha256": sha256(arguments.sqrail.resolve()),
         "duckdb_sha256": sha256(arguments.duckdb.resolve()),
         "task_corpus_sha256": sha256(arguments.tasks.resolve()),
+        "evaluation_source_sha256": {
+            name: sha256(path) for name, path in EVALUATION_SOURCES.items()
+        },
         "dataset_manifest_sha256": sha256(manifest),
         "paths": paths,
         "source_paths": sources,
@@ -207,7 +260,15 @@ def prepare_session(arguments: argparse.Namespace) -> int:
             "session_id": "non-empty provider session identifier",
             "invocations": [
                 {
-                    "argv": [arguments.arm, "arguments without shell syntax"],
+                    "argv": [
+                        (
+                            "duckdb, or timeout/gtimeout followed by duckdb"
+                            if arguments.arm == "duckdb"
+                            and arguments.task == "timeout_recovery"
+                            else arguments.arm
+                        ),
+                        "arguments without shell syntax",
+                    ],
                     "stdin": "optional UTF-8 string or null",
                 }
             ],
@@ -221,7 +282,15 @@ def prepare_session(arguments: argparse.Namespace) -> int:
         json.dumps(session["candidate_schema"], indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
-    print(json.dumps({"artifact": artifact_id, "session": str(artifact / "session.json"), "prompt": prompt}))
+    print(
+        json.dumps(
+            {
+                "artifact": artifact_id,
+                "session": str(artifact / "session.json"),
+                "prompt": prompt,
+            }
+        )
+    )
     return 0
 
 
@@ -259,7 +328,9 @@ def validate_candidate(
         if not isinstance(argv, list) or not argv or len(argv) > 64:
             raise RunnerError(f"candidate invocation {index} argv is invalid")
         if not all(isinstance(value, str) and "\0" not in value for value in argv):
-            raise RunnerError(f"candidate invocation {index} argv must contain plain strings")
+            raise RunnerError(
+                f"candidate invocation {index} argv must contain plain strings"
+            )
         for value in argv:
             reject_external_reference(value, f"candidate invocation {index}")
         executable = Path(argv[0]).name.lower().removesuffix(".exe")
@@ -271,16 +342,21 @@ def validate_candidate(
                     "the DuckDB timeout-recovery arm"
                 )
             nested = {
-                Path(value).name.lower().removesuffix(".exe")
-                for value in argv[1:4]
+                Path(value).name.lower().removesuffix(".exe") for value in argv[1:4]
             }
             if arm not in nested:
-                raise RunnerError(f"timeout wrapper in invocation {index} does not launch {arm}")
+                raise RunnerError(
+                    f"timeout wrapper in invocation {index} does not launch {arm}"
+                )
         elif executable not in allowed:
-            raise RunnerError(f"invocation {index} may only launch the selected {arm} CLI")
+            raise RunnerError(
+                f"invocation {index} may only launch the selected {arm} CLI"
+            )
         stdin = invocation.get("stdin")
         if stdin is not None and not isinstance(stdin, str):
-            raise RunnerError(f"candidate invocation {index} stdin must be a string or null")
+            raise RunnerError(
+                f"candidate invocation {index} stdin must be a string or null"
+            )
         if isinstance(stdin, str):
             reject_external_reference(stdin, f"candidate invocation {index} stdin")
     return invocations
@@ -301,6 +377,25 @@ def resolve_command(
     return resolved
 
 
+def unwrap_timeout(command: list[str]) -> tuple[list[str], float | None]:
+    executable = Path(command[0]).name.lower().removesuffix(".exe")
+    if executable not in {"timeout", "gtimeout"}:
+        return command, None
+    if len(command) < 3:
+        raise RunnerError("timeout wrapper requires a duration and command")
+    match = TIMEOUT_DURATION.fullmatch(command[1].lower())
+    if match is None:
+        raise RunnerError("timeout duration must be a non-negative number in ms or s")
+    duration = float(match.group("value"))
+    if match.group("unit") == "ms":
+        duration /= 1000
+    if duration <= 0 or duration > 5:
+        raise RunnerError(
+            "timeout duration must be greater than zero and at most 5 seconds"
+        )
+    return command[2:], duration
+
+
 def execute_candidate(arguments: argparse.Namespace) -> int:
     artifact_id = validate_artifact_id(arguments.artifact_id)
     artifact = arguments.artifact_root.resolve() / artifact_id
@@ -319,6 +414,9 @@ def execute_candidate(arguments: argparse.Namespace) -> int:
         raise RunnerError("DuckDB binary changed after session preparation")
     if sha256(arguments.tasks.resolve()) != session.get("task_corpus_sha256"):
         raise RunnerError("task corpus changed after session preparation")
+    expected_sources = {name: sha256(path) for name, path in EVALUATION_SOURCES.items()}
+    if session.get("evaluation_source_sha256") != expected_sources:
+        raise RunnerError("evaluation source changed after session preparation")
 
     invocations = validate_candidate(candidate, session["arm"], session["task"])
     records: list[dict[str, Any]] = []
@@ -346,7 +444,15 @@ def execute_candidate(arguments: argparse.Namespace) -> int:
         }
     )
     for index, invocation in enumerate(invocations, start=1):
-        command = resolve_command(invocation["argv"], arguments.sqrail, arguments.duckdb)
+        command = resolve_command(
+            invocation["argv"], arguments.sqrail, arguments.duckdb
+        )
+        command, requested_timeout = unwrap_timeout(command)
+        command_timeout = (
+            min(arguments.command_timeout, requested_timeout)
+            if requested_timeout is not None
+            else arguments.command_timeout
+        )
         started = time.monotonic()
         try:
             result = subprocess.run(
@@ -357,7 +463,7 @@ def execute_candidate(arguments: argparse.Namespace) -> int:
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 check=False,
-                timeout=arguments.command_timeout,
+                timeout=command_timeout,
             )
             exit_code = result.returncode
             stdout = result.stdout
@@ -441,7 +547,10 @@ def main() -> int:
             return prepare_session(arguments)
         return execute_candidate(arguments)
     except (RunnerError, OracleError, OSError, subprocess.SubprocessError) as error:
-        print(json.dumps({"ok": False, "error": str(error)}, separators=(",", ":")), file=sys.stderr)
+        print(
+            json.dumps({"ok": False, "error": str(error)}, separators=(",", ":")),
+            file=sys.stderr,
+        )
         return 2
 
 

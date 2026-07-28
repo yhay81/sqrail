@@ -15,7 +15,12 @@ ROOT = Path(__file__).resolve().parents[1]
 BENCHMARKS = ROOT / "benchmarks"
 sys.path.insert(0, str(BENCHMARKS))
 
-from agent_oracle import OracleError, verify_attempt  # noqa: E402
+from agent_oracle import (  # noqa: E402
+    OracleError,
+    duration_seconds,
+    requested_timeout,
+    verify_attempt,
+)
 
 
 TASKS_PATH = BENCHMARKS / "agent-tasks-v0.3.json"
@@ -103,6 +108,14 @@ class AgentOracleTest(unittest.TestCase):
             "sqrail_sha256": file_sha256(Path(sys.executable)),
             "duckdb_sha256": file_sha256(Path(sys.executable)),
             "task_corpus_sha256": file_sha256(TASKS_PATH),
+            "evaluation_source_sha256": {
+                name: file_sha256(path)
+                for name, path in {
+                    "runner": BENCHMARKS / "agent-run.py",
+                    "oracle": BENCHMARKS / "agent_oracle.py",
+                    "evaluator": BENCHMARKS / "agent-eval.py",
+                }.items()
+            },
             "paths": paths,
             "source_paths": sources,
             "input_sha256": digests,
@@ -217,6 +230,33 @@ class AgentOracleTest(unittest.TestCase):
                 Path(sys.executable),
                 Path(sys.executable),
             )
+
+    def test_changed_evaluation_source_digest_is_rejected(self) -> None:
+        self.session["evaluation_source_sha256"]["runner"] = "0" * 64
+        self.write_metadata()
+        with self.assertRaisesRegex(OracleError, "evaluation source digests"):
+            verify_attempt(
+                self.attempt,
+                TASK,
+                TASKS_PATH,
+                self.artifacts,
+                self.data,
+                Path(sys.executable),
+                Path(sys.executable),
+            )
+
+    def test_timeout_duration_is_recomputed_from_recorded_arguments(self) -> None:
+        self.assertEqual(duration_seconds("10ms"), 0.01)
+        self.assertEqual(duration_seconds("0.01s"), 0.01)
+        self.assertIsNone(duration_seconds("--signal=TERM"))
+        duckdb_record = {
+            "invocations": [{"argv": ["timeout", "10ms", "duckdb", "-c", "SELECT 1"]}]
+        }
+        sqrail_record = {
+            "invocations": [{"argv": ["sqrail", "run", "--timeout=10ms", "SELECT 1"]}]
+        }
+        self.assertEqual(requested_timeout(duckdb_record, "duckdb"), 0.01)
+        self.assertEqual(requested_timeout(sqrail_record, "sqrail"), 0.01)
 
 
 if __name__ == "__main__":
