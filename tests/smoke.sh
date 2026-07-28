@@ -366,7 +366,11 @@ set +e
   head -n 1 >"$test_dir/first-row.jsonl"
 pipe_status=${PIPESTATUS[0]}
 set -e
-test "$pipe_status" -eq 5
+if [ "$pipe_status" -ne 5 ]; then
+  echo "expected broken-pipe exit 5, got $pipe_status" >&2
+  cat "$test_dir/pipe-error.json" >&2
+  exit 1
+fi
 test "$(cat "$test_dir/first-row.jsonl")" = '{"i":0}'
 grep -q '"code":"STDOUT_WRITE"' "$test_dir/pipe-error.json"
 test "$(find "$test_dir/pipe-spill" -name '.sqrail-spill-*' | wc -l | tr -d ' ')" = "0"
