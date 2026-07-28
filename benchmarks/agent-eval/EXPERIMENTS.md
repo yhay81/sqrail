@@ -21,16 +21,16 @@ decision and stop rule first:
 The exact historical candidate is
 [`help-candidate-decision-first.txt`](help-candidate-decision-first.txt).
 
-| Cohort | Valid successes | Mean data calls | Median wall s | Notes |
-|---|---:|---:|---:|---|
-| GPT-5.6 Luna Low, original help | 15/15 | 1.133 | 17.751 | One additional run was invalidated by host disk exhaustion after producing a correct artifact. |
-| GPT-5.6 Luna Low, decision-first | 16/16 | 1.000 | 17.088 | Four tasks × four contexts. |
-| Gemini 3.6 Flash Low, original help | 16/16 | 1.125 | 9.034 | Four tasks × four contexts. |
-| Gemini 3.6 Flash Low, decision-first | 16/16 | 1.000 | 8.607 | Four tasks × four contexts. |
-| Gemini 3.5 Flash Low, decision-first | 16/16 | 1.000 | 12.482 | Resolved-model audit passed for every run. |
-| Claude Haiku 4.5 Low, decision-first | 16/16 | 1.813 | 31.955 | Claude Code OAuth on a Max subscription; zero model, safety, or protocol mismatches. |
-| GPT-OSS 120B Medium, decision-first | 15/15 | 1.467 | 21.105 | One additional attempt was provider overload before any model response. |
-| Qwen 3.5 9B via local Ollama, final stop wording | 1/1 | 4.000 | 116.256 | Noisy join only; correct but much less efficient. |
+| Cohort                                           | Valid successes | Mean data calls | Median wall s | Notes                                                                                          |
+| ------------------------------------------------ | --------------: | --------------: | ------------: | ---------------------------------------------------------------------------------------------- |
+| GPT-5.6 Luna Low, original help                  |           15/15 |           1.133 |        17.751 | One additional run was invalidated by host disk exhaustion after producing a correct artifact. |
+| GPT-5.6 Luna Low, decision-first                 |           16/16 |           1.000 |        17.088 | Four tasks × four contexts.                                                                    |
+| Gemini 3.6 Flash Low, original help              |           16/16 |           1.125 |         9.034 | Four tasks × four contexts.                                                                    |
+| Gemini 3.6 Flash Low, decision-first             |           16/16 |           1.000 |         8.607 | Four tasks × four contexts.                                                                    |
+| Gemini 3.5 Flash Low, decision-first             |           16/16 |           1.000 |        12.482 | Resolved-model audit passed for every run.                                                     |
+| Claude Haiku 4.5 Low, decision-first             |           16/16 |           1.813 |        31.955 | Claude Code OAuth on a Max subscription; zero model, safety, or protocol mismatches.           |
+| GPT-OSS 120B Medium, decision-first              |           15/15 |           1.467 |        21.105 | One additional attempt was provider overload before any model response.                        |
+| Qwen 3.5 9B via local Ollama, final stop wording |             1/1 |           4.000 |       116.256 | Noisy join only; correct but much less efficient.                                              |
 
 The selected wording also passed a final noisy-workspace regression on all four
 representative tasks: Luna Low 4/4 and Gemini 3.6 Flash Low 4/4, both with

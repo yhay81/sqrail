@@ -9,12 +9,12 @@ engine than DuckDB.
 
 The runner builds a crossed design from the selected factors:
 
-| Factor | Levels |
-|---|---|
+| Factor        | Levels                                                                                  |
+| ------------- | --------------------------------------------------------------------------------------- |
 | Agent runtime | Codex; Claude Code; Antigravity CLI (`agy`); optional Codex-to-Ollama/LM Studio adapter |
-| Data CLI | sqrail; DuckDB CLI built from the same DuckDB version |
-| Context | clean; noisy workspace; superseded handoff; prior-error recovery |
-| Task | eight deterministic file, query, resource, and failure tasks |
+| Data CLI      | sqrail; DuckDB CLI built from the same DuckDB version                                   |
+| Context       | clean; noisy workspace; superseded handoff; prior-error recovery                        |
+| Task          | eight deterministic file, query, resource, and failure tasks                            |
 
 Every agent, tool, task, and repetition runs in a fresh session and working
 directory. The runner randomizes execution order and file names from a recorded

@@ -9,20 +9,20 @@
 
 ## Start with the question
 
-| I need to…                          | Read                                               |
-| ----------------------------------- | -------------------------------------------------- |
-| install and run a first query       | [3-minute guide](https://sqrails.yhay81.com/docs/) |
-| integrate sqrail with an agent      | [Agent integration](AGENT_INTEGRATION.md)          |
-| depend on exact CLI behavior        | [CLI contract](CONTRACT.md)                        |
-| understand supported systems        | [Platform support](PLATFORMS.md)                   |
-| evaluate performance claims         | [Benchmark policy](BENCHMARKS.md)                  |
-| reproduce the published measurement | [Measured baseline](BASELINE.md)                   |
-| build or release v0.3               | [v0.3 release gate](V0.3_RELEASE.md)               |
-| validate or deploy the website      | [Documentation deployment](DEPLOYMENT.md)          |
-| understand or run the test suites   | [Testing architecture](TESTING.md)                 |
-| understand the original design      | [Concept](CONCEPT.md) / [日本語](CONCEPT.ja.md)    |
-| report a vulnerability              | [Security policy](../SECURITY.md)                  |
-| contribute a change                 | [Contributing guide](../CONTRIBUTING.md)           |
+| I need to…                        | Read                                               |
+| --------------------------------- | -------------------------------------------------- |
+| install and run a first query     | [3-minute guide](https://sqrails.yhay81.com/docs/) |
+| integrate sqrail with an agent    | [Agent integration](AGENT_INTEGRATION.md)          |
+| depend on exact CLI behavior      | [CLI contract](CONTRACT.md)                        |
+| understand supported systems      | [Platform support](PLATFORMS.md)                   |
+| evaluate performance claims       | [Benchmark policy](BENCHMARKS.md)                  |
+| reproduce historical measurements | [Performance baselines](BASELINE.md)               |
+| review the v0.3 release criteria  | [v0.3 release gate](V0.3_RELEASE.md)               |
+| validate or deploy the website    | [Documentation deployment](DEPLOYMENT.md)          |
+| understand or run the test suites | [Testing architecture](TESTING.md)                 |
+| understand the original design    | [Concept](CONCEPT.md) / [日本語](CONCEPT.ja.md)    |
+| report a vulnerability            | [Security policy](../SECURITY.md)                  |
+| contribute a change               | [Contributing guide](../CONTRIBUTING.md)           |
 
 ## Contract hierarchy
 

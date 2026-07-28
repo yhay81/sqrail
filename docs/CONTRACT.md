@@ -54,13 +54,13 @@ Unbound file-reading functions therefore cannot open arbitrary local paths.
 
 ## Formats
 
-| Extension | Input | Output |
-|---|---:|---:|
-| `.csv` | yes | yes |
-| `.tsv`, `.tab` | yes | yes |
-| `.json` | yes | yes, one JSON array |
-| `.jsonl`, `.ndjson` | yes | yes, one object per line |
-| `.parquet` | yes | yes |
+| Extension           | Input |                   Output |
+| ------------------- | ----: | -----------------------: |
+| `.csv`              |   yes |                      yes |
+| `.tsv`, `.tab`      |   yes |                      yes |
+| `.json`             |   yes |      yes, one JSON array |
+| `.jsonl`, `.ndjson` |   yes | yes, one object per line |
+| `.parquet`          |   yes |                      yes |
 
 Text formats may additionally end in `.gz` or `.zst`. External compression of
 Parquet and `.bz2`/`.xz` streams are rejected.
@@ -86,7 +86,17 @@ With `--stats`, a successful `run` writes exactly one compact JSON object to
 stderr after the result is complete:
 
 ```json
-{"schema_version":1,"sqrail_version":"0.3.0","ok":true,"command":"run","rows":3,"bytes":57,"elapsed_ms":18,"input_files":1,"destination":"stdout"}
+{
+  "schema_version": 1,
+  "sqrail_version": "0.3.0",
+  "ok": true,
+  "command": "run",
+  "rows": 3,
+  "bytes": 57,
+  "elapsed_ms": 18,
+  "input_files": 1,
+  "destination": "stdout"
+}
 ```
 
 `rows` and `bytes` describe the emitted result, `input_files` counts resolved
@@ -147,7 +157,14 @@ metadata, resolved input counts, and a strict JSON physical plan without
 executing the query:
 
 ```json
-{"schema_version":1,"sqrail_version":"0.3.0","ok":true,"columns":[{"name":"total","type":"HUGEINT","nullable":true}],"inputs":[{"table":"sales","files":1}],"plan":[{"name":"UNGROUPED_AGGREGATE","children":[],"extra_info":{}}]}
+{
+  "schema_version": 1,
+  "sqrail_version": "0.3.0",
+  "ok": true,
+  "columns": [{ "name": "total", "type": "HUGEINT", "nullable": true }],
+  "inputs": [{ "table": "sales", "files": 1 }],
+  "plan": [{ "name": "UNGROUPED_AGGREGATE", "children": [], "extra_info": {} }]
+}
 ```
 
 With `--max-rows`, the reported columns and plan describe the bounded wrapper
@@ -158,7 +175,13 @@ that execution would use.
 `schema` writes one JSON object per input path:
 
 ```json
-{"schema_version":1,"sqrail_version":"0.3.0","file":"/absolute/data.csv","files":1,"columns":[{"name":"id","type":"BIGINT","nullable":true}]}
+{
+  "schema_version": 1,
+  "sqrail_version": "0.3.0",
+  "file": "/absolute/data.csv",
+  "files": 1,
+  "columns": [{ "name": "id", "type": "BIGINT", "nullable": true }]
+}
 ```
 
 ## Diagnostics
@@ -167,7 +190,13 @@ Every handled failure writes exactly one UTF-8 JSON object to stderr. Invalid
 bytes in operating-system arguments are replaced with U+FFFD:
 
 ```json
-{"schema_version":1,"sqrail_version":"0.3.0","ok":false,"code":"INPUT_NOT_FOUND","message":"input file not found: missing.csv"}
+{
+  "schema_version": 1,
+  "sqrail_version": "0.3.0",
+  "ok": false,
+  "code": "INPUT_NOT_FOUND",
+  "message": "input file not found: missing.csv"
+}
 ```
 
 `SIGINT` and `SIGTERM` interrupt active planning, schema inference, or execution
@@ -184,11 +213,11 @@ semantic incompatibility requires a new `schema_version`.
 
 Exit codes are stable:
 
-| Exit | Class |
-|---:|---|
-| 0 | success |
-| 2 | command usage |
-| 3 | input file or format |
-| 4 | SQL parse, bind, or execution |
-| 5 | output path or commit |
-| 70 | unexpected internal failure |
+| Exit | Class                         |
+| ---: | ----------------------------- |
+|    0 | success                       |
+|    2 | command usage                 |
+|    3 | input file or format          |
+|    4 | SQL parse, bind, or execution |
+|    5 | output path or commit         |
+|   70 | unexpected internal failure   |

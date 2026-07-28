@@ -5,6 +5,17 @@ versions follow semantic versioning.
 
 ## [Unreleased]
 
+### Added
+
+- automated link checking for Markdown, the documentation site, discovery
+  files, and GitHub community forms
+
+### Changed
+
+- canonical project and community links from the legacy GitHub Pages deployment
+  to `sqrails.yhay81.com`
+- GitHub language statistics to identify C++ as the shipped implementation
+
 ## [0.3.0] - 2026-07-28
 
 ### Added
