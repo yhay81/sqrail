@@ -5,6 +5,8 @@ versions follow semantic versioning.
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-07-29
+
 ### Added
 
 - automated link checking for Markdown, the documentation site, discovery
@@ -142,7 +144,8 @@ versions follow semantic versioning.
 - Linux and macOS release archives for x86-64 and Arm64
 - SHA-256 checksums and build-provenance attestations
 
-[Unreleased]: https://github.com/yhay81/sqrail/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/yhay81/sqrail/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/yhay81/sqrail/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/yhay81/sqrail/compare/v0.2.2...v0.3.0
 [0.2.2]: https://github.com/yhay81/sqrail/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/yhay81/sqrail/compare/v0.2.0...v0.2.1

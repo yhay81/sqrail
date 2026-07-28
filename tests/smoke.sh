@@ -92,7 +92,7 @@ with open(sys.argv[1], encoding="utf-8") as handle:
     value = json.load(handle)
 assert value["ok"] is True
 assert value["schema_version"] == 1
-assert value["sqrail_version"] == "0.3.0"
+assert value["sqrail_version"] == "0.3.1"
 assert value["command"] == "run"
 assert value["rows"] == 3
 assert value["bytes"] > 0

@@ -82,7 +82,7 @@ class AgentOracleTest(unittest.TestCase):
         (self.data / "manifest.json").write_text('{"fixture":true}\n', encoding="utf-8")
         schema_stdout = {
             "schema_version": 1,
-            "sqrail_version": "0.3.0",
+            "sqrail_version": "0.3.1",
             "file": paths["fact_csv"],
             "files": 1,
             "columns": [
