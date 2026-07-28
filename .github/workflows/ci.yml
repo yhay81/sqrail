@@ -30,6 +30,7 @@ jobs:
             --no-progress
             --include-fragments=anchor-only
             --accept "100..=103,200..=299,429"
+            --exclude "^https?://github[.]com/yhay81/sqrail/compare/"
             --extensions "md,html,txt,xml,yml,yaml"
             "./**/*.md"
             "./site/**/*.html"
