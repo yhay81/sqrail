@@ -178,9 +178,8 @@ uint64_t StreamJson(duckdb::Connection &connection, const std::string &sql, cons
 			}
 		}
 	} catch (...) {
-		if (result->type == duckdb::QueryResultType::STREAM_RESULT) {
-			result->Cast<duckdb::StreamQueryResult>().Close();
-		}
+		connection.Interrupt();
+		(void)result->Fetch();
 		throw;
 	}
 	if (result->HasError()) {
