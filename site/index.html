@@ -5,14 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="sqrail is a small, read-only SQL-on-files CLI designed for coding agents."
+      content="Bounded SQL over CSV, JSON, and Parquet for coding agents that already write the query."
     />
     <meta name="theme-color" content="#090a09" />
+    <meta name="color-scheme" content="dark" />
     <meta property="og:title" content="sqrail — SQL in. Files out." />
     <meta
       property="og:description"
-      content="A narrow, bounded command surface for agents that already write SQL."
+      content="Bounded SQL over local files for agents that already write the query."
     />
+    <meta property="og:site_name" content="sqrail" />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://sqrails.yhay81.com/" />
     <meta
@@ -21,12 +23,28 @@
     />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="sqrail — SQL in. Files out." />
     <meta name="twitter:card" content="summary_large_image" />
     <link rel="canonical" href="https://sqrails.yhay81.com/" />
     <title>sqrail — SQL in. Files out.</title>
     <link rel="icon" href="/icon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="/styles.css" />
     <script src="/app.js" defer></script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "sqrail",
+        "applicationCategory": "DeveloperApplication",
+        "operatingSystem": "macOS, Linux, Windows",
+        "softwareVersion": "0.3.1",
+        "description": "A bounded SQL-on-files CLI for coding agents.",
+        "url": "https://sqrails.yhay81.com/",
+        "downloadUrl": "https://github.com/yhay81/sqrail/releases/tag/v0.3.1",
+        "license": "https://opensource.org/license/mit",
+        "codeRepository": "https://github.com/yhay81/sqrail"
+      }
+    </script>
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
@@ -37,11 +55,11 @@
         sqrail
       </a>
       <nav aria-label="Primary">
-        <a href="#model">Model</a>
-        <a href="#evidence">Evidence</a>
+        <a href="#workflow">Workflow</a>
+        <a href="#boundary">Why sqrail</a>
         <a href="/docs/">Docs</a>
         <a href="https://github.com/yhay81/sqrail">GitHub</a>
-        <a class="nav-install" href="#install">Install</a>
+        <a class="nav-install" href="#get-sqrail">Install</a>
       </nav>
     </header>
 
@@ -60,26 +78,211 @@
             <h1 id="hero-title">sqrail</h1>
             <p class="hero-promise">SQL in. <em>Files out.</em></p>
             <p class="lede">
-              One read-only DuckDB query over local CSV, JSON, and Parquet.
-              Built for agents that already know the SQL.
+              Bounded SQL over local CSV, JSON, and Parquet—for agents that
+              already write the query.
             </p>
-            <div class="hero-actions">
-              <a class="button button-primary" href="#install"
-                >Install sqrail</a
+
+            <div class="quick-install" id="get-sqrail">
+              <div
+                class="install-tabs"
+                role="tablist"
+                aria-label="Install or download method"
               >
-              <a class="button button-quiet" href="/docs/">
-                Read the 3-minute guide <span aria-hidden="true">→</span>
-              </a>
+                <button
+                  id="install-tab-homebrew"
+                  type="button"
+                  role="tab"
+                  aria-selected="true"
+                  aria-controls="install-panel-homebrew"
+                  data-install-tab="homebrew"
+                >
+                  Homebrew
+                </button>
+                <button
+                  id="install-tab-linux"
+                  type="button"
+                  role="tab"
+                  aria-selected="false"
+                  aria-controls="install-panel-linux"
+                  data-install-tab="linux"
+                  tabindex="-1"
+                >
+                  Linux x64
+                </button>
+                <button
+                  id="install-tab-windows"
+                  type="button"
+                  role="tab"
+                  aria-selected="false"
+                  aria-controls="install-panel-windows"
+                  data-install-tab="windows"
+                  tabindex="-1"
+                >
+                  Windows x64
+                </button>
+              </div>
+              <div
+                class="quick-install-panel"
+                id="install-panel-homebrew"
+                role="tabpanel"
+                aria-labelledby="install-tab-homebrew"
+                data-install-panel="homebrew"
+              >
+                <code
+                  id="hero-install-homebrew"
+                  data-copy-value="brew install yhay81/tap/sqrail"
+                  ><span>$</span> brew install yhay81/tap/sqrail</code
+                >
+                <button
+                  class="copy-button quick-copy"
+                  type="button"
+                  data-copy-target="hero-install-homebrew"
+                  aria-label="Copy Homebrew install command"
+                >
+                  Copy
+                </button>
+              </div>
+              <div
+                class="quick-install-panel"
+                id="install-panel-linux"
+                role="tabpanel"
+                aria-labelledby="install-tab-linux"
+                data-install-panel="linux"
+                hidden
+              >
+                <code
+                  id="hero-install-linux"
+                  data-copy-value="curl -LO https://github.com/yhay81/sqrail/releases/download/v0.3.1/sqrail-v0.3.1-linux-x86_64.tar.gz"
+                  ><span>$</span> curl -LO
+                  https://github.com/yhay81/sqrail/releases/download/v0.3.1/sqrail-v0.3.1-linux-x86_64.tar.gz</code
+                >
+                <button
+                  class="copy-button quick-copy"
+                  type="button"
+                  data-copy-target="hero-install-linux"
+                  aria-label="Copy Linux download command"
+                >
+                  Copy
+                </button>
+              </div>
+              <div
+                class="quick-install-panel"
+                id="install-panel-windows"
+                role="tabpanel"
+                aria-labelledby="install-tab-windows"
+                data-install-panel="windows"
+                hidden
+              >
+                <code
+                  id="hero-install-windows"
+                  data-copy-value="curl.exe -LO https://github.com/yhay81/sqrail/releases/download/v0.3.1/sqrail-v0.3.1-windows-x86_64.zip"
+                  ><span>&gt;</span> curl.exe -LO
+                  https://github.com/yhay81/sqrail/releases/download/v0.3.1/sqrail-v0.3.1-windows-x86_64.zip</code
+                >
+                <button
+                  class="copy-button quick-copy"
+                  type="button"
+                  data-copy-target="hero-install-windows"
+                  aria-label="Copy Windows download command"
+                >
+                  Copy
+                </button>
+              </div>
             </div>
+            <p class="install-aside">
+              <a href="/docs/"
+                >3-minute guide <span aria-hidden="true">→</span></a
+              >
+              <a href="https://github.com/yhay81/sqrail/releases/tag/v0.3.1"
+                >Arm64 &amp; checksums <span aria-hidden="true">→</span></a
+              >
+            </p>
           </div>
 
           <section class="terminal-wrap" aria-label="sqrail command example">
             <div class="terminal">
               <div class="terminal-bar">
-                <span class="terminal-title">sqrail / run 01</span>
+                <div
+                  class="terminal-tabs"
+                  role="tablist"
+                  aria-label="sqrail workflow"
+                >
+                  <button
+                    id="terminal-tab-schema"
+                    type="button"
+                    role="tab"
+                    aria-selected="false"
+                    aria-controls="terminal-panel-schema"
+                    data-terminal-tab="schema"
+                    tabindex="-1"
+                  >
+                    schema
+                  </button>
+                  <button
+                    id="terminal-tab-check"
+                    type="button"
+                    role="tab"
+                    aria-selected="false"
+                    aria-controls="terminal-panel-check"
+                    data-terminal-tab="check"
+                    tabindex="-1"
+                  >
+                    check
+                  </button>
+                  <button
+                    id="terminal-tab-run"
+                    type="button"
+                    role="tab"
+                    aria-selected="true"
+                    aria-controls="terminal-panel-run"
+                    data-terminal-tab="run"
+                  >
+                    run
+                  </button>
+                </div>
                 <span class="terminal-status"><i></i> read only</span>
               </div>
-              <pre><code><span class="prompt">$</span> <span data-stage="1">sqrail run \</span>
+              <div
+                id="terminal-panel-schema"
+                role="tabpanel"
+                aria-labelledby="terminal-tab-schema"
+                data-terminal-panel="schema"
+                hidden
+              >
+                <pre><code><span class="prompt">$</span> sqrail schema trials.parquet
+
+<span class="result">{"schema_version":1,"sqrail_version":"0.3.1",
+ "file":"/data/trials.parquet","files":1,
+ "columns":[{"name":"phase",
+ "type":"BIGINT","nullable":true}]}</span></code></pre>
+              </div>
+              <div
+                id="terminal-panel-check"
+                role="tabpanel"
+                aria-labelledby="terminal-tab-check"
+                data-terminal-panel="check"
+                hidden
+              >
+                <pre><code><span class="prompt">$</span> sqrail check \
+  -t trials=trials.parquet \
+  'SELECT phase, count(*) AS n
+   FROM trials GROUP BY phase'
+
+<span class="result">{"schema_version":1,"sqrail_version":"0.3.1",
+ "ok":true,
+ "columns":[{"name":"phase","type":"BIGINT","nullable":true},
+            {"name":"n","type":"BIGINT","nullable":true}],
+ "inputs":[{"table":"trials","files":1}],
+ "plan":[{"name":"HASH_GROUP_BY","children":[],
+          "extra_info":{}}]}</span></code></pre>
+              </div>
+              <div
+                id="terminal-panel-run"
+                role="tabpanel"
+                aria-labelledby="terminal-tab-run"
+                data-terminal-panel="run"
+              >
+                <pre><code><span class="prompt">$</span> <span data-stage="1">sqrail run \</span>
   <span data-stage="2">-t trials=trials.parquet \</span>
   <span data-stage="3">--memory 512MB --threads 2 \</span>
   <span data-stage="4">--stats \</span>
@@ -91,9 +294,10 @@
 <span class="result" data-stage="6">{"phase":1,"n":8231}
 {"phase":2,"n":4817}
 {"phase":3,"n":1092}</span></code></pre>
+              </div>
               <div class="terminal-foot">
-                <span>JSONL stdout</span>
-                <span>exit 0</span>
+                <span>strict JSON output</span>
+                <span>bounded · exit 0</span>
               </div>
             </div>
           </section>
@@ -105,25 +309,15 @@
         </div>
       </section>
 
-      <section class="signal-strip" aria-label="Project facts">
-        <dl>
-          <div>
-            <dt>01</dt>
-            <dd>read-only query</dd>
-          </div>
-          <div>
-            <dt>04</dt>
-            <dd>input formats</dd>
-          </div>
-          <div>
-            <dt>170</dt>
-            <dd>words of agent help</dd>
-          </div>
-          <div>
-            <dt>00</dt>
-            <dd>configuration files read</dd>
-          </div>
-        </dl>
+      <section class="trust-strip" aria-label="Release and platform facts">
+        <ul>
+          <li>
+            <span aria-hidden="true">✓</span> Provenance-attested releases
+          </li>
+          <li><span aria-hidden="true">✓</span> SPDX 2.3 SBOMs</li>
+          <li><span aria-hidden="true">✓</span> macOS · Linux · Windows</li>
+          <li><span aria-hidden="true">✓</span> x86-64 · Arm64</li>
+        </ul>
       </section>
 
       <section
@@ -143,7 +337,11 @@
         </p>
       </section>
 
-      <section class="sequence reveal" aria-labelledby="sequence-title">
+      <section
+        class="sequence reveal"
+        id="workflow"
+        aria-labelledby="sequence-title"
+      >
         <div class="sequence-heading">
           <p class="section-label">Three verbs</p>
           <h2 id="sequence-title">A decision rail, not a toolbox.</h2>
@@ -174,6 +372,78 @@
             <code>sqrail run -t d=data.csv - &lt; query.sql</code>
           </li>
         </ol>
+      </section>
+
+      <section
+        class="boundary reveal"
+        id="boundary"
+        aria-labelledby="boundary-title"
+      >
+        <div class="boundary-intro">
+          <p class="section-label">Why sqrail</p>
+          <h2 id="boundary-title">
+            DuckDB computes.<br />
+            <span>sqrail defines the boundary.</span>
+          </h2>
+          <p>
+            Use DuckDB directly for interactive analytics and its complete SQL
+            surface. Use sqrail when an automated caller needs one predictable,
+            inspectable operation over explicitly named files.
+          </p>
+        </div>
+        <table class="boundary-table">
+          <caption>
+            Tool fit comparison
+          </caption>
+          <thead>
+            <tr class="boundary-row boundary-head">
+              <th scope="col">Need</th>
+              <th scope="col">DuckDB CLI</th>
+              <th scope="col">sqrail</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="boundary-row">
+              <th scope="row">Working mode</th>
+              <td>Interactive and general purpose</td>
+              <td>One bounded operation</td>
+            </tr>
+            <tr class="boundary-row">
+              <th scope="row">Inputs</th>
+              <td>SQL can address configured sources</td>
+              <td>Only explicit bindings are allowlisted</td>
+            </tr>
+            <tr class="boundary-row">
+              <th scope="row">Failure contract</th>
+              <td>Human-oriented CLI behavior</td>
+              <td>One strict JSON diagnostic</td>
+            </tr>
+            <tr class="boundary-row">
+              <th scope="row">Output commit</th>
+              <td>Flexible export paths</td>
+              <td>Atomic and never overwrites</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="use-rail">
+          <article>
+            <span>01</span>
+            <h3>Agent analysis</h3>
+            <p>
+              Let the model write SQL while the process enforces the limits.
+            </p>
+          </article>
+          <article>
+            <span>02</span>
+            <h3>Local data handoff</h3>
+            <p>Turn large extracts into a bounded, machine-readable result.</p>
+          </article>
+          <article>
+            <span>03</span>
+            <h3>Pipeline guardrail</h3>
+            <p>Validate, execute, and commit one file transformation safely.</p>
+          </article>
+        </div>
       </section>
 
       <section class="contract reveal" aria-label="Agent-facing contract">
