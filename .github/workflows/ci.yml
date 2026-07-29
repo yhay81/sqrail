@@ -37,12 +37,14 @@ jobs:
             --remap "https://github[.]com/${{ github.repository }}/compare/v0[.]3[.]1[.][.][.]v0[.]3[.]2 https://github.com/${{ github.repository }}/commit/${{ github.sha }}"
             --remap "https://github[.]com/${{ github.repository }}/compare/v0[.]3[.]2[.][.][.]HEAD https://github.com/${{ github.repository }}/commit/${{ github.sha }}"
             --exclude "^https?://github[.]com/yhay81/sqrail/compare/"
+            --exclude-path node_modules
+            --exclude-path out
             --extensions "md,html,txt,xml,yml,yaml"
             "./**/*.md"
             "./site/**/*.html"
             "./site/*.txt"
             "./site/*.xml"
-            "./.github/**/*.yml"
+            "./.github/ISSUE_TEMPLATE/**/*.yml"
           fail: true
           failIfEmpty: true
           token: ${{ github.token }}
