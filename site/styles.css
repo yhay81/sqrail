@@ -12,7 +12,7 @@
   --line-strong: #3b413b;
   --sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
   --mono: "SFMono-Regular", "Cascadia Code", "Roboto Mono", Consolas, monospace;
-  --page: min(1440px, calc(100% - 64px));
+  --page: min(1280px, calc(100% - 64px));
 }
 
 * {
