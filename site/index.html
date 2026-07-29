@@ -37,10 +37,10 @@
         "name": "sqrail",
         "applicationCategory": "DeveloperApplication",
         "operatingSystem": "macOS, Linux, Windows",
-        "softwareVersion": "0.3.1",
+        "softwareVersion": "0.3.2",
         "description": "A bounded SQL-on-files CLI for coding agents.",
         "url": "https://sqrails.yhay81.com/",
-        "downloadUrl": "https://github.com/yhay81/sqrail/releases/tag/v0.3.1",
+        "downloadUrl": "https://github.com/yhay81/sqrail/releases/tag/v0.3.2",
         "license": "https://opensource.org/license/mit",
         "codeRepository": "https://github.com/yhay81/sqrail"
       }
@@ -72,7 +72,7 @@
         <div class="hero-inner">
           <div class="hero-copy">
             <p class="eyebrow">
-              <span>v0.3.1</span>
+              <span>v0.3.2</span>
               Agent-native data CLI
             </p>
             <h1 id="hero-title">sqrail</h1>
@@ -120,6 +120,17 @@
                 >
                   Windows x64
                 </button>
+                <button
+                  id="install-tab-agent"
+                  type="button"
+                  role="tab"
+                  aria-selected="false"
+                  aria-controls="install-panel-agent"
+                  data-install-tab="agent"
+                  tabindex="-1"
+                >
+                  AI agent
+                </button>
               </div>
               <div
                 class="quick-install-panel"
@@ -152,9 +163,9 @@
               >
                 <code
                   id="hero-install-linux"
-                  data-copy-value="curl -LO https://github.com/yhay81/sqrail/releases/download/v0.3.1/sqrail-v0.3.1-linux-x86_64.tar.gz"
+                  data-copy-value="curl -LO https://github.com/yhay81/sqrail/releases/download/v0.3.2/sqrail-v0.3.2-linux-x86_64.tar.gz"
                   ><span>$</span> curl -LO
-                  https://github.com/yhay81/sqrail/releases/download/v0.3.1/sqrail-v0.3.1-linux-x86_64.tar.gz</code
+                  https://github.com/yhay81/sqrail/releases/download/v0.3.2/sqrail-v0.3.2-linux-x86_64.tar.gz</code
                 >
                 <button
                   class="copy-button quick-copy"
@@ -175,9 +186,9 @@
               >
                 <code
                   id="hero-install-windows"
-                  data-copy-value="curl.exe -LO https://github.com/yhay81/sqrail/releases/download/v0.3.1/sqrail-v0.3.1-windows-x86_64.zip"
+                  data-copy-value="curl.exe -LO https://github.com/yhay81/sqrail/releases/download/v0.3.2/sqrail-v0.3.2-windows-x86_64.zip"
                   ><span>&gt;</span> curl.exe -LO
-                  https://github.com/yhay81/sqrail/releases/download/v0.3.1/sqrail-v0.3.1-windows-x86_64.zip</code
+                  https://github.com/yhay81/sqrail/releases/download/v0.3.2/sqrail-v0.3.2-windows-x86_64.zip</code
                 >
                 <button
                   class="copy-button quick-copy"
@@ -188,12 +199,38 @@
                   Copy
                 </button>
               </div>
+              <div
+                class="quick-install-panel"
+                id="install-panel-agent"
+                role="tabpanel"
+                aria-labelledby="install-tab-agent"
+                data-install-panel="agent"
+                hidden
+              >
+                <code
+                  id="hero-install-agent"
+                  data-copy-value="Open https://sqrails.yhay81.com/install-agent.md, review its instructions, then install sqrail and its Agent Skill for the AI agent you are currently running."
+                  ><span>&gt;</span> Open install-agent.md, review it, then
+                  install sqrail and its Agent Skill for this agent.</code
+                >
+                <button
+                  class="copy-button quick-copy"
+                  type="button"
+                  data-copy-target="hero-install-agent"
+                  aria-label="Copy AI agent installation prompt"
+                >
+                  Copy
+                </button>
+              </div>
             </div>
             <p class="install-aside">
+              <a href="https://sqrails.yhay81.com/install-agent.md"
+                >Agent installer <span aria-hidden="true">→</span></a
+              >
               <a href="/docs/"
                 >3-minute guide <span aria-hidden="true">→</span></a
               >
-              <a href="https://github.com/yhay81/sqrail/releases/tag/v0.3.1"
+              <a href="https://github.com/yhay81/sqrail/releases/tag/v0.3.2"
                 >Arm64 &amp; checksums <span aria-hidden="true">→</span></a
               >
             </p>
@@ -251,7 +288,7 @@
               >
                 <pre><code><span class="prompt">$</span> sqrail schema trials.parquet
 
-<span class="result">{"schema_version":1,"sqrail_version":"0.3.1",
+<span class="result">{"schema_version":1,"sqrail_version":"0.3.2",
  "file":"/data/trials.parquet","files":1,
  "columns":[{"name":"phase",
  "type":"BIGINT","nullable":true}]}</span></code></pre>
@@ -268,7 +305,7 @@
   'SELECT phase, count(*) AS n
    FROM trials GROUP BY phase'
 
-<span class="result">{"schema_version":1,"sqrail_version":"0.3.1",
+<span class="result">{"schema_version":1,"sqrail_version":"0.3.2",
  "ok":true,
  "columns":[{"name":"phase","type":"BIGINT","nullable":true},
             {"name":"n","type":"BIGINT","nullable":true}],

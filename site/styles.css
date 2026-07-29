@@ -216,6 +216,7 @@ main {
 .hero-copy {
   position: relative;
   z-index: 4;
+  min-width: 0;
   padding-right: 52px;
 }
 
@@ -1518,6 +1519,22 @@ footer > div {
 
   .hero-promise {
     margin-top: 28px;
+  }
+
+  .quick-install {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .install-tabs {
+    min-width: 0;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+  }
+
+  .install-tabs button {
+    flex: 0 0 auto;
+    margin-right: 18px;
   }
 
   .terminal pre {

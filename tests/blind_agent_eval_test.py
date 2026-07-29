@@ -99,6 +99,31 @@ class BlindAgentEvaluationTest(unittest.TestCase):
         )
         self.assertTrue(RUNNER.model_selection_matches("fable", "claude-fable-5"))
 
+    def test_agy_command_uses_current_prompt_and_workspace_contract(self) -> None:
+        arguments = types.SimpleNamespace(
+            agy_model="gemini-3.6-flash-low",
+            max_seconds=90,
+        )
+        command = RUNNER.agent_command(
+            agent="gemini",
+            args=arguments,
+            workspace=Path("/tmp/isolated-workspace"),
+            prompt="do it",
+            codex_bin=Path("/bin/codex"),
+            claude_bin=Path("/bin/claude"),
+            agy_bin=Path("/bin/agy"),
+            agy_log_path=Path("/tmp/agy.log"),
+        )
+        self.assertIn("--prompt", command)
+        self.assertNotIn("--print", command)
+        self.assertEqual(
+            command[command.index("--add-dir") + 1],
+            "/tmp/isolated-workspace",
+        )
+        prompt = command[command.index("--prompt") + 1]
+        self.assertIn("Change to that directory", prompt)
+        self.assertIn("/tmp/isolated-workspace", prompt)
+
     def test_provider_and_evaluation_failures_are_infrastructure(self) -> None:
         cases = (
             (

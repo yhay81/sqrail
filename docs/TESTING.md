@@ -61,3 +61,23 @@ cmake --build out/build/product --target sqrail
 CTest remains the single entry point for all configured layers. Test names use
 stable `sqrail-` prefixes so a preset or CI job can select a responsibility
 without depending on source-file layout.
+
+## Website and Agent Skill
+
+The static website and public Agent Skill use the pinned Node.js development
+tooling:
+
+```sh
+npm ci
+npm run site:check
+```
+
+In addition to formatting, HTML, JavaScript, and Cloudflare checks, this
+validates the Agent Skills frontmatter, OpenAI interface metadata, stable web
+bootstrap, canonical repository links, and the absence of remote
+download-to-shell instructions. Before publishing a release, also run
+`gh skill publish --dry-run` with GitHub CLI 2.90 or newer to validate
+ecosystem discovery. Run `agy plugin validate .` to validate the native
+AGY/Antigravity route. AGY print mode executes in a private scratch project, so
+evaluation runners must share their isolated workspace with `--add-dir` and
+pass the task with `--prompt`; `--print PROMPT` is not equivalent in AGY 1.1.8.

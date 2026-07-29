@@ -47,6 +47,7 @@
         <p>On this page</p>
         <nav aria-label="Documentation sections">
           <a href="#install" aria-current="page">Install</a>
+          <a href="#agent-skill">Agent Skill</a>
           <a href="#first-query">First query</a>
           <a href="#three-verbs">Three verbs</a>
           <a href="#limits">Boundaries</a>
@@ -80,8 +81,35 @@ sqrail --agent-help</code></pre>
           </p>
         </section>
 
+        <section id="agent-skill">
+          <p class="section-label">02 / Agent Skill</p>
+          <h2>Let the agent find it.</h2>
+          <p>
+            Install the optional public Agent Skill with GitHub CLI 2.90 or
+            newer. It teaches an agent when to choose sqrail and tells it to
+            read the executable's current help before acting.
+          </p>
+          <pre><code>gh skill preview yhay81/sqrail sqrail
+gh skill install yhay81/sqrail sqrail \
+  --agent codex --scope user</code></pre>
+          <p>
+            Replace <code>codex</code> with the current host, such as
+            <code>claude-code</code>, <code>cursor</code>, or
+            <code>github-copilot</code>. Google's current consumer route,
+            AGY/Antigravity CLI, uses
+            <code>agy plugin install https://github.com/yhay81/sqrail</code>. An
+            agent can follow the complete, review-first installer at
+            <a
+              class="text-link"
+              href="https://sqrails.yhay81.com/install-agent.md"
+            >
+              install-agent.md <span aria-hidden="true">→</span>
+            </a>
+          </p>
+        </section>
+
         <section id="first-query">
-          <p class="section-label">02 / First query</p>
+          <p class="section-label">03 / First query</p>
           <h2>SQL already is the interface.</h2>
           <p>
             Bind each input to an explicit table name with <code>-t</code>. Send
@@ -106,7 +134,7 @@ SQL</code></pre>
         </section>
 
         <section id="three-verbs">
-          <p class="section-label">03 / Three verbs</p>
+          <p class="section-label">04 / Three verbs</p>
           <h2>Inspect only when needed.</h2>
           <h3>schema — discover names and types</h3>
           <pre><code>sqrail schema trials.parquet</code></pre>
@@ -122,7 +150,7 @@ SQL</code></pre>
         </section>
 
         <section id="limits">
-          <p class="section-label">04 / Boundaries</p>
+          <p class="section-label">05 / Boundaries</p>
           <h2>Make resource use explicit.</h2>
           <pre><code>sqrail run \
   -t events=events.parquet \
@@ -143,7 +171,7 @@ SQL</code></pre>
         </section>
 
         <section id="files">
-          <p class="section-label">05 / File formats</p>
+          <p class="section-label">06 / File formats</p>
           <h2>Local files, named precisely.</h2>
           <table>
             <thead>
@@ -179,7 +207,7 @@ SQL</code></pre>
         </section>
 
         <section id="reference">
-          <p class="section-label">06 / Reference</p>
+          <p class="section-label">07 / Reference</p>
           <h2>Follow the contract.<br />Audit the evidence.</h2>
           <div class="doc-links">
             <a

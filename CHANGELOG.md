@@ -5,6 +5,24 @@ versions follow semantic versioning.
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-07-30
+
+### Added
+
+- a public Agent Skill discoverable by GitHub CLI, Cursor, Codex, Claude Code,
+  AGY/Antigravity, and other Agent Skills-compatible hosts, with a compatibility
+  target for enterprise and API-key Gemini CLI deployments
+- a native AGY/Antigravity plugin manifest for reliable Skill discovery
+- a stable, review-first web bootstrap for agents to install both the sqrail
+  executable and its Skill
+- release-archive and Homebrew source-build installation of the canonical Skill
+
+### Fixed
+
+- the Antigravity evaluation runner now uses AGY 1.1.8's `--prompt` form and
+  explicitly shares its isolated workspace instead of silently running in the
+  CLI's private scratch directory
+
 ## [0.3.1] - 2026-07-29
 
 ### Added
@@ -144,7 +162,8 @@ versions follow semantic versioning.
 - Linux and macOS release archives for x86-64 and Arm64
 - SHA-256 checksums and build-provenance attestations
 
-[Unreleased]: https://github.com/yhay81/sqrail/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/yhay81/sqrail/compare/v0.3.2...HEAD
+[0.3.2]: https://github.com/yhay81/sqrail/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/yhay81/sqrail/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/yhay81/sqrail/compare/v0.2.2...v0.3.0
 [0.2.2]: https://github.com/yhay81/sqrail/compare/v0.2.1...v0.2.2

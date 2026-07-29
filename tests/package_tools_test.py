@@ -23,7 +23,7 @@ class PackageToolsTest(unittest.TestCase):
     def test_sbom_and_archives_are_deterministic(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             temporary = Path(directory)
-            installed = temporary / "sqrail-v0.3.1-test"
+            installed = temporary / "sqrail-v0.3.2-test"
             binary = installed / "bin" / "sqrail"
             license_file = installed / "share" / "doc" / "sqrail" / "LICENSE"
             binary.parent.mkdir(parents=True)
@@ -41,7 +41,7 @@ class PackageToolsTest(unittest.TestCase):
                     "--output",
                     str(sbom),
                     "--version",
-                    "0.3.1",
+                    "0.3.2",
                     "--target",
                     "test",
                     "--duckdb-version",

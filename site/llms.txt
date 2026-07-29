@@ -7,6 +7,11 @@ Source: https://github.com/yhay81/sqrail
 Releases: https://github.com/yhay81/sqrail/releases
 License: MIT
 
+## Install
+
+To install the executable and Agent Skill, review and follow:
+https://sqrails.yhay81.com/install-agent.md
+
 ## Agent rule
 
 If names and types are unknown, run `sqrail schema FILE...` once.
@@ -21,5 +26,6 @@ https://sqrails.yhay81.com/agent-help.txt
 
 - CLI contract: https://github.com/yhay81/sqrail/blob/main/docs/CONTRACT.md
 - Agent integration: https://github.com/yhay81/sqrail/blob/main/docs/AGENT_INTEGRATION.md
+- Agent Skill: https://github.com/yhay81/sqrail/tree/main/skills/sqrail
 - Security boundary: https://github.com/yhay81/sqrail/blob/main/SECURITY.md
 - Benchmark policy: https://github.com/yhay81/sqrail/blob/main/docs/BENCHMARKS.md

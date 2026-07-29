@@ -18,7 +18,7 @@ body:
       options:
         - label: "I searched existing issues and read `sqrail --agent-help`."
           required: true
-        - label: "I checked the [README](https://github.com/yhay81/sqrail#readme) and [CLI contract](https://github.com/yhay81/sqrail/blob/main/docs/CONTRACT.md)."
+        - label: "I checked the [README](https://github.com/yhay81/sqrail) and [CLI contract](https://github.com/yhay81/sqrail/blob/main/docs/CONTRACT.md)."
           required: true
 
   - type: textarea
