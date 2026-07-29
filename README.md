@@ -89,6 +89,32 @@ statically include the MSVC runtime and require a UTF-8-capable Windows 10/11 or
 Windows Server release. The tested platform tiers are documented in
 [Platform support](docs/PLATFORMS.md).
 
+### Install the Agent Skill
+
+The CLI works by itself. Its optional public
+[Agent Skill](skills/sqrail/SKILL.md) lets compatible agents discover when to
+use it without adding the full tool manual to every prompt. With GitHub CLI
+2.90 or newer:
+
+```sh
+gh skill preview yhay81/sqrail sqrail
+gh skill install yhay81/sqrail sqrail --agent codex --scope user
+```
+
+Replace `codex` with the current host, including `claude-code`, `cursor`,
+`github-copilot`, `opencode`, `cline`, `kiro-cli`, or `windsurf`. Google's
+current consumer route is AGY/Antigravity CLI, which uses the repository's
+native plugin:
+
+```sh
+agy plugin install https://github.com/yhay81/sqrail
+```
+
+The stable
+[AI installer](https://sqrails.yhay81.com/install-agent.md) gives an agent a
+review-first path to install both the executable and Skill, with an `npx
+skills` fallback when GitHub CLI is unavailable.
+
 ## Contract
 
 ```text

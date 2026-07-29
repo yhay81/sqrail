@@ -3,7 +3,7 @@ cmake_policy(SET CMP0091 NEW)
 
 project(
   sqrail
-  VERSION 0.3.1
+  VERSION 0.3.2
   DESCRIPTION "A minimal SQL-on-files CLI for coding agents"
   LANGUAGES CXX
 )
@@ -371,6 +371,16 @@ install(
 install(
   FILES README.md LICENSE THIRD_PARTY_NOTICES.md CHANGELOG.md SECURITY.md
   DESTINATION "${CMAKE_INSTALL_DOCDIR}"
+  COMPONENT sqrail
+)
+install(
+  DIRECTORY skills/sqrail/
+  DESTINATION "${CMAKE_INSTALL_DATADIR}/sqrail/skills/sqrail"
+  COMPONENT sqrail
+)
+install(
+  FILES plugin.json
+  DESTINATION "${CMAKE_INSTALL_DATADIR}/sqrail"
   COMPONENT sqrail
 )
 install(

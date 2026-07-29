@@ -1,0 +1,4 @@
+interface:
+  display_name: "sqrail"
+  short_description: "Bounded SQL for CSV, JSON, and Parquet"
+  default_prompt: "Use $sqrail to inspect and analyze these local data files with bounded, read-only SQL."

@@ -108,6 +108,9 @@ jobs:
           test -f "dist/${PACKAGE_NAME}/share/doc/sqrail/benchmarks/agent_oracle.py"
           test -f "dist/${PACKAGE_NAME}/share/doc/sqrail/docs/PLATFORMS.md"
           test -f "dist/${PACKAGE_NAME}/share/doc/sqrail/docs/V0.3_RELEASE.md"
+          test -f "dist/${PACKAGE_NAME}/share/sqrail/skills/sqrail/SKILL.md"
+          test -f "dist/${PACKAGE_NAME}/share/sqrail/skills/sqrail/agents/openai.yaml"
+          test -f "dist/${PACKAGE_NAME}/share/sqrail/plugin.json"
           test -f "dist/${PACKAGE_NAME}/share/doc/sqrail/licenses/duckdb-third-party/zstd/LICENSE"
           test "$(find "dist/${PACKAGE_NAME}" -type f \( -name '*.a' -o -name '*.h' -o -name '*.hpp' \) | wc -l)" -eq 0
           if [ "$(uname -s)" = Linux ]; then
@@ -212,7 +215,10 @@ jobs:
             "dist/$env:PACKAGE_NAME/share/doc/sqrail/benchmarks/agent-run.py",
             "dist/$env:PACKAGE_NAME/share/doc/sqrail/benchmarks/agent_oracle.py",
             "dist/$env:PACKAGE_NAME/share/doc/sqrail/docs/PLATFORMS.md",
-            "dist/$env:PACKAGE_NAME/share/doc/sqrail/docs/V0.3_RELEASE.md"
+            "dist/$env:PACKAGE_NAME/share/doc/sqrail/docs/V0.3_RELEASE.md",
+            "dist/$env:PACKAGE_NAME/share/sqrail/skills/sqrail/SKILL.md",
+            "dist/$env:PACKAGE_NAME/share/sqrail/skills/sqrail/agents/openai.yaml",
+            "dist/$env:PACKAGE_NAME/share/sqrail/plugin.json"
           )
           foreach ($path in $required) {
             if (-not (Test-Path $path -PathType Leaf)) { throw "missing package file: $path" }

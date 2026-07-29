@@ -93,7 +93,7 @@ python3 benchmarks/agent-eval/run.py \
   --codex-effort high \
   --claude-model claude-sonnet-5 \
   --claude-effort high \
-  --agy-model 'Gemini 3.6 Flash (High)' \
+  --agy-model gemini-3.6-flash-high \
   --contexts clean,noisy_workspace,superseded_handoff,prior_error \
   --repetitions 5 \
   --plan-only
@@ -113,7 +113,7 @@ python3 benchmarks/agent-eval/run.py \
   --claude-model claude-sonnet-5 \
   --claude-effort high \
   --claude-max-budget-usd 1.0 \
-  --agy-model 'Gemini 3.6 Flash (High)' \
+  --agy-model gemini-3.6-flash-high \
   --contexts clean,noisy_workspace,superseded_handoff,prior_error \
   --repetitions 5
 ```
@@ -155,7 +155,7 @@ python3 benchmarks/agent-eval/run.py \
   --codex-effort high \
   --claude-model claude-sonnet-5 \
   --claude-effort high \
-  --agy-model 'Gemini 3.6 Flash (High)' \
+  --agy-model gemini-3.6-flash-high \
   --contexts clean,noisy_workspace,superseded_handoff,prior_error \
   --repetitions 1
 ```

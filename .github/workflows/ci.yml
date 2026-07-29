@@ -30,6 +30,12 @@ jobs:
             --no-progress
             --include-fragments=anchor-only
             --accept "100..=103,200..=299,429"
+            --remap "^https://sqrails[.]yhay81[.]com file://${{ github.workspace }}/site"
+            --remap "https://github[.]com/${{ github.repository }}/blob/main https://github.com/${{ github.repository }}/blob/${{ github.sha }}"
+            --remap "https://github[.]com/${{ github.repository }}/tree/main https://github.com/${{ github.repository }}/tree/${{ github.sha }}"
+            --remap "https://github[.]com/${{ github.repository }}/releases/tag/v0[.]3[.]2 https://github.com/${{ github.repository }}/commit/${{ github.sha }}"
+            --remap "https://github[.]com/${{ github.repository }}/compare/v0[.]3[.]1[.][.][.]v0[.]3[.]2 https://github.com/${{ github.repository }}/commit/${{ github.sha }}"
+            --remap "https://github[.]com/${{ github.repository }}/compare/v0[.]3[.]2[.][.][.]HEAD https://github.com/${{ github.repository }}/commit/${{ github.sha }}"
             --exclude "^https?://github[.]com/yhay81/sqrail/compare/"
             --extensions "md,html,txt,xml,yml,yaml"
             "./**/*.md"
@@ -114,6 +120,9 @@ jobs:
           test -f install/share/doc/sqrail/benchmarks/agent_oracle.py
           test -f install/share/doc/sqrail/docs/PLATFORMS.md
           test -f install/share/doc/sqrail/docs/V0.3_RELEASE.md
+          test -f install/share/sqrail/skills/sqrail/SKILL.md
+          test -f install/share/sqrail/skills/sqrail/agents/openai.yaml
+          test -f install/share/sqrail/plugin.json
           test -f install/share/doc/sqrail/licenses/duckdb-third-party/zstd/LICENSE
           test "$(find install -type f \( -name '*.a' -o -name '*.h' -o -name '*.hpp' \) | wc -l)" -eq 0
       - name: Verify Linux runtime
@@ -179,7 +188,10 @@ jobs:
             "install/share/doc/sqrail/benchmarks/agent-run.py",
             "install/share/doc/sqrail/benchmarks/agent_oracle.py",
             "install/share/doc/sqrail/docs/PLATFORMS.md",
-            "install/share/doc/sqrail/docs/V0.3_RELEASE.md"
+            "install/share/doc/sqrail/docs/V0.3_RELEASE.md",
+            "install/share/sqrail/skills/sqrail/SKILL.md",
+            "install/share/sqrail/skills/sqrail/agents/openai.yaml",
+            "install/share/sqrail/plugin.json"
           )
           foreach ($path in $required) {
             if (-not (Test-Path $path -PathType Leaf)) { throw "missing installed file: $path" }
@@ -231,7 +243,9 @@ jobs:
           test -f install/share/doc/sqrail/benchmarks/agent_oracle.py
           test -f install/share/doc/sqrail/docs/PLATFORMS.md
           test -f install/share/doc/sqrail/docs/V0.3_RELEASE.md
-          test -f install/share/doc/sqrail/docs/V0.3_RELEASE.md
+          test -f install/share/sqrail/skills/sqrail/SKILL.md
+          test -f install/share/sqrail/skills/sqrail/agents/openai.yaml
+          test -f install/share/sqrail/plugin.json
           test ! -d install/share/doc/sqrail/licenses/duckdb-third-party
           test "$(find install -type f \( -name '*.a' -o -name '*.h' -o -name '*.hpp' \) | wc -l)" -eq 0
       - name: Verify DuckDB runtime

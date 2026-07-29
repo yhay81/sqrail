@@ -128,7 +128,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--claude-max-budget-usd", type=float, default=2.0)
     parser.add_argument("--claude-max-turns", type=int, default=16)
     parser.add_argument("--agy-bin", type=pathlib.Path, default=pathlib.Path("agy"))
-    parser.add_argument("--agy-model", default="Gemini 3.6 Flash (High)")
+    parser.add_argument("--agy-model", default="gemini-3.6-flash-high")
     parser.add_argument(
         "--agy-data-dir",
         type=pathlib.Path,
@@ -736,9 +736,16 @@ def agent_command(
             "--verbose",
             prompt,
         ]
+    agy_prompt = f"""Antigravity starts print-mode tasks in a private scratch
+directory. The exact task workspace is {workspace}. Change to that directory
+before using relative paths, and perform the task only there.
+
+{prompt}"""
     return [
         str(agy_bin),
         "--new-project",
+        "--add-dir",
+        str(workspace),
         "--dangerously-skip-permissions",
         "--model",
         args.agy_model,
@@ -746,8 +753,10 @@ def agent_command(
         f"{args.max_seconds}s",
         "--log-file",
         str(agy_log_path),
-        "--print",
-        prompt,
+        "--output-format",
+        "json",
+        "--prompt",
+        agy_prompt,
     ]
 
 

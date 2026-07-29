@@ -18,6 +18,47 @@ The same release interface is available to HTTP-based agents at
 <https://sqrails.yhay81.com/agent-help.txt>. The website discovery file is
 <https://sqrails.yhay81.com/llms.txt>.
 
+## Install discovery
+
+The canonical public Agent Skill is
+[`skills/sqrail`](../skills/sqrail/SKILL.md). GitHub CLI 2.90 or newer can
+preview it before placing it in the current host's native user directory:
+
+```sh
+gh skill preview yhay81/sqrail sqrail
+gh skill install yhay81/sqrail sqrail --agent codex --scope user
+```
+
+Replace `codex` with the active host. Verified targets include Claude Code,
+Cursor, GitHub Copilot, OpenCode, Cline, Kiro CLI, and Windsurf. GitHub CLI
+records source provenance so `gh skill update` can check later releases.
+
+Google ended Gemini CLI consumer sign-in on June 18, 2026 and directs individual
+users to Antigravity CLI. Gemini CLI remains available for Standard and
+Enterprise subscriptions and API-key authentication, so its Skill target is
+retained only as a compatibility path. See Google's
+[official deprecation notice](https://developers.google.com/gemini-code-assist/docs/deprecations/code-assist-individuals).
+Those deployments should use Gemini CLI's native Skill installer:
+
+```sh
+gemini skills install https://github.com/yhay81/sqrail \
+  --path skills/sqrail --scope user --consent
+```
+
+AGY and Antigravity CLI 1.1.8 do not discover the shared `.agents/skills`
+project location used by current generic installers. Install the repository as
+a native plugin instead:
+
+```sh
+agy plugin install https://github.com/yhay81/sqrail
+```
+
+Agents that start without sqrail can be given the stable
+<https://sqrails.yhay81.com/install-agent.md> bootstrap. It deliberately
+contains reviewable Markdown rather than executable shell code and installs the
+CLI before the Skill. `npx skills` is a fallback only when Node.js is already
+present.
+
 ## Decision rule
 
 1. If the user has not supplied names and types, run `sqrail schema FILE...`

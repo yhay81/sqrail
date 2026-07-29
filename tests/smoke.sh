@@ -92,7 +92,7 @@ with open(sys.argv[1], encoding="utf-8") as handle:
     value = json.load(handle)
 assert value["ok"] is True
 assert value["schema_version"] == 1
-assert value["sqrail_version"] == "0.3.1"
+assert value["sqrail_version"] == "0.3.2"
 assert value["command"] == "run"
 assert value["rows"] == 3
 assert value["bytes"] > 0
@@ -435,4 +435,4 @@ printf '%s\n' "$agent_help" | grep -q -- '--max-input-files'
 printf '%s\n' "$agent_help" | grep -q -- '--max-sql-bytes'
 printf '%s\n' "$agent_help" | grep -q 'check emits columns'
 test "$(printf '%s\n' "$agent_help" | wc -w | tr -d ' ')" -le 170
-"$sqrail_bin" --version | grep -Eq '^sqrail 0\.3\.1 \(DuckDB v[0-9]+\.[0-9]+\.[0-9]+([.-][^)]*)?\)$'
+"$sqrail_bin" --version | grep -Eq '^sqrail 0\.3\.2 \(DuckDB v[0-9]+\.[0-9]+\.[0-9]+([.-][^)]*)?\)$'

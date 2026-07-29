@@ -31,7 +31,7 @@ def invoke(*arguments: str, stdin: bytes | None = None) -> subprocess.CompletedP
 def diagnostic(result: subprocess.CompletedProcess[bytes]) -> dict[str, object]:
     value = json.loads(result.stderr.decode("utf-8"))
     assert value["schema_version"] == 1
-    assert value["sqrail_version"] == "0.3.1"
+    assert value["sqrail_version"] == "0.3.2"
     assert value["ok"] is False
     return value
 
@@ -54,7 +54,7 @@ class CrossPlatformTest(unittest.TestCase):
         self.assertEqual(schema.returncode, 0, schema.stderr)
         schema_value = json.loads(schema.stdout)
         self.assertEqual(schema_value["schema_version"], 1)
-        self.assertEqual(schema_value["sqrail_version"], "0.3.1")
+        self.assertEqual(schema_value["sqrail_version"], "0.3.2")
         self.assertEqual([item["name"] for item in schema_value["columns"]], ["drug_id", "name", "amount"])
 
         result = invoke(
