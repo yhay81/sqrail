@@ -5,7 +5,8 @@
 [Website](https://sqrails.yhay81.com) ·
 [3-minute guide](https://sqrails.yhay81.com/docs/) ·
 [Source](https://github.com/yhay81/sqrail) ·
-[Releases](https://github.com/yhay81/sqrail/releases)
+[Releases](https://github.com/yhay81/sqrail/releases) ·
+[Community](https://github.com/yhay81/sqrail/discussions)
 
 ## Start with the question
 
@@ -24,6 +25,7 @@
 | understand the original design    | [Concept](CONCEPT.md) / [日本語](CONCEPT.ja.md)             |
 | report a vulnerability            | [Security policy](../SECURITY.md)                           |
 | contribute a change               | [Contributing guide](../CONTRIBUTING.md)                    |
+| understand the community roadmap  | [Community growth plan](COMMUNITY_GROWTH.md)                |
 
 ## Contract hierarchy
 

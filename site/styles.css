@@ -13,6 +13,7 @@
   --sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
   --mono: "SFMono-Regular", "Cascadia Code", "Roboto Mono", Consolas, monospace;
   --page: min(1280px, calc(100% - 64px));
+  --header-height: 78px;
 }
 
 * {
@@ -75,16 +76,69 @@ button {
   transform: translateY(0);
 }
 
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  height: var(--header-height);
+  border-bottom: 1px solid rgb(59 65 59 / 72%);
+  background: rgb(9 10 9 / 84%);
+  backdrop-filter: blur(18px) saturate(130%);
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.site-header::after {
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 4%,
+    rgb(202 255 61 / 32%) 34%,
+    transparent 70%
+  );
+  content: "";
+  opacity: 0;
+  transform: scaleX(0.72);
+  transition:
+    opacity 180ms ease,
+    transform 300ms ease;
+}
+
+.site-header.is-scrolled {
+  border-color: rgb(59 65 59 / 88%);
+  background: rgb(9 10 9 / 94%);
+  box-shadow: 0 14px 36px rgb(0 0 0 / 28%);
+}
+
+.site-header.is-scrolled::after {
+  opacity: 1;
+  transform: scaleX(1);
+}
+
 .nav {
   position: relative;
-  z-index: 20;
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: var(--page);
-  height: 84px;
+  height: 100%;
   margin: 0 auto;
-  border-bottom: 1px solid var(--line);
+}
+
+.nav-brand,
+.nav-actions {
+  display: flex;
+  align-items: center;
+}
+
+.nav-brand {
+  min-width: 0;
 }
 
 .wordmark {
@@ -112,31 +166,131 @@ button {
   content: "";
 }
 
-.nav nav {
-  display: flex;
-  align-items: center;
-  gap: 30px;
-  color: var(--muted-light);
-  font: 600 12px var(--mono);
-  letter-spacing: 0.04em;
+.nav-tagline {
+  margin-left: 22px;
+  padding-left: 22px;
+  border-left: 1px solid var(--line);
+  color: #81867d;
+  font: 650 9px var(--mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
-.nav nav a,
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  margin-left: auto;
+  padding: 0 32px;
+  color: var(--muted-light);
+  font: 620 11px var(--mono);
+  letter-spacing: 0.05em;
+}
+
+.nav-links a,
 footer a,
 .text-link {
   transition: color 160ms ease;
 }
 
-.nav nav a:hover,
+.nav-links a:hover,
 footer a:hover,
 .text-link:hover {
   color: var(--acid);
 }
 
+.nav-actions {
+  gap: 10px;
+}
+
+.github-repo,
 .nav-install {
-  padding: 10px 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  white-space: nowrap;
+}
+
+.github-repo {
+  gap: 9px;
+  padding: 0 11px 0 12px;
   border: 1px solid var(--line-strong);
+  background: rgb(22 25 22 / 70%);
+  color: #d4d6cf;
+  font: 650 10px var(--mono);
+  letter-spacing: 0.035em;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.github-repo:hover {
+  border-color: #5b6259;
+  background: var(--panel-raised);
   color: var(--ink);
+  transform: translateY(-1px);
+}
+
+.github-icon {
+  width: 17px;
+  height: 17px;
+  fill: currentColor;
+}
+
+.github-stars {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 30px;
+  min-height: 20px;
+  padding-left: 9px;
+  border-left: 1px solid var(--line);
+  color: var(--ink);
+}
+
+.github-star-icon {
+  width: 11px;
+  height: 11px;
+  fill: var(--acid);
+}
+
+.github-star-count {
+  min-width: 1ch;
+  font-variant-numeric: tabular-nums;
+}
+
+.github-repo.is-live .github-star-count {
+  animation: star-in 300ms ease both;
+}
+
+.nav-install {
+  min-width: 78px;
+  padding: 0 16px;
+  border: 1px solid var(--acid);
+  background: var(--acid);
+  color: var(--ground);
+  font: 750 10px var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    transform 160ms ease;
+}
+
+.nav-install:hover {
+  border-color: var(--acid-soft);
+  background: var(--acid-soft);
+  transform: translateY(-1px);
+}
+
+.nav-install:active,
+.github-repo:active {
+  transform: translateY(0);
 }
 
 main {
@@ -145,7 +299,7 @@ main {
 
 .hero {
   position: relative;
-  min-height: min(900px, calc(100vh - 84px));
+  min-height: min(900px, calc(100vh - var(--header-height)));
   border-bottom: 1px solid var(--line);
 }
 
@@ -1376,13 +1530,29 @@ footer > div {
   }
 }
 
+@keyframes star-in {
+  from {
+    opacity: 0.25;
+    transform: translateY(2px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @media (max-width: 980px) {
   :root {
     --page: min(100% - 40px, 900px);
   }
 
-  .nav nav a:not(.nav-install, :last-child) {
+  .nav-links {
     display: none;
+  }
+
+  .nav-tagline {
+    margin-right: auto;
   }
 
   .hero {
@@ -1490,22 +1660,32 @@ footer > div {
 @media (max-width: 680px) {
   :root {
     --page: calc(100% - 28px);
+    --header-height: 68px;
   }
 
-  .nav {
-    height: 70px;
-  }
-
-  .nav nav {
-    gap: 12px;
-  }
-
-  .nav nav > a {
+  .nav-tagline,
+  .github-label {
     display: none;
   }
 
-  .nav nav .nav-install {
-    display: inline-flex;
+  .nav-actions {
+    gap: 8px;
+  }
+
+  .github-repo {
+    gap: 7px;
+    min-height: 36px;
+    padding: 0 9px;
+  }
+
+  .github-stars {
+    padding-left: 7px;
+  }
+
+  .nav-install {
+    min-width: 68px;
+    min-height: 36px;
+    padding: 0 12px;
   }
 
   .hero-inner {
