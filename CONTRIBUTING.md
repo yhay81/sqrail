@@ -24,6 +24,14 @@ Issues labeled
 have bounded scope suitable for a first contribution. If an issue is unclear,
 asking a focused question is useful work too.
 
+### Claiming an issue
+
+Comment `/take` on an unassigned issue if you want to work on it. A maintainer
+will normally assign it for seven days; ask for more time whenever you need it.
+If there is no update after that window, the issue may be opened to another
+contributor. This is coordination, not permission: small pull requests are also
+welcome without prior assignment.
+
 ## Before proposing a feature
 
 The project deliberately has one engine, one SQL dialect, no natural-language

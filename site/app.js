@@ -4,6 +4,66 @@ const reduceMotion = window.matchMedia(
   "(prefers-reduced-motion: reduce)",
 ).matches;
 
+const siteHeader = document.querySelector("[data-site-header]");
+if (siteHeader) {
+  let headerFrame = 0;
+  const syncHeader = () => {
+    siteHeader.classList.toggle("is-scrolled", window.scrollY > 12);
+    headerFrame = 0;
+  };
+  syncHeader();
+  window.addEventListener(
+    "scroll",
+    () => {
+      if (!headerFrame) headerFrame = window.requestAnimationFrame(syncHeader);
+    },
+    { passive: true },
+  );
+}
+
+const githubStarNodes = [...document.querySelectorAll("[data-github-stars]")];
+const githubRepoLinks = [...document.querySelectorAll("[data-github-repo]")];
+if (githubStarNodes.length) {
+  const renderGithubStars = (count) => {
+    const formatted =
+      count >= 1000
+        ? new Intl.NumberFormat("en", {
+            notation: "compact",
+            maximumFractionDigits: 1,
+          }).format(count)
+        : new Intl.NumberFormat("en").format(count);
+    githubStarNodes.forEach((node) => {
+      node.textContent = formatted;
+    });
+    githubRepoLinks.forEach((link) => {
+      link.setAttribute(
+        "aria-label",
+        `View yhay81/sqrail on GitHub — ${new Intl.NumberFormat("en").format(count)} ${count === 1 ? "star" : "stars"}`,
+      );
+      link.classList.remove("is-live");
+      window.requestAnimationFrame(() => link.classList.add("is-live"));
+    });
+  };
+
+  const controller = new AbortController();
+  const githubTimeout = window.setTimeout(() => controller.abort(), 4000);
+  fetch("https://api.github.com/repos/yhay81/sqrail", {
+    headers: { Accept: "application/vnd.github+json" },
+    signal: controller.signal,
+  })
+    .then((response) => {
+      if (!response.ok) throw new Error(`GitHub API ${response.status}`);
+      return response.json();
+    })
+    .then((repository) => {
+      if (Number.isSafeInteger(repository.stargazers_count)) {
+        renderGithubStars(repository.stargazers_count);
+      }
+    })
+    .catch(() => {})
+    .finally(() => window.clearTimeout(githubTimeout));
+}
+
 const setupTabs = (buttonSelector, panelSelector, tabKey, panelKey) => {
   const buttons = [...document.querySelectorAll(buttonSelector)];
   const panels = [...document.querySelectorAll(panelSelector)];

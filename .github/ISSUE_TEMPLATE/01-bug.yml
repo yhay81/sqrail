@@ -26,7 +26,7 @@ body:
     attributes:
       label: "sqrail version"
       description: "Paste the output of `sqrail --version`."
-      placeholder: "sqrail 0.3.1 (DuckDB v1.5.5)"
+      placeholder: "sqrail 0.3.2 (DuckDB v1.5.5)"
     validations:
       required: true
 

@@ -24,22 +24,65 @@
     <title>Documentation — sqrail</title>
     <link rel="icon" href="/icon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="/styles.css" />
+    <script src="/app.js" defer></script>
   </head>
   <body class="docs-body">
     <a class="skip-link" href="#main">Skip to content</a>
 
-    <header class="nav">
-      <a class="wordmark" href="/" aria-label="sqrail home">
-        <span class="wordmark-mark" aria-hidden="true"></span>
-        sqrail
-      </a>
-      <nav aria-label="Primary">
-        <a href="/">Overview</a>
-        <a href="https://github.com/yhay81/sqrail">GitHub</a>
-        <a class="nav-install" href="https://github.com/yhay81/sqrail/releases"
-          >Releases</a
-        >
-      </nav>
+    <header class="site-header" data-site-header>
+      <div class="nav">
+        <div class="nav-brand">
+          <a class="wordmark" href="/" aria-label="sqrail home">
+            <span class="wordmark-mark" aria-hidden="true"></span>
+            sqrail
+          </a>
+          <span class="nav-tagline">Agent-safe SQL on files</span>
+        </div>
+        <nav class="nav-links" aria-label="Primary">
+          <a href="/">Overview</a>
+          <a href="/#workflow">Workflow</a>
+          <a href="/#boundary">Why sqrail</a>
+        </nav>
+        <div class="nav-actions">
+          <a
+            class="github-repo"
+            data-github-repo
+            href="https://github.com/yhay81/sqrail"
+            aria-label="View yhay81/sqrail on GitHub — 1 star"
+          >
+            <svg
+              class="github-icon"
+              viewBox="0 0 16 16"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <path
+                d="M8 0C3.58 0 0 3.64 0 8.13c0 3.59 2.29 6.64 5.47 7.71.4.08.55-.18.55-.39 0-.19-.01-.83-.01-1.51-2.01.38-2.53-.5-2.69-.96-.09-.23-.48-.96-.82-1.15-.28-.15-.68-.54-.01-.55.63-.01 1.08.59 1.23.83.72 1.23 1.87.88 2.33.67.07-.53.28-.88.51-1.08-1.78-.2-3.64-.9-3.64-4.01 0-.89.31-1.62.82-2.19-.08-.2-.36-1.04.08-2.16 0 0 .67-.22 2.2.84A7.48 7.48 0 0 1 8 3.91c.68 0 1.36.09 2 .27 1.53-1.06 2.2-.84 2.2-.84.44 1.12.16 1.96.08 2.16.51.57.82 1.3.82 2.19 0 3.12-1.87 3.81-3.65 4.01.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.47.55.39A8.13 8.13 0 0 0 16 8.13C16 3.64 12.42 0 8 0Z"
+              />
+            </svg>
+            <span class="github-label">GitHub</span>
+            <span class="github-stars">
+              <svg
+                class="github-star-icon"
+                viewBox="0 0 16 16"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <path
+                  d="M8 0.25a0.75 0.75 0 0 1 0.673 0.418l1.882 3.815 4.21 0.612a0.75 0.75 0 0 1 0.416 1.279l-3.046 2.97 0.719 4.193a0.75 0.75 0 0 1-1.088 0.79L8 12.347l-3.766 1.98a0.75 0.75 0 0 1-1.088-0.79l0.719-4.194L0.819 6.374a0.75 0.75 0 0 1 0.416-1.28l4.21-0.611 1.882-3.815A0.75 0.75 0 0 1 8 0.25Z"
+                />
+              </svg>
+              <span
+                class="github-star-count"
+                data-github-stars
+                aria-live="polite"
+                >1</span
+              >
+            </span>
+          </a>
+          <a class="nav-install" href="#install">Install</a>
+        </div>
+      </div>
     </header>
 
     <main class="docs-shell" id="main">
@@ -244,6 +287,10 @@ SQL</code></pre>
               <strong>Contributing →</strong>
               <small>How to propose a focused, verifiable change</small>
             </a>
+            <a href="https://github.com/yhay81/sqrail/discussions">
+              <strong>Community Q&amp;A →</strong>
+              <small>Ask a question or share a working integration</small>
+            </a>
           </div>
         </section>
       </article>
@@ -258,6 +305,7 @@ SQL</code></pre>
       <div>
         <a href="/">Home</a>
         <a href="https://github.com/yhay81/sqrail">Source</a>
+        <a href="https://github.com/yhay81/sqrail/discussions">Community</a>
         <a href="https://github.com/yhay81/sqrail/releases">Releases</a>
       </div>
     </footer>

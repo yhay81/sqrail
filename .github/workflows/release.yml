@@ -136,11 +136,11 @@ jobs:
           rm "${PACKAGE_NAME}-repro.tar.gz"
           ls -lh "${PACKAGE_NAME}.tar.gz" "${PACKAGE_NAME}.spdx.json"
       - name: Attest build provenance
-        uses: actions/attest@f7c74d28b9d84cb8768d0b8ca14a4bac6ef463e6 # v4
+        uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
         with:
           subject-path: sqrail-${{ github.ref_name }}-${{ matrix.target }}.tar.gz
       - name: Attest SBOM
-        uses: actions/attest@f7c74d28b9d84cb8768d0b8ca14a4bac6ef463e6 # v4
+        uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
         with:
           subject-path: sqrail-${{ github.ref_name }}-${{ matrix.target }}.tar.gz
           sbom-path: sqrail-${{ github.ref_name }}-${{ matrix.target }}.spdx.json
@@ -238,11 +238,11 @@ jobs:
           if ($first -ne $second) { throw "Windows release archive is not reproducible" }
           Remove-Item "$env:PACKAGE_NAME-repro.zip"
       - name: Attest build provenance
-        uses: actions/attest@f7c74d28b9d84cb8768d0b8ca14a4bac6ef463e6 # v4
+        uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
         with:
           subject-path: sqrail-${{ github.ref_name }}-${{ matrix.target }}.zip
       - name: Attest SBOM
-        uses: actions/attest@f7c74d28b9d84cb8768d0b8ca14a4bac6ef463e6 # v4
+        uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
         with:
           subject-path: sqrail-${{ github.ref_name }}-${{ matrix.target }}.zip
           sbom-path: sqrail-${{ github.ref_name }}-${{ matrix.target }}.spdx.json
@@ -283,7 +283,7 @@ jobs:
             xargs -0 sha256sum > "$manifest"
           mv "$manifest" SHA256SUMS
       - name: Attest checksum manifest
-        uses: actions/attest@f7c74d28b9d84cb8768d0b8ca14a4bac6ef463e6 # v4
+        uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
         with:
           subject-path: release-assets/SHA256SUMS
       - name: Create complete draft release

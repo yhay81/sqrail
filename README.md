@@ -288,8 +288,10 @@ DuckDB engine is faster than itself.
 ## Community
 
 Questions, careful bug reports, reproducible performance evidence, documentation
-improvements, and focused patches are welcome. Start with the
-[support guide](SUPPORT.md), then read the
+improvements, and focused patches are welcome. Ask in
+[Discussions](https://github.com/yhay81/sqrail/discussions), browse the
+[`good first issue`](https://github.com/yhay81/sqrail/labels/good%20first%20issue)
+queue, or start with the [support guide](SUPPORT.md) and
 [contribution guide](CONTRIBUTING.md). Everyone participating in the project
 must follow the [Code of Conduct](CODE_OF_CONDUCT.md). Report suspected
 vulnerabilities privately through the [security policy](SECURITY.md).
@@ -297,6 +299,9 @@ vulnerabilities privately through the [security policy](SECURITY.md).
 The [documentation index](docs/README.md) maps each question to its normative
 source. Please treat benchmark numbers as hardware-specific observations unless
 the linked harness and equivalent-work checks support a broader claim.
+
+The public [community growth plan](docs/COMMUNITY_GROWTH.md) records who sqrail
+is for, how the project will earn attention, and which outcomes it measures.
 
 ## License
 
