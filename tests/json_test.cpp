@@ -40,12 +40,8 @@ TEST_CASE("JSON escaping emits portable Unicode and replacements", "[json]") {
 
 TEST_CASE("JSON escaping covers every ASCII control byte", "[json]") {
 	// Short escapes for the five controls named by the JSON RFC.
-	const std::vector<std::pair<char, std::string>> short_escapes{
-	    {'\b', "\\b"},
-	    {'\t', "\\t"},
-	    {'\n', "\\n"},
-	    {'\f', "\\f"},
-	    {'\r', "\\r"},
+	const std::vector<std::pair<char, std::string>> short_escapes {
+	    {'\b', "\\b"}, {'\t', "\\t"}, {'\n', "\\n"}, {'\f', "\\f"}, {'\r', "\\r"},
 	};
 	for (const auto &entry : short_escapes) {
 		CAPTURE(static_cast<int>(static_cast<unsigned char>(entry.first)));
@@ -68,7 +64,7 @@ TEST_CASE("JSON escaping covers every ASCII control byte", "[json]") {
 }
 
 TEST_CASE("JSON escaping replaces truncated UTF-8 and isolated continuations", "[json]") {
-	const std::vector<std::pair<std::string, std::string>> cases{
+	const std::vector<std::pair<std::string, std::string>> cases {
 	    // Truncated 2-byte sequence (lead only)
 	    {std::string("\xC2", 1), R"(\ufffd)"},
 	    // Truncated 3-byte sequences
