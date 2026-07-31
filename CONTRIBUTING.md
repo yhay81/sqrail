@@ -37,7 +37,7 @@ welcome without prior assignment.
 The project deliberately has one engine, one SQL dialect, no natural-language
 layer, no daemon, and no configuration file. A feature proposal should explain
 why ordinary DuckDB SQL or an existing command option cannot solve the task and
-how an agent can learn the addition without making `--agent-help` ambiguous.
+how an agent can learn the addition without making `--help` ambiguous.
 
 ## Build and test
 
@@ -88,7 +88,7 @@ output is a correctness failure.
 
 - Keep unrelated changes separate.
 - Add a regression test for behavioral fixes.
-- Update `docs/CONTRACT.md` and `--agent-help` together when the public CLI
+- Update `docs/CONTRACT.md` and `--help` together when the public CLI
   changes.
 - Do not update the DuckDB revision without documenting and benchmarking the
   change.

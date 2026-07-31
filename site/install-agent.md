@@ -77,4 +77,4 @@ Follow any host-specific post-install notice printed by the installer.
 Confirm that the host lists a Skill named `sqrail`. Restart the agent if it
 only discovers Skills at startup. Then use a fresh task to inspect a local CSV
 or Parquet file; the agent should choose `sqrail`, read
-`sqrail --agent-help`, run the required query once, and stop after success.
+`sqrail --help`, run the required query once, and stop after success.

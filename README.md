@@ -60,7 +60,7 @@ SQL
 | Need                              | sqrail's answer                                                   |
 | --------------------------------- | ----------------------------------------------------------------- |
 | A model already writes SQL        | Keep SQL as the only query language                               |
-| Tool instructions consume context | Learn the complete interface with `sqrail --agent-help`           |
+| Tool instructions consume context | Learn the complete interface with `sqrail --help`                 |
 | File access should be intentional | Allowlist only explicitly bound inputs                            |
 | Agent work must be bounded        | Cap memory, threads, time, spill, rows, bytes, files, and SQL     |
 | Pipelines need stable I/O         | Stream JSONL; emit one JSON diagnostic; use documented exit codes |
@@ -69,7 +69,7 @@ SQL
 The interface has three verbs: `schema` when names and types are unknown,
 `check` to plan without execution, and `run` to execute once. See the
 [3-minute guide](https://sqrails.yhay81.com/docs/) or give an agent the canonical
-[170-word help](https://sqrails.yhay81.com/agent-help.txt).
+[195-word help](https://sqrails.yhay81.com/help.txt).
 
 ## Install
 
@@ -155,10 +155,10 @@ The normative details, JSON schemas, failure semantics, and exit codes are in
 An agent can learn the complete interface with:
 
 ```sh
-sqrail --agent-help
+sqrail --help
 ```
 
-The 170-word v0.3 help includes a one-action decision rule and explicit stop
+The 195-word v0.3 help includes a one-action decision rule and explicit stop
 condition. The low-cost-model experiments that motivated that rule are recorded
 in the [agent experiment log](benchmarks/agent-eval/EXPERIMENTS.md). Integration
 patterns are collected in [Agent integration](docs/AGENT_INTEGRATION.md).

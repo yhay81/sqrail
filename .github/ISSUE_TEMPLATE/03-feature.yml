@@ -47,7 +47,7 @@ body:
     id: agent_learnability
     attributes:
       label: "Agent learnability"
-      description: "Explain how this fits in `--agent-help` without making its decision rule ambiguous or substantially longer."
+      description: "Explain how this fits in `--help` without making its decision rule ambiguous or substantially longer."
     validations:
       required: true
 

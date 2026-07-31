@@ -232,7 +232,7 @@ int Schema(int argc, char **argv) {
 	return 0;
 }
 
-void PrintAgentHelp() {
+void PrintHelp() {
 	std::cout
 	    << "sqrail runs read-only SQL over CSV, TSV, JSON, and Parquet.\n"
 	    << "\n"
@@ -245,6 +245,7 @@ void PrintAgentHelp() {
 	    << "           [--spill DIR [--max-spill SIZE]] [--timeout DURATION] [--max-rows N]\n"
 	    << "           [--max-output-bytes SIZE] [--max-input-files N] [--max-sql-bytes SIZE]\n"
 	    << "           [--stats] [--strict-schema] [SQL|-]\n"
+	    << "sqrail --help\n"
 	    << "sqrail --version\n"
 	    << "\n"
 	    << "Names/types result: schema once. Otherwise trust stated names/types, run once, and stop after success.\n"
@@ -255,16 +256,12 @@ void PrintAgentHelp() {
 	    << "Limits fail closed; --stats writes versioned success JSON to stderr.\n"
 	    << "Text supports .gz/.zst. Outputs are private, atomic, never overwritten.\n"
 	    << "SQL is one SELECT, VALUES, or WITH; order needs ORDER BY.\n"
-	    << "Errors are one stderr JSON. Exit: 0 success, 2 usage, 3 input, 4 SQL, 5 output, 70 internal.\n";
-}
-
-void PrintHumanHelp() {
-	std::cout << "sqrail " << SQRAIL_VERSION << " — SQL in, files out.\n\n";
-	PrintAgentHelp();
-	std::cout << "\nExamples:\n"
-	          << "  sqrail schema sales.csv\n"
-	          << "  sqrail run -t sales=sales.csv 'SELECT count(*) AS n FROM sales'\n"
-	          << "  sqrail run -t sales=sales.csv -o result.parquet - < query.sql\n";
+	    << "Errors are one stderr JSON. Exit: 0 success, 2 usage, 3 input, 4 SQL, 5 output, 70 internal.\n"
+	    << "\n"
+	    << "Examples:\n"
+	    << "  sqrail schema sales.csv\n"
+	    << "  sqrail run -t sales=sales.csv 'SELECT count(*) AS n FROM sales'\n"
+	    << "  sqrail run -t sales=sales.csv -o result.parquet - < query.sql\n";
 }
 
 void PrintError(const std::string &code, const std::string &message) {

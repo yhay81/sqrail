@@ -5,6 +5,17 @@ versions follow semantic versioning.
 
 ## [Unreleased]
 
+### Changed
+
+- `--help` is now the single normative help text: the former agent help plus a
+  `sqrail --help` usage line and three examples, without a version header, so
+  the published `site/help.txt` matches the executable byte for byte
+
+### Removed
+
+- the separate `--agent-help` flag; agents and humans read the same `--help`,
+  and the website file moved from `agent-help.txt` to `help.txt`
+
 ## [0.3.2] - 2026-07-30
 
 ### Added

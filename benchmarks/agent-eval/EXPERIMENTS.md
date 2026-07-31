@@ -1,6 +1,7 @@
 # Agent-contract experiment log
 
-This log records engineering pilots used to refine `sqrail --agent-help`. It is
+This log records engineering pilots used to refine sqrail's agent-facing help
+text (published as `--agent-help` through v0.3.2, now `sqrail --help`). It is
 not a statistically powered product comparison. The cohorts below evaluated
 the v0.2.2 command surface with a 100,000-row pilot dataset, the sqrail arm,
 seed `20260727`, and deterministic machine scoring. The four realistic context

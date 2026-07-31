@@ -27,7 +27,7 @@ name=file bindings -> DuckDB -> JSONL stdout or one output file
    are restricted to one read-only `SELECT`, `VALUES`, or `WITH` statement.
 
 3. **The complete interface must fit in a small prompt**
-   `sqrail --agent-help` is normative, complete, and intentionally short.
+   `sqrail --help` is normative, complete, and intentionally short.
 
 4. **stdout is data**
    Successful rows go to stdout. Diagnostics go to stderr as one JSON object.
@@ -98,7 +98,7 @@ that cannot be solved through schema, query planning, or DuckDB configuration.
 
 ## Success criteria
 
-- an agent succeeds after reading only `--agent-help`
+- an agent succeeds after reading only `--help`
 - identical task behavior across non-interactive shells
 - no full-result materialization in the frontend
 - no accidental output replacement

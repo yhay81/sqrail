@@ -36,8 +36,8 @@ npm run site:check
 
 This checks formatting, HTML structure and accessibility rules, JavaScript
 syntax, the public Agent Skill routes, and a Wrangler deployment dry run. The
-C++ CI build separately verifies that `site/agent-help.txt` exactly matches
-`sqrail --agent-help`.
+C++ CI build separately verifies that `site/help.txt` exactly matches
+`sqrail --help`.
 
 ## Deploy
 
@@ -63,7 +63,7 @@ After deployment, check the origin, headers, documents, and custom 404:
 
 ```sh
 curl --fail --silent --show-error --head https://sqrails.yhay81.com/
-curl --fail --silent --show-error https://sqrails.yhay81.com/agent-help.txt
+curl --fail --silent --show-error https://sqrails.yhay81.com/help.txt
 curl --fail --silent --show-error https://sqrails.yhay81.com/llms.txt
 curl --fail --silent --show-error https://sqrails.yhay81.com/install-agent.md
 curl --silent --show-error --output /dev/null --write-out '%{http_code}\n' \

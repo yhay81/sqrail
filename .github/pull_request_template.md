@@ -4,7 +4,7 @@
 
 ## Contract impact
 
-<!-- State whether docs/CONTRACT.md or --agent-help changes. -->
+<!-- State whether docs/CONTRACT.md or --help changes. -->
 
 ## Validation
 

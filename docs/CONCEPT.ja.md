@@ -25,7 +25,7 @@ name=file束縛 -> DuckDB -> JSONL標準出力または単一出力ファイル
    一つのread-onlyな`SELECT`、`VALUES`、`WITH`だけです。
 
 3. **全インターフェースを短い説明へ収める**
-   `sqrail --agent-help`は規範的かつ完全な説明です。
+   `sqrail --help`は規範的かつ完全な説明です。
 
 4. **stdoutはデータ専用**
    成功時の行はstdout、診断は一つのJSONとしてstderrへ出します。
