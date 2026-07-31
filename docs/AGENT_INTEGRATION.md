@@ -11,11 +11,11 @@
 Prefer the executable's stable help over a prose tool tutorial:
 
 ```sh
-sqrail --agent-help
+sqrail --help
 ```
 
 The same release interface is available to HTTP-based agents at
-<https://sqrails.yhay81.com/agent-help.txt>. The website discovery file is
+<https://sqrails.yhay81.com/help.txt>. The website discovery file is
 <https://sqrails.yhay81.com/llms.txt>.
 
 ## Install discovery

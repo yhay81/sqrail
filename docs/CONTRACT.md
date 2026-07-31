@@ -14,7 +14,6 @@ sqrail run [-t NAME=PATH]... [-o FILE] [--memory SIZE] [--threads N]
            [--spill DIR [--max-spill SIZE]] [--timeout DURATION]
            [--max-rows N] [--max-output-bytes SIZE] [--max-input-files N]
            [--max-sql-bytes SIZE] [--stats] [--strict-schema] [SQL|-]
-sqrail --agent-help
 sqrail --help
 sqrail --version
 ```

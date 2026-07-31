@@ -371,7 +371,7 @@ def build_help(
     if arm == "sqrail":
         if sqrail_help_file is not None:
             return sanitize_help(sqrail_help_file.read_text(encoding="utf-8"))
-        return sanitize_help(checked_output([str(sqrail_bin), "--agent-help"]))
+        return sanitize_help(checked_output([str(sqrail_bin), "--help"]))
     return sanitize_help(checked_output([str(duckdb_bin), "--help"]))
 
 

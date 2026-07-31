@@ -104,8 +104,8 @@ jobs:
         run: cmake --build --preset release
       - name: Test
         run: ctest --preset release
-      - name: Verify published agent help
-        run: diff -u <(out/build/release/sqrail --agent-help) site/agent-help.txt
+      - name: Verify published help
+        run: diff -u <(out/build/release/sqrail --help) site/help.txt
       - name: Install
         run: |
           cmake --install out/build/release --prefix install --component sqrail

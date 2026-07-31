@@ -423,16 +423,17 @@ for signal_name in TERM INT; do
   test "$(find "$signal_spill" -name '.sqrail-spill-*' | wc -l | tr -d ' ')" = "0"
 done
 
-agent_help=$("$sqrail_bin" --agent-help)
-printf '%s\n' "$agent_help" | grep -q 'Names/types result: schema once'
-printf '%s\n' "$agent_help" | grep -q 'run once, and stop after success'
-printf '%s\n' "$agent_help" | grep -q 'SQL is one SELECT'
-printf '%s\n' "$agent_help" | grep -q -- '--max-rows'
-printf '%s\n' "$agent_help" | grep -q -- '--strict-schema'
-printf '%s\n' "$agent_help" | grep -q -- '--stats'
-printf '%s\n' "$agent_help" | grep -q -- '--max-output-bytes'
-printf '%s\n' "$agent_help" | grep -q -- '--max-input-files'
-printf '%s\n' "$agent_help" | grep -q -- '--max-sql-bytes'
-printf '%s\n' "$agent_help" | grep -q 'check emits columns'
-test "$(printf '%s\n' "$agent_help" | wc -w | tr -d ' ')" -le 170
+help_text=$("$sqrail_bin" --help)
+printf '%s\n' "$help_text" | grep -q 'Names/types result: schema once'
+printf '%s\n' "$help_text" | grep -q 'run once, and stop after success'
+printf '%s\n' "$help_text" | grep -q 'SQL is one SELECT'
+printf '%s\n' "$help_text" | grep -q -- '--max-rows'
+printf '%s\n' "$help_text" | grep -q -- '--strict-schema'
+printf '%s\n' "$help_text" | grep -q -- '--stats'
+printf '%s\n' "$help_text" | grep -q -- '--max-output-bytes'
+printf '%s\n' "$help_text" | grep -q -- '--max-input-files'
+printf '%s\n' "$help_text" | grep -q -- '--max-sql-bytes'
+printf '%s\n' "$help_text" | grep -q 'check emits columns'
+printf '%s\n' "$help_text" | grep -q 'Examples:'
+test "$(printf '%s\n' "$help_text" | wc -w | tr -d ' ')" -le 195
 "$sqrail_bin" --version | grep -Eq '^sqrail 0\.3\.2 \(DuckDB v[0-9]+\.[0-9]+\.[0-9]+([.-][^)]*)?\)$'

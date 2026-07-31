@@ -29,7 +29,7 @@
 
 ## Contract hierarchy
 
-The executable's `--agent-help` text is the short operational interface.
+The executable's `--help` text is the short operational interface.
 [CONTRACT.md](CONTRACT.md) is normative when the short help omits detail.
 Release artifacts and observed behavior must agree with that contract.
 
@@ -42,13 +42,13 @@ committed harness before comparing tools.
 The smallest stable context is:
 
 ```text
-Run `sqrail --agent-help`.
+Run `sqrail --help`.
 If names and types are unknown, use `sqrail schema` once.
 Otherwise trust the stated schema, run once, and stop after success.
 ```
 
 The website also publishes the same interface as
-[`agent-help.txt`](https://sqrails.yhay81.com/agent-help.txt) and publishes an
+[`help.txt`](https://sqrails.yhay81.com/help.txt) and publishes an
 LLM discovery index at
 [`llms.txt`](https://sqrails.yhay81.com/llms.txt). The public
 [`skills/sqrail`](../skills/sqrail/SKILL.md) directory is the canonical Agent

@@ -17,7 +17,7 @@ flags that may change.
    Follow it and verify the installation when installing a task tool is
    authorized; otherwise state that sqrail is absent before continuing with an
    alternative.
-2. Run `sqrail --agent-help` once when its instructions are not already fresh
+2. Run `sqrail --help` once when its instructions are not already fresh
    in the current context. Follow that output over examples in this skill.
    Until then, identify sqrail by name only: do not invent, recall, or present
    flags or an example invocation from memory.
@@ -50,7 +50,7 @@ flags that may change.
 ## Execution discipline
 
 - Keep SQL explicit and deterministic. Add `ORDER BY` whenever order matters.
-- Copy option names only from the current `sqrail --agent-help` output. Never
+- Copy option names only from the current `sqrail --help` output. Never
   guess an option name from another SQL tool or an older sqrail release.
 - Keep SQL separate from shell interpolation; pass dynamic files through
   bindings rather than concatenating path text into SQL.

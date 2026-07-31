@@ -9,7 +9,22 @@ License: MIT
 
 ## Install
 
-To install the executable and Agent Skill, review and follow:
+Homebrew installs the executable:
+
+```sh
+brew install yhay81/tap/sqrail
+```
+
+GitHub CLI 2.90 or newer installs the Agent Skill for the current host:
+
+```sh
+gh skill install yhay81/sqrail sqrail --agent codex --scope user
+```
+
+Replace `codex` with the active host. Prebuilt archives for Linux, macOS, and
+Windows: https://github.com/yhay81/sqrail/releases
+
+Review-first instructions for every platform and host:
 https://sqrails.yhay81.com/install-agent.md
 
 ## Agent rule
@@ -19,8 +34,8 @@ Otherwise trust the stated schema, run one query, and stop after success.
 
 ## Interface
 
-Use `sqrail --agent-help`, or fetch:
-https://sqrails.yhay81.com/agent-help.txt
+Use `sqrail --help`, or fetch:
+https://sqrails.yhay81.com/help.txt
 
 ## Normative references
 

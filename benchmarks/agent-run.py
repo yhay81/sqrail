@@ -211,9 +211,8 @@ def prepare_session(arguments: argparse.Namespace) -> int:
         (workspace / paths["output"]).write_bytes(b"sqrail-agent-evaluation-sentinel\n")
 
     selected = arguments.sqrail if arguments.arm == "sqrail" else arguments.duckdb
-    help_argument = "--agent-help" if arguments.arm == "sqrail" else "--help"
     help_result = subprocess.run(
-        [str(selected.resolve()), help_argument],
+        [str(selected.resolve()), "--help"],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         check=False,

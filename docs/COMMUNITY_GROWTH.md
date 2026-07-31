@@ -31,7 +31,7 @@ The first audiences are:
 | Contribute | bounded issues, validation commands, kind review, and fast feedback     | first-time contributors             |
 | Retain     | predictable releases, public decisions, and visible contributor credit  | repeat contributors and discussions |
 
-The website, README, `--agent-help`, Agent Skill, packages, and release artifacts
+The website, README, `--help`, Agent Skill, packages, and release artifacts
 must tell the same story. Unsupported “faster than DuckDB/Polars” claims would
 damage trust; performance statements require equivalent-work checks and raw
 evidence under the benchmark policy.

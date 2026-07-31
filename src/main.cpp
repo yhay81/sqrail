@@ -18,17 +18,13 @@ int main(int argc, char **argv) {
 	try {
 		sqrail::InstallSignalHandlers();
 		if (argc < 2) {
-			sqrail::PrintHumanHelp();
+			sqrail::PrintHelp();
 			return EXIT_USAGE;
 		}
 
 		const std::string command = argv[1];
 		if (command == "--help" || command == "-h" || command == "help") {
-			sqrail::PrintHumanHelp();
-			return 0;
-		}
-		if (command == "--agent-help") {
-			sqrail::PrintAgentHelp();
+			sqrail::PrintHelp();
 			return 0;
 		}
 		if (command == "--version" || command == "-V") {
