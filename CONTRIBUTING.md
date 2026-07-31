@@ -52,13 +52,19 @@ cmake --build --preset fuzz
 out/build/fuzz/sqrail-strict-json-fuzz -max_total_time=30
 out/build/fuzz/sqrail-cli-fuzz -max_total_time=30
 CMAKE_PREFIX_PATH=/path/to/duckdb cmake --workflow --preset system
+clang-format-18 --dry-run --Werror src/*.cpp src/*.hpp tests/*.cpp fuzz/*.cpp \
+  benchmarks/agent-eval/launcher.c
 shellcheck tests/*.sh benchmarks/*.sh
 actionlint
-zizmor --pedantic .
+GH_TOKEN=$(gh auth token) zizmor --pedantic .
 ```
 
-Format C++ with the repository `.clang-format`. GitHub Actions additionally run
-CodeQL and audit every workflow with Actionlint and Zizmor. The `windows-x64`
+Format C++ with the repository `.clang-format`. CI enforces the same check with
+`clang-format` 18, so a different major version can disagree; `uvx
+clang-format@18.1.8` provides it when your platform packages another release.
+Give Zizmor a `GH_TOKEN` so it runs the online audits CI performs, including the
+action reference checks a local run otherwise skips. GitHub Actions additionally
+run CodeQL and audit every workflow with Actionlint and Zizmor. The `windows-x64`
 preset follows the Windows 2025 hosted image and uses Visual Studio 2026 with
 a CMake version that provides the `Visual Studio 18 2026` generator; the Windows
 11 Arm64 runner continues to use Visual Studio 2022 through the `windows-arm64`
@@ -86,8 +92,8 @@ output is a correctness failure.
   changes.
 - Do not update the DuckDB revision without documenting and benchmarking the
   change.
-- Confirm that `git diff --check`, the smoke test, ShellCheck, Actionlint, and
-  Zizmor pass.
+- Confirm that `git diff --check`, `clang-format`, the smoke test, ShellCheck,
+  Actionlint, and Zizmor pass.
 
 Reviews focus on the documented contract, correctness, safety, portability,
 performance evidence, and whether an agent can learn the interface reliably.
