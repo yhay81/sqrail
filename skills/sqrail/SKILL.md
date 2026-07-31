@@ -6,7 +6,7 @@ description: Use sqrail for local, read-only SQL over CSV, TSV, JSON, or Parquet
 # Use sqrail
 
 Use the installed `sqrail` CLI as the small, bounded SQL-on-files frontend. Let
-the CLI's published agent help remain the source of truth instead of memorizing
+the CLI's published help remain the source of truth instead of memorizing
 flags that may change.
 
 ## Workflow

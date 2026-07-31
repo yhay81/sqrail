@@ -15,9 +15,11 @@ Homebrew installs the executable:
 brew install yhay81/tap/sqrail
 ```
 
-GitHub CLI 2.90 or newer installs the Agent Skill for the current host:
+GitHub CLI 2.90 or newer previews and installs the Agent Skill for the
+current host:
 
 ```sh
+gh skill preview yhay81/sqrail sqrail
 gh skill install yhay81/sqrail sqrail --agent codex --scope user
 ```
 
