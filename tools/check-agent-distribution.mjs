@@ -68,6 +68,23 @@ assert.equal(
 );
 assert.equal(plugin.repository, "https://github.com/yhay81/sqrail");
 
+const homepageVersions = [
+  ...homepage.matchAll(
+    /(?:sqrail-v|\/releases\/(?:tag|download)\/v|"softwareVersion": "|"sqrail_version":"|>v)(\d+\.\d+\.\d+)/g,
+  ),
+].map((match) => match[1]);
+assert(
+  homepageVersions.length > 0,
+  "site/index.html must state the release version",
+);
+for (const found of new Set(homepageVersions)) {
+  assert.equal(
+    found,
+    plugin.version,
+    `site/index.html still references version ${found}`,
+  );
+}
+
 for (const required of [
   "brew install yhay81/tap/sqrail",
   "winget show --id yhay81.sqrail --exact",

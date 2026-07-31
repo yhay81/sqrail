@@ -82,7 +82,7 @@ execution engine.
   installation.
 - **r/dataengineering:** emphasize explicit bindings, Parquet, resource limits,
   and equivalent-work benchmarks.
-- **Agent-builder communities:** publish the complete 170-word interface and a
+- **Agent-builder communities:** publish the complete 195-word interface and a
   blind low-cost-model evaluation, including failures.
 - **Developer-tool curators:** submit only after the quick start and platform
   packages are verified. Console's published criteria favor self-service,
@@ -103,7 +103,7 @@ Useful references:
 > CSV, JSON, or Parquet inputs, accepts exactly one read-only query, and returns
 > JSONL or an atomic output file. It adds explicit memory, thread, timeout, row,
 > byte, file, SQL-size, and spill limits around DuckDB. The interface fits in
-> 170 words and ships as one C++20 binary for macOS, Linux, and Windows. I would
+> 195 words and ships as one C++20 binary for macOS, Linux, and Windows. I would
 > especially value reports from real agent workflows where the contract is
 > unclear or a limit is missing.
 

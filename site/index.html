@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="Bounded SQL over CSV, JSON, and Parquet for coding agents that already write the query."
+      content="Bounded SQL over CSV, TSV, JSON, and Parquet for coding agents that already write the query."
     />
     <meta name="theme-color" content="#090a09" />
     <meta name="color-scheme" content="dark" />
@@ -37,10 +37,10 @@
         "name": "sqrail",
         "applicationCategory": "DeveloperApplication",
         "operatingSystem": "macOS, Linux, Windows",
-        "softwareVersion": "0.3.2",
+        "softwareVersion": "0.3.3",
         "description": "A bounded SQL-on-files CLI for coding agents.",
         "url": "https://sqrails.yhay81.com/",
-        "downloadUrl": "https://github.com/yhay81/sqrail/releases/tag/v0.3.2",
+        "downloadUrl": "https://github.com/yhay81/sqrail/releases/tag/v0.3.3",
         "license": "https://opensource.org/license/mit",
         "codeRepository": "https://github.com/yhay81/sqrail"
       }
@@ -114,13 +114,13 @@
         <div class="hero-inner">
           <div class="hero-copy">
             <p class="eyebrow">
-              <span>v0.3.2</span>
+              <span>v0.3.3</span>
               Agent-native data CLI
             </p>
             <h1 id="hero-title">sqrail</h1>
             <p class="hero-promise">SQL in. <em>Files out.</em></p>
             <p class="lede">
-              Bounded SQL over local CSV, JSON, and Parquet—for agents that
+              Bounded SQL over local CSV, TSV, JSON, and Parquet—for agents that
               already write the query.
             </p>
 
@@ -205,9 +205,9 @@
               >
                 <code
                   id="hero-install-linux"
-                  data-copy-value="curl -LO https://github.com/yhay81/sqrail/releases/download/v0.3.2/sqrail-v0.3.2-linux-x86_64.tar.gz"
+                  data-copy-value="curl -LO https://github.com/yhay81/sqrail/releases/download/v0.3.3/sqrail-v0.3.3-linux-x86_64.tar.gz"
                   ><span>$</span> curl -LO
-                  https://github.com/yhay81/sqrail/releases/download/v0.3.2/sqrail-v0.3.2-linux-x86_64.tar.gz</code
+                  https://github.com/yhay81/sqrail/releases/download/v0.3.3/sqrail-v0.3.3-linux-x86_64.tar.gz</code
                 >
                 <button
                   class="copy-button quick-copy"
@@ -228,9 +228,9 @@
               >
                 <code
                   id="hero-install-windows"
-                  data-copy-value="curl.exe -LO https://github.com/yhay81/sqrail/releases/download/v0.3.2/sqrail-v0.3.2-windows-x86_64.zip"
+                  data-copy-value="curl.exe -LO https://github.com/yhay81/sqrail/releases/download/v0.3.3/sqrail-v0.3.3-windows-x86_64.zip"
                   ><span>&gt;</span> curl.exe -LO
-                  https://github.com/yhay81/sqrail/releases/download/v0.3.2/sqrail-v0.3.2-windows-x86_64.zip</code
+                  https://github.com/yhay81/sqrail/releases/download/v0.3.3/sqrail-v0.3.3-windows-x86_64.zip</code
                 >
                 <button
                   class="copy-button quick-copy"
@@ -272,7 +272,7 @@
               <a href="/docs/"
                 >3-minute guide <span aria-hidden="true">→</span></a
               >
-              <a href="https://github.com/yhay81/sqrail/releases/tag/v0.3.2"
+              <a href="https://github.com/yhay81/sqrail/releases/tag/v0.3.3"
                 >Arm64 &amp; checksums <span aria-hidden="true">→</span></a
               >
             </p>
@@ -330,7 +330,7 @@
               >
                 <pre><code><span class="prompt">$</span> sqrail schema trials.parquet
 
-<span class="result">{"schema_version":1,"sqrail_version":"0.3.2",
+<span class="result">{"schema_version":1,"sqrail_version":"0.3.3",
  "file":"/data/trials.parquet","files":1,
  "columns":[{"name":"phase",
  "type":"BIGINT","nullable":true}]}</span></code></pre>
@@ -347,7 +347,7 @@
   'SELECT phase, count(*) AS n
    FROM trials GROUP BY phase'
 
-<span class="result">{"schema_version":1,"sqrail_version":"0.3.2",
+<span class="result">{"schema_version":1,"sqrail_version":"0.3.3",
  "ok":true,
  "columns":[{"name":"phase","type":"BIGINT","nullable":true},
             {"name":"n","type":"BIGINT","nullable":true}],
@@ -541,17 +541,17 @@
           <button
             class="copy-button"
             type="button"
-            data-copy-target="agent-code"
+            data-copy-target="help-code"
           >
             Copy
           </button>
-          <pre id="agent-code"><code>sqrail --help
+          <pre id="help-code"><code>sqrail --help
 
 Names/types result: schema once.
 Otherwise trust stated names/types,
 run once, and stop after success.
 
--t binds a file, directory, or glob.
+-t binds a file, Parquet directory, or glob.
 - reads SQL from stdin.
 No -o streams JSONL.
 -o selects format by extension.

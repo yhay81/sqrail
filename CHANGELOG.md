@@ -5,6 +5,13 @@ versions follow semantic versioning.
 
 ## [Unreleased]
 
+## [0.3.3] - 2026-08-01
+
+### Added
+
+- inline Homebrew and `gh skill install` commands in the website's `llms.txt`
+  so one fetch is enough to install and start using sqrail
+
 ### Changed
 
 - `--help` is now the single normative help text: the former agent help plus a
@@ -173,7 +180,8 @@ versions follow semantic versioning.
 - Linux and macOS release archives for x86-64 and Arm64
 - SHA-256 checksums and build-provenance attestations
 
-[Unreleased]: https://github.com/yhay81/sqrail/compare/v0.3.2...HEAD
+[Unreleased]: https://github.com/yhay81/sqrail/compare/v0.3.3...HEAD
+[0.3.3]: https://github.com/yhay81/sqrail/compare/v0.3.2...v0.3.3
 [0.3.2]: https://github.com/yhay81/sqrail/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/yhay81/sqrail/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/yhay81/sqrail/compare/v0.2.2...v0.3.0

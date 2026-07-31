@@ -99,7 +99,8 @@ offers them.
 
 The v0.3 contract adds schema-evolution, result-limit, statistics, and safety
 options, so the v0.2.2 help cannot be copied byte-for-byte. Its validated
-decision rule was compressed into the 170-word v0.3 help:
+decision rule was compressed into the 170-word help shipped from v0.3.0 through
+v0.3.2:
 
 > Names/types result: schema once. Otherwise trust stated names/types, run once,
 > and stop after success.
