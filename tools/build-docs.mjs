@@ -375,12 +375,6 @@ const renderPage = async (page, source) => {
         <nav class="docs-global-nav" aria-label="Documentation pages">
           ${renderPageNavigation(page)}
         </nav>
-        <div class="docs-sidebar-sections">
-          <p>On this page</p>
-          <nav class="docs-section-nav" aria-label="Page sections">
-            ${renderSectionNavigation(rendered.headings)}
-          </nav>
-        </div>
       </aside>
 
       <article class="docs-content docs-reference-content">
@@ -398,6 +392,13 @@ const renderPage = async (page, source) => {
           <a href="${machineUrl}">Markdown source <span aria-hidden="true">→</span></a>
         </aside>
       </article>
+
+      <aside class="docs-page-sidebar" aria-label="On this page">
+        <p>On this page</p>
+        <nav class="docs-section-nav" aria-label="Page sections">
+          ${renderSectionNavigation(rendered.headings)}
+        </nav>
+      </aside>
     </main>
 
     <footer>
