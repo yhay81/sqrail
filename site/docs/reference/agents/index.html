@@ -184,20 +184,6 @@ gh skill install yhay81/sqrail sqrail --agent codex --scope user
             <code>gh skill update</code> can check later releases.
           </p>
           <p>
-            Google ended Gemini CLI consumer sign-in on June 18, 2026 and
-            directs individual users to Antigravity CLI. Gemini CLI remains
-            available for Standard and Enterprise subscriptions and API-key
-            authentication, so its Skill target is retained only as a
-            compatibility path. See Google’s
-            <a
-              href="https://developers.google.com/gemini-code-assist/docs/deprecations/code-assist-individuals"
-              >official deprecation notice</a
-            >. Those deployments should use Gemini CLI’s native Skill installer:
-          </p>
-          <pre><code class="language-sh">gemini skills install https://github.com/yhay81/sqrail \
-  --path skills/sqrail --scope user --consent
-</code></pre>
-          <p>
             AGY and Antigravity CLI 1.1.8 do not discover the shared
             <code>.agents/skills</code> project location used by current generic
             installers. Install the repository as a native plugin instead:

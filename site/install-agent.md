@@ -50,17 +50,6 @@ Replace `AGENT` with the current host. Common values are `codex`,
 `claude-code`, `cursor`, `github-copilot`, `opencode`, `cline`, `kiro-cli`, and
 `windsurf`. Use `universal` only when the host is unknown.
 
-Gemini CLI is not the default route for individual Google users: consumer
-sign-in ended on June 18, 2026. Use AGY/Antigravity above. The `gemini-cli`
-target is only for Standard or Enterprise subscriptions and API-key
-deployments that still run Gemini CLI. Those deployments should use its native
-installer:
-
-```sh
-gemini skills install https://github.com/yhay81/sqrail \
-  --path skills/sqrail --scope user --consent
-```
-
 If `gh skill` is unavailable but Node.js is already installed, use:
 
 ```sh

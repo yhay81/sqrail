@@ -33,18 +33,6 @@ Replace `codex` with the active host. Verified targets include Claude Code,
 Cursor, GitHub Copilot, OpenCode, Cline, Kiro CLI, and Windsurf. GitHub CLI
 records source provenance so `gh skill update` can check later releases.
 
-Google ended Gemini CLI consumer sign-in on June 18, 2026 and directs individual
-users to Antigravity CLI. Gemini CLI remains available for Standard and
-Enterprise subscriptions and API-key authentication, so its Skill target is
-retained only as a compatibility path. See Google's
-[official deprecation notice](https://developers.google.com/gemini-code-assist/docs/deprecations/code-assist-individuals).
-Those deployments should use Gemini CLI's native Skill installer:
-
-```sh
-gemini skills install https://github.com/yhay81/sqrail \
-  --path skills/sqrail --scope user --consent
-```
-
 AGY and Antigravity CLI 1.1.8 do not discover the shared `.agents/skills`
 project location used by current generic installers. Install the repository as
 a native plugin instead:
