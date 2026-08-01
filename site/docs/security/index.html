@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Supported versions, private reporting, guarantees, threat boundaries, and explicit non-goals."
+    />
+    <meta name="theme-color" content="#090a09" />
+    <meta property="og:title" content="Security boundary — sqrail" />
+    <meta
+      property="og:description"
+      content="Supported versions, private reporting, guarantees, threat boundaries, and explicit non-goals."
+    />
+    <meta property="og:type" content="article" />
+    <meta
+      property="og:url"
+      content="https://sqrails.yhay81.com/docs/security/"
+    />
+    <meta
+      property="og:image"
+      content="https://sqrails.yhay81.com/social-card.png"
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="canonical" href="https://sqrails.yhay81.com/docs/security/" />
+    <link
+      rel="alternate"
+      type="text/markdown"
+      href="https://raw.githubusercontent.com/yhay81/sqrail/main/SECURITY.md"
+    />
+    <title>Security boundary — sqrail documentation</title>
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="/app.js" defer></script>
+  </head>
+  <body class="docs-body">
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header" data-site-header>
+      <div class="nav">
+        <div class="nav-brand">
+          <a class="wordmark" href="/" aria-label="sqrail home">
+            <span class="wordmark-mark" aria-hidden="true"></span>
+            sqrail
+          </a>
+          <span class="nav-tagline">Agent-safe SQL on files</span>
+        </div>
+        <nav class="nav-links" aria-label="Primary">
+          <a href="/docs/">Documentation</a>
+          <a href="/docs/agents/">Agent setup</a>
+          <a href="/docs/reference/contract/">Reference</a>
+        </nav>
+        <div class="nav-actions">
+          <a
+            class="github-repo"
+            data-github-repo
+            href="https://github.com/yhay81/sqrail"
+            aria-label="View yhay81/sqrail on GitHub — 1 star"
+          >
+            <svg
+              class="github-icon"
+              viewBox="0 0 16 16"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <path
+                d="M8 0C3.58 0 0 3.64 0 8.13c0 3.59 2.29 6.64 5.47 7.71.4.08.55-.18.55-.39 0-.19-.01-.83-.01-1.51-2.01.38-2.53-.5-2.69-.96-.09-.23-.48-.96-.82-1.15-.28-.15-.68-.54-.01-.55.63-.01 1.08.59 1.23.83.72 1.23 1.87.88 2.33.67.07-.53.28-.88.51-1.08-1.78-.2-3.64-.9-3.64-4.01 0-.89.31-1.62.82-2.19-.08-.2-.36-1.04.08-2.16 0 0 .67-.22 2.2.84A7.48 7.48 0 0 1 8 3.91c.68 0 1.36.09 2 .27 1.53-1.06 2.2-.84 2.2-.84.44 1.12.16 1.96.08 2.16.51.57.82 1.3.82 2.19 0 3.12-1.87 3.81-3.65 4.01.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.47.55.39A8.13 8.13 0 0 0 16 8.13C16 3.64 12.42 0 8 0Z"
+              />
+            </svg>
+            <span class="github-label">GitHub</span>
+            <span class="github-stars">
+              <svg
+                class="github-star-icon"
+                viewBox="0 0 16 16"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <path
+                  d="M8 0.25a0.75 0.75 0 0 1 0.673 0.418l1.882 3.815 4.21 0.612a0.75 0.75 0 0 1 0.416 1.279l-3.046 2.97 0.719 4.193a0.75 0.75 0 0 1-1.088 0.79L8 12.347l-3.766 1.98a0.75 0.75 0 0 1-1.088-0.79l0.719-4.194L0.819 6.374a0.75 0.75 0 0 1 0.416-1.28l4.21-0.611 1.882-3.815A0.75 0.75 0 0 1 8 0.25Z"
+                />
+              </svg>
+              <span
+                class="github-star-count"
+                data-github-stars
+                aria-live="polite"
+                >1</span
+              >
+            </span>
+          </a>
+          <a class="nav-install" href="/docs/">Install</a>
+        </div>
+      </div>
+    </header>
+
+    <main class="docs-shell docs-shell-reference" id="main">
+      <aside class="docs-sidebar" aria-label="Documentation navigation">
+        <p>Documentation</p>
+        <nav class="docs-global-nav" aria-label="Documentation pages">
+          <a href="/docs/">Start here</a>
+          <a href="/docs/agents/">Agent setup</a>
+          <a href="/docs/reference/contract/">CLI contract</a>
+          <a href="/docs/reference/agents/">Agent integration</a>
+          <a href="/docs/reference/performance/">Performance</a>
+          <a href="/docs/reference/platforms/">Platforms</a>
+          <a href="/docs/security/" aria-current="page">Security</a>
+          <a href="/docs/contributing/">Contributing</a>
+        </nav>
+        <div class="docs-sidebar-sections">
+          <p>On this page</p>
+          <nav class="docs-section-nav" aria-label="Page sections">
+            <a href="#supported-versions" aria-current="location"
+              >Supported versions</a
+            >
+            <a href="#reporting">Reporting</a>
+            <a href="#security-boundary">Security boundary</a>
+          </nav>
+        </div>
+      </aside>
+
+      <article class="docs-content docs-reference-content">
+        <p class="eyebrow"><span>Project</span> Documentation</p>
+        <h1>Security boundary</h1>
+        <p class="docs-deck">
+          Supported versions, private reporting, guarantees, threat boundaries,
+          and explicit non-goals.
+        </p>
+        <div class="docs-markdown">
+          <h2 id="supported-versions">Supported versions</h2>
+          <p>The latest published sqrail release receives security fixes.</p>
+          <h2 id="reporting">Reporting</h2>
+          <p>
+            Do not open a public issue for a suspected vulnerability. Use
+            <a href="https://github.com/yhay81/sqrail/security/advisories/new"
+              >GitHub private vulnerability reporting</a
+            >
+            with:
+          </p>
+          <ul>
+            <li>affected sqrail version and platform</li>
+            <li>a minimal reproduction</li>
+            <li>expected and observed impact</li>
+            <li>whether untrusted SQL, filenames, or data are required</li>
+          </ul>
+          <p>
+            The project will acknowledge a complete report, investigate it, and
+            coordinate disclosure through a GitHub Security Advisory.
+          </p>
+          <h2 id="security-boundary">Security boundary</h2>
+          <p>
+            sqrail rejects write statements, protects named output files from
+            replacement, disables extension installation/loading and external
+            access, allowlists exact bound inputs and output temporaries,
+            creates POSIX outputs without group or other permissions, protects
+            Windows outputs with a non-inheriting current-user DACL, and locks
+            DuckDB configuration. When <code>--spill</code> is used, sqrail
+            creates and allowlists only a unique, owner-only workspace beneath
+            the requested root. Existing siblings under that root remain
+            inaccessible and the workspace is removed after DuckDB shuts down.
+            Handled interrupts and closed stdout pipes pass through the same
+            private-artifact cleanup path.
+          </p>
+          <p>
+            The SQL-size, input-count, result-row, output-byte, memory, spill,
+            thread, and end-to-end deadline controls bound distinct resource
+            dimensions. <code>--memory</code> remains a DuckDB buffer-manager
+            limit rather than a process RSS or address-space limit.
+          </p>
+          <p>
+            These controls reduce accidental and agent-generated file access.
+            They do not replace an operating-system sandbox, resource cgroup, or
+            trust review for hostile SQL, native dependencies, malformed data,
+            or a filesystem whose remote server does not preserve local
+            atomicity and durability semantics. The agent-evaluation runner also
+            filters inherited environment secrets and rejects absolute paths,
+            parent traversal, and external URIs, but it is evidence collection
+            rather than a general-purpose hostile-code sandbox.
+          </p>
+        </div>
+        <aside class="docs-source-note" aria-label="Machine-readable source">
+          <div>
+            <strong>Prefer plain text?</strong>
+            <span
+              >The rendered page and repository Markdown share one source.</span
+            >
+          </div>
+          <a
+            href="https://raw.githubusercontent.com/yhay81/sqrail/main/SECURITY.md"
+            >Markdown source <span aria-hidden="true">→</span></a
+          >
+        </aside>
+      </article>
+    </main>
+
+    <footer>
+      <a class="wordmark" href="/">
+        <span class="wordmark-mark" aria-hidden="true"></span>
+        sqrail
+      </a>
+      <p>One query at a time.</p>
+      <div>
+        <a href="/docs/">Docs</a>
+        <a href="https://github.com/yhay81/sqrail">Source</a>
+        <a href="https://github.com/yhay81/sqrail/discussions">Community</a>
+        <a href="https://github.com/yhay81/sqrail/releases">Releases</a>
+      </div>
+    </footer>
+  </body>
+</html>

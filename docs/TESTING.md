@@ -69,13 +69,16 @@ tooling:
 
 ```sh
 npm ci
+npm run docs:build
 npm run site:check
 ```
 
-In addition to formatting, HTML, JavaScript, and Cloudflare checks, this
-validates the Agent Skills frontmatter, OpenAI interface metadata, stable web
-bootstrap, canonical repository links, and the absence of remote
-download-to-shell instructions. Before publishing a release, also run
+Human-readable reference pages under `site/docs/` are generated from the
+repository Markdown by `tools/build-docs.mjs`; `site:check` fails when a
+generated page is stale. In addition to formatting, HTML, JavaScript, and
+Cloudflare checks, it validates the Agent Skills frontmatter, OpenAI interface
+metadata, stable web bootstrap, canonical repository links, and the absence of
+remote download-to-shell instructions. Before publishing a release, also run
 `gh skill publish --dry-run` with GitHub CLI 2.90 or newer to validate
 ecosystem discovery. Run `agy plugin validate .` to validate the native
 AGY/Antigravity route. AGY print mode executes in a private scratch project, so

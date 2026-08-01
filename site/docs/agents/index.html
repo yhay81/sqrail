@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Install sqrail and its optional Agent Skill with a review-first path for the agent you already use."
+    />
+    <meta name="theme-color" content="#090a09" />
+    <meta property="og:title" content="Agent setup — sqrail" />
+    <meta
+      property="og:description"
+      content="Install sqrail and its optional Agent Skill with a review-first path for the agent you already use."
+    />
+    <meta property="og:type" content="article" />
+    <meta property="og:url" content="https://sqrails.yhay81.com/docs/agents/" />
+    <meta
+      property="og:image"
+      content="https://sqrails.yhay81.com/social-card.png"
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="canonical" href="https://sqrails.yhay81.com/docs/agents/" />
+    <link
+      rel="alternate"
+      type="text/markdown"
+      href="https://sqrails.yhay81.com/install-agent.md"
+    />
+    <title>Agent setup — sqrail documentation</title>
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="/app.js" defer></script>
+  </head>
+  <body class="docs-body">
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header" data-site-header>
+      <div class="nav">
+        <div class="nav-brand">
+          <a class="wordmark" href="/" aria-label="sqrail home">
+            <span class="wordmark-mark" aria-hidden="true"></span>
+            sqrail
+          </a>
+          <span class="nav-tagline">Agent-safe SQL on files</span>
+        </div>
+        <nav class="nav-links" aria-label="Primary">
+          <a href="/docs/">Documentation</a>
+          <a href="/docs/agents/">Agent setup</a>
+          <a href="/docs/reference/contract/">Reference</a>
+        </nav>
+        <div class="nav-actions">
+          <a
+            class="github-repo"
+            data-github-repo
+            href="https://github.com/yhay81/sqrail"
+            aria-label="View yhay81/sqrail on GitHub — 1 star"
+          >
+            <svg
+              class="github-icon"
+              viewBox="0 0 16 16"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <path
+                d="M8 0C3.58 0 0 3.64 0 8.13c0 3.59 2.29 6.64 5.47 7.71.4.08.55-.18.55-.39 0-.19-.01-.83-.01-1.51-2.01.38-2.53-.5-2.69-.96-.09-.23-.48-.96-.82-1.15-.28-.15-.68-.54-.01-.55.63-.01 1.08.59 1.23.83.72 1.23 1.87.88 2.33.67.07-.53.28-.88.51-1.08-1.78-.2-3.64-.9-3.64-4.01 0-.89.31-1.62.82-2.19-.08-.2-.36-1.04.08-2.16 0 0 .67-.22 2.2.84A7.48 7.48 0 0 1 8 3.91c.68 0 1.36.09 2 .27 1.53-1.06 2.2-.84 2.2-.84.44 1.12.16 1.96.08 2.16.51.57.82 1.3.82 2.19 0 3.12-1.87 3.81-3.65 4.01.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.47.55.39A8.13 8.13 0 0 0 16 8.13C16 3.64 12.42 0 8 0Z"
+              />
+            </svg>
+            <span class="github-label">GitHub</span>
+            <span class="github-stars">
+              <svg
+                class="github-star-icon"
+                viewBox="0 0 16 16"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <path
+                  d="M8 0.25a0.75 0.75 0 0 1 0.673 0.418l1.882 3.815 4.21 0.612a0.75 0.75 0 0 1 0.416 1.279l-3.046 2.97 0.719 4.193a0.75 0.75 0 0 1-1.088 0.79L8 12.347l-3.766 1.98a0.75 0.75 0 0 1-1.088-0.79l0.719-4.194L0.819 6.374a0.75 0.75 0 0 1 0.416-1.28l4.21-0.611 1.882-3.815A0.75 0.75 0 0 1 8 0.25Z"
+                />
+              </svg>
+              <span
+                class="github-star-count"
+                data-github-stars
+                aria-live="polite"
+                >1</span
+              >
+            </span>
+          </a>
+          <a class="nav-install" href="/docs/">Install</a>
+        </div>
+      </div>
+    </header>
+
+    <main class="docs-shell docs-shell-reference" id="main">
+      <aside class="docs-sidebar" aria-label="Documentation navigation">
+        <p>Documentation</p>
+        <nav class="docs-global-nav" aria-label="Documentation pages">
+          <a href="/docs/">Start here</a>
+          <a href="/docs/agents/" aria-current="page">Agent setup</a>
+          <a href="/docs/reference/contract/">CLI contract</a>
+          <a href="/docs/reference/agents/">Agent integration</a>
+          <a href="/docs/reference/performance/">Performance</a>
+          <a href="/docs/reference/platforms/">Platforms</a>
+          <a href="/docs/security/">Security</a>
+          <a href="/docs/contributing/">Contributing</a>
+        </nav>
+        <div class="docs-sidebar-sections">
+          <p>On this page</p>
+          <nav class="docs-section-nav" aria-label="Page sections">
+            <a href="#1-install-the-executable" aria-current="location"
+              >1. Install the executable</a
+            >
+            <a href="#2-install-the-agent-skill">2. Install the Agent Skill</a>
+            <a href="#3-confirm-discovery">3. Confirm discovery</a>
+          </nav>
+        </div>
+      </aside>
+
+      <article class="docs-content docs-reference-content">
+        <p class="eyebrow"><span>Guide</span> Documentation</p>
+        <h1>Agent setup</h1>
+        <p class="docs-deck">
+          Install sqrail and its optional Agent Skill with a review-first path
+          for the agent you already use.
+        </p>
+        <div class="docs-markdown">
+          <p>
+            Install the sqrail executable first, then install its optional Agent
+            Skill for the agent that is currently running. Review each command
+            before executing it. Do not pipe downloaded code into a shell.
+          </p>
+          <h2 id="1-install-the-executable">1. Install the executable</h2>
+          <p>Prefer an existing package manager:</p>
+          <ul>
+            <li>
+              macOS or Linux with Homebrew:
+              <code>brew install yhay81/tap/sqrail</code>
+            </li>
+            <li>
+              Windows: first run
+              <code>winget show --id yhay81.sqrail --exact</code>. If it
+              succeeds, run
+              <code>winget install --id yhay81.sqrail --exact</code>. If the
+              package is not yet available, use the signed release below.
+            </li>
+            <li>
+              Other supported systems: select the matching Arm64 or x86-64
+              archive from
+              <a href="https://github.com/yhay81/sqrail/releases/latest"
+                >https://github.com/yhay81/sqrail/releases/latest</a
+              >. Verify it with the published <code>SHA256SUMS</code> or GitHub
+              attestation, extract it, and place <code>bin/sqrail</code> on
+              <code>PATH</code>.
+            </li>
+          </ul>
+          <p>
+            Do not replace an existing installation without the user’s
+            permission.
+          </p>
+          <p>Verify:</p>
+          <pre><code class="language-sh">sqrail --version
+sqrail run 'SELECT 42 AS answer'
+</code></pre>
+          <p>
+            The second command must print
+            <code>{&quot;answer&quot;:42}</code> and exit successfully.
+          </p>
+          <h2 id="2-install-the-agent-skill">2. Install the Agent Skill</h2>
+          <p>
+            For AGY or Antigravity CLI, use its native plugin manager. This
+            route is verified with AGY 1.1.8:
+          </p>
+          <pre><code class="language-sh">agy plugin install https://github.com/yhay81/sqrail
+</code></pre>
+          <p>
+            For other hosts, GitHub CLI 2.90 or newer is preferred because it
+            records provenance and can update the Skill later:
+          </p>
+          <pre><code class="language-sh">gh skill preview yhay81/sqrail sqrail
+gh skill install yhay81/sqrail sqrail --agent AGENT --scope user
+</code></pre>
+          <p>
+            Replace <code>AGENT</code> with the current host. Common values are
+            <code>codex</code>, <code>claude-code</code>, <code>cursor</code>,
+            <code>github-copilot</code>, <code>opencode</code>,
+            <code>cline</code>, <code>kiro-cli</code>, and
+            <code>windsurf</code>. Use <code>universal</code> only when the host
+            is unknown.
+          </p>
+          <p>
+            Gemini CLI is not the default route for individual Google users:
+            consumer sign-in ended on June 18, 2026. Use AGY/Antigravity above.
+            The <code>gemini-cli</code> target is only for Standard or
+            Enterprise subscriptions and API-key deployments that still run
+            Gemini CLI. Those deployments should use its native installer:
+          </p>
+          <pre><code class="language-sh">gemini skills install https://github.com/yhay81/sqrail \
+  --path skills/sqrail --scope user --consent
+</code></pre>
+          <p>
+            If <code>gh skill</code> is unavailable but Node.js is already
+            installed, use:
+          </p>
+          <pre><code class="language-sh">npx skills add yhay81/sqrail --skill sqrail --agent AGENT --global --yes
+</code></pre>
+          <p>
+            Do not install Node.js solely for this fallback. The canonical,
+            reviewable Skill source is
+            <a href="https://github.com/yhay81/sqrail/tree/main/skills/sqrail"
+              >https://github.com/yhay81/sqrail/tree/main/skills/sqrail</a
+            >. Follow any host-specific post-install notice printed by the
+            installer.
+          </p>
+          <h2 id="3-confirm-discovery">3. Confirm discovery</h2>
+          <p>
+            Confirm that the host lists a Skill named <code>sqrail</code>.
+            Restart the agent if it only discovers Skills at startup. Then use a
+            fresh task to inspect a local CSV or Parquet file; the agent should
+            choose <code>sqrail</code>, read <code>sqrail --help</code>, run the
+            required query once, and stop after success.
+          </p>
+        </div>
+        <aside class="docs-source-note" aria-label="Machine-readable source">
+          <div>
+            <strong>Prefer plain text?</strong>
+            <span
+              >This page and the agent-readable installer share one
+              source.</span
+            >
+          </div>
+          <a href="https://sqrails.yhay81.com/install-agent.md"
+            >Markdown source <span aria-hidden="true">→</span></a
+          >
+        </aside>
+      </article>
+    </main>
+
+    <footer>
+      <a class="wordmark" href="/">
+        <span class="wordmark-mark" aria-hidden="true"></span>
+        sqrail
+      </a>
+      <p>One query at a time.</p>
+      <div>
+        <a href="/docs/">Docs</a>
+        <a href="https://github.com/yhay81/sqrail">Source</a>
+        <a href="https://github.com/yhay81/sqrail/discussions">Community</a>
+        <a href="https://github.com/yhay81/sqrail/releases">Releases</a>
+      </div>
+    </footer>
+  </body>
+</html>

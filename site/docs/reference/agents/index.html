@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Minimal context, install discovery, invocation rules, limits, stop conditions, and error handling for coding agents."
+    />
+    <meta name="theme-color" content="#090a09" />
+    <meta property="og:title" content="Agent integration — sqrail" />
+    <meta
+      property="og:description"
+      content="Minimal context, install discovery, invocation rules, limits, stop conditions, and error handling for coding agents."
+    />
+    <meta property="og:type" content="article" />
+    <meta
+      property="og:url"
+      content="https://sqrails.yhay81.com/docs/reference/agents/"
+    />
+    <meta
+      property="og:image"
+      content="https://sqrails.yhay81.com/social-card.png"
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link
+      rel="canonical"
+      href="https://sqrails.yhay81.com/docs/reference/agents/"
+    />
+    <link
+      rel="alternate"
+      type="text/markdown"
+      href="https://raw.githubusercontent.com/yhay81/sqrail/main/docs/AGENT_INTEGRATION.md"
+    />
+    <title>Agent integration — sqrail documentation</title>
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="/app.js" defer></script>
+  </head>
+  <body class="docs-body">
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header" data-site-header>
+      <div class="nav">
+        <div class="nav-brand">
+          <a class="wordmark" href="/" aria-label="sqrail home">
+            <span class="wordmark-mark" aria-hidden="true"></span>
+            sqrail
+          </a>
+          <span class="nav-tagline">Agent-safe SQL on files</span>
+        </div>
+        <nav class="nav-links" aria-label="Primary">
+          <a href="/docs/">Documentation</a>
+          <a href="/docs/agents/">Agent setup</a>
+          <a href="/docs/reference/contract/">Reference</a>
+        </nav>
+        <div class="nav-actions">
+          <a
+            class="github-repo"
+            data-github-repo
+            href="https://github.com/yhay81/sqrail"
+            aria-label="View yhay81/sqrail on GitHub — 1 star"
+          >
+            <svg
+              class="github-icon"
+              viewBox="0 0 16 16"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <path
+                d="M8 0C3.58 0 0 3.64 0 8.13c0 3.59 2.29 6.64 5.47 7.71.4.08.55-.18.55-.39 0-.19-.01-.83-.01-1.51-2.01.38-2.53-.5-2.69-.96-.09-.23-.48-.96-.82-1.15-.28-.15-.68-.54-.01-.55.63-.01 1.08.59 1.23.83.72 1.23 1.87.88 2.33.67.07-.53.28-.88.51-1.08-1.78-.2-3.64-.9-3.64-4.01 0-.89.31-1.62.82-2.19-.08-.2-.36-1.04.08-2.16 0 0 .67-.22 2.2.84A7.48 7.48 0 0 1 8 3.91c.68 0 1.36.09 2 .27 1.53-1.06 2.2-.84 2.2-.84.44 1.12.16 1.96.08 2.16.51.57.82 1.3.82 2.19 0 3.12-1.87 3.81-3.65 4.01.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.47.55.39A8.13 8.13 0 0 0 16 8.13C16 3.64 12.42 0 8 0Z"
+              />
+            </svg>
+            <span class="github-label">GitHub</span>
+            <span class="github-stars">
+              <svg
+                class="github-star-icon"
+                viewBox="0 0 16 16"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <path
+                  d="M8 0.25a0.75 0.75 0 0 1 0.673 0.418l1.882 3.815 4.21 0.612a0.75 0.75 0 0 1 0.416 1.279l-3.046 2.97 0.719 4.193a0.75 0.75 0 0 1-1.088 0.79L8 12.347l-3.766 1.98a0.75 0.75 0 0 1-1.088-0.79l0.719-4.194L0.819 6.374a0.75 0.75 0 0 1 0.416-1.28l4.21-0.611 1.882-3.815A0.75 0.75 0 0 1 8 0.25Z"
+                />
+              </svg>
+              <span
+                class="github-star-count"
+                data-github-stars
+                aria-live="polite"
+                >1</span
+              >
+            </span>
+          </a>
+          <a class="nav-install" href="/docs/">Install</a>
+        </div>
+      </div>
+    </header>
+
+    <main class="docs-shell docs-shell-reference" id="main">
+      <aside class="docs-sidebar" aria-label="Documentation navigation">
+        <p>Documentation</p>
+        <nav class="docs-global-nav" aria-label="Documentation pages">
+          <a href="/docs/">Start here</a>
+          <a href="/docs/agents/">Agent setup</a>
+          <a href="/docs/reference/contract/">CLI contract</a>
+          <a href="/docs/reference/agents/" aria-current="page"
+            >Agent integration</a
+          >
+          <a href="/docs/reference/performance/">Performance</a>
+          <a href="/docs/reference/platforms/">Platforms</a>
+          <a href="/docs/security/">Security</a>
+          <a href="/docs/contributing/">Contributing</a>
+        </nav>
+        <div class="docs-sidebar-sections">
+          <p>On this page</p>
+          <nav class="docs-section-nav" aria-label="Page sections">
+            <a href="#minimal-context" aria-current="location"
+              >Minimal context</a
+            >
+            <a href="#install-discovery">Install discovery</a>
+            <a href="#decision-rule">Decision rule</a>
+            <a href="#invocation-pattern">Invocation pattern</a>
+            <a href="#choose-limits-from-the-task"
+              >Choose limits from the task</a
+            >
+            <a href="#error-handling">Error handling</a>
+            <a href="#evaluation">Evaluation</a>
+          </nav>
+        </div>
+      </aside>
+
+      <article class="docs-content docs-reference-content">
+        <p class="eyebrow"><span>Reference</span> Documentation</p>
+        <h1>Agent integration</h1>
+        <p class="docs-deck">
+          Minimal context, install discovery, invocation rules, limits, stop
+          conditions, and error handling for coding agents.
+        </p>
+        <div class="docs-markdown">
+          <blockquote>
+            <p>
+              Give an agent SQL, explicit files, and a bounded execution
+              envelope.
+            </p>
+          </blockquote>
+          <p>
+            <a href="/docs/">Documentation index</a> ·
+            <a href="/docs/reference/contract/">CLI contract</a> ·
+            <a href="/docs/security/">Security</a> ·
+            <a
+              href="https://github.com/yhay81/sqrail/blob/main/benchmarks/agent-eval/EXPERIMENTS.md"
+              >Agent experiments</a
+            >
+          </p>
+          <h2 id="minimal-context">Minimal context</h2>
+          <p>Prefer the executable’s stable help over a prose tool tutorial:</p>
+          <pre><code class="language-sh">sqrail --help
+</code></pre>
+          <p>
+            The same release interface is available to HTTP-based agents at
+            <a href="https://sqrails.yhay81.com/help.txt"
+              >https://sqrails.yhay81.com/help.txt</a
+            >. The website discovery file is
+            <a href="https://sqrails.yhay81.com/llms.txt"
+              >https://sqrails.yhay81.com/llms.txt</a
+            >.
+          </p>
+          <h2 id="install-discovery">Install discovery</h2>
+          <p>
+            The canonical public Agent Skill is
+            <a
+              href="https://github.com/yhay81/sqrail/blob/main/skills/sqrail/SKILL.md"
+              ><code>skills/sqrail</code></a
+            >. GitHub CLI 2.90 or newer can preview it before placing it in the
+            current host’s native user directory:
+          </p>
+          <pre><code class="language-sh">gh skill preview yhay81/sqrail sqrail
+gh skill install yhay81/sqrail sqrail --agent codex --scope user
+</code></pre>
+          <p>
+            Replace <code>codex</code> with the active host. Verified targets
+            include Claude Code, Cursor, GitHub Copilot, OpenCode, Cline, Kiro
+            CLI, and Windsurf. GitHub CLI records source provenance so
+            <code>gh skill update</code> can check later releases.
+          </p>
+          <p>
+            Google ended Gemini CLI consumer sign-in on June 18, 2026 and
+            directs individual users to Antigravity CLI. Gemini CLI remains
+            available for Standard and Enterprise subscriptions and API-key
+            authentication, so its Skill target is retained only as a
+            compatibility path. See Google’s
+            <a
+              href="https://developers.google.com/gemini-code-assist/docs/deprecations/code-assist-individuals"
+              >official deprecation notice</a
+            >. Those deployments should use Gemini CLI’s native Skill installer:
+          </p>
+          <pre><code class="language-sh">gemini skills install https://github.com/yhay81/sqrail \
+  --path skills/sqrail --scope user --consent
+</code></pre>
+          <p>
+            AGY and Antigravity CLI 1.1.8 do not discover the shared
+            <code>.agents/skills</code> project location used by current generic
+            installers. Install the repository as a native plugin instead:
+          </p>
+          <pre><code class="language-sh">agy plugin install https://github.com/yhay81/sqrail
+</code></pre>
+          <p>
+            Agents that start without sqrail can be given the stable
+            <a href="/docs/agents/"
+              >https://sqrails.yhay81.com/install-agent.md</a
+            >
+            bootstrap. It deliberately contains reviewable Markdown rather than
+            executable shell code and installs the CLI before the Skill.
+            <code>npx skills</code> is a fallback only when Node.js is already
+            present.
+          </p>
+          <h2 id="decision-rule">Decision rule</h2>
+          <ol>
+            <li>
+              If the user has not supplied names and types, run
+              <code>sqrail schema FILE...</code> once.
+            </li>
+            <li>Otherwise trust the stated names and types.</li>
+            <li>Bind every input with <code>-t NAME=PATH</code>.</li>
+            <li>
+              Use <code>check</code> only when a dry plan is materially useful.
+            </li>
+            <li>Run the SQL once and stop after exit code <code>0</code>.</li>
+            <li>
+              On failure, parse the single stderr JSON object before deciding
+              whether a corrected invocation is justified.
+            </li>
+          </ol>
+          <p>
+            Do not rediscover a stated schema, retry a successful query, or
+            treat unordered results as ordered.
+          </p>
+          <h2 id="invocation-pattern">Invocation pattern</h2>
+          <p>
+            Pass long or generated SQL on stdin so the shell does not have to
+            interpret it:
+          </p>
+          <pre><code class="language-sh">sqrail run \
+  -t events=events.parquet \
+  --memory 512MB \
+  --threads 2 \
+  --timeout 30s \
+  --max-rows 100000 \
+  --max-output-bytes 64MB \
+  --max-input-files 32 \
+  --stats \
+  - &lt; query.sql
+</code></pre>
+          <p>
+            Without <code>-o</code>, successful rows are JSONL on stdout.
+            Diagnostics and <code>--stats</code> output are JSON on stderr. Keep
+            the streams separate.
+          </p>
+          <h2 id="choose-limits-from-the-task">Choose limits from the task</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Dimension</th>
+                <th>Option</th>
+                <th>Typical reason</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>DuckDB memory</td>
+                <td><code>--memory</code></td>
+                <td>Bound the engine’s buffer and operator memory</td>
+              </tr>
+              <tr>
+                <td>parallelism</td>
+                <td><code>--threads</code></td>
+                <td>Avoid saturating a shared agent host</td>
+              </tr>
+              <tr>
+                <td>wall time</td>
+                <td><code>--timeout</code></td>
+                <td>Bound discovery, planning, execution, and finalization</td>
+              </tr>
+              <tr>
+                <td>spill</td>
+                <td><code>--spill</code>, <code>--max-spill</code></td>
+                <td>Permit larger-than-memory work within a disk budget</td>
+              </tr>
+              <tr>
+                <td>result rows</td>
+                <td><code>--max-rows</code></td>
+                <td>Reject accidentally broad results</td>
+              </tr>
+              <tr>
+                <td>output bytes</td>
+                <td><code>--max-output-bytes</code></td>
+                <td>Protect storage and downstream context</td>
+              </tr>
+              <tr>
+                <td>input count</td>
+                <td><code>--max-input-files</code></td>
+                <td>Bound glob and directory expansion</td>
+              </tr>
+              <tr>
+                <td>SQL size</td>
+                <td><code>--max-sql-bytes</code></td>
+                <td>Bound generated input size</td>
+              </tr>
+            </tbody>
+          </table>
+          <p>
+            <code>--memory</code> is a DuckDB limit, not a process RSS sandbox.
+            Use operating-system isolation when SQL or input files are hostile.
+          </p>
+          <h2 id="error-handling">Error handling</h2>
+          <p>
+            sqrail writes exactly one diagnostic JSON object to stderr and
+            selects an exit code by failure class:
+          </p>
+          <table>
+            <thead>
+              <tr>
+                <th class="align-right">Exit</th>
+                <th>Class</th>
+                <th>Agent response</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="align-right">0</td>
+                <td>success</td>
+                <td>consume output and stop</td>
+              </tr>
+              <tr>
+                <td class="align-right">2</td>
+                <td>usage</td>
+                <td>correct invocation or declared limit syntax</td>
+              </tr>
+              <tr>
+                <td class="align-right">3</td>
+                <td>input</td>
+                <td>correct an explicit binding or input path</td>
+              </tr>
+              <tr>
+                <td class="align-right">4</td>
+                <td>SQL</td>
+                <td>correct the query without broadening file access</td>
+              </tr>
+              <tr>
+                <td class="align-right">5</td>
+                <td>output</td>
+                <td>choose a valid, absent destination or output limit</td>
+              </tr>
+              <tr>
+                <td class="align-right">70</td>
+                <td>internal</td>
+                <td>preserve the diagnostic and report a tool failure</td>
+              </tr>
+            </tbody>
+          </table>
+          <p>
+            The full schemas and failure semantics are normative in the
+            <a href="/docs/reference/contract/">CLI contract</a>.
+          </p>
+          <h2 id="evaluation">Evaluation</h2>
+          <p>
+            The agent-facing surface is tested with blinded, low-cost-model
+            tasks rather than optimized only for a single frontier model. Read
+            the
+            <a
+              href="https://github.com/yhay81/sqrail/blob/main/benchmarks/agent-eval/EXPERIMENTS.md"
+              >experiment log</a
+            >
+            before changing help wording or decision rules; small wording
+            changes can alter redundant discovery, retry, and stop behavior.
+          </p>
+        </div>
+        <aside class="docs-source-note" aria-label="Machine-readable source">
+          <div>
+            <strong>Prefer plain text?</strong>
+            <span
+              >The rendered page and repository Markdown share one source.</span
+            >
+          </div>
+          <a
+            href="https://raw.githubusercontent.com/yhay81/sqrail/main/docs/AGENT_INTEGRATION.md"
+            >Markdown source <span aria-hidden="true">→</span></a
+          >
+        </aside>
+      </article>
+    </main>
+
+    <footer>
+      <a class="wordmark" href="/">
+        <span class="wordmark-mark" aria-hidden="true"></span>
+        sqrail
+      </a>
+      <p>One query at a time.</p>
+      <div>
+        <a href="/docs/">Docs</a>
+        <a href="https://github.com/yhay81/sqrail">Source</a>
+        <a href="https://github.com/yhay81/sqrail/discussions">Community</a>
+        <a href="https://github.com/yhay81/sqrail/releases">Releases</a>
+      </div>
+    </footer>
+  </body>
+</html>

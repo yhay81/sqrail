@@ -124,7 +124,7 @@ code by failure class:
 |   70 | internal | preserve the diagnostic and report a tool failure  |
 
 The full schemas and failure semantics are normative in
-[CONTRACT.md](CONTRACT.md).
+the [CLI contract](CONTRACT.md).
 
 ## Evaluation
 

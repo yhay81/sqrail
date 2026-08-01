@@ -4,14 +4,16 @@
   "private": true,
   "description": "Validation and Cloudflare deployment tooling for the sqrail documentation site",
   "scripts": {
+    "docs:build": "node tools/build-docs.mjs",
+    "docs:check": "node tools/build-docs.mjs --check",
     "format": "prettier --write .htmlvalidate.json package.json plugin.json \"*.md\" \"docs/*.md\" \"benchmarks/*.md\" \"benchmarks/agent-eval/*.md\" \".github/**/*.md\" \".github/**/*.yml\" \"skills/**/*.md\" \"skills/**/*.yaml\" \"site/**/*.html\" \"site/**/*.md\" site/styles.css site/app.js \"tools/*.mjs\" wrangler.jsonc",
     "format:check": "prettier --check .htmlvalidate.json package.json plugin.json \"*.md\" \"docs/*.md\" \"benchmarks/*.md\" \"benchmarks/agent-eval/*.md\" \".github/**/*.md\" \".github/**/*.yml\" \"skills/**/*.md\" \"skills/**/*.yaml\" \"site/**/*.html\" \"site/**/*.md\" site/styles.css site/app.js \"tools/*.mjs\" wrangler.jsonc",
     "agent:check": "node tools/check-agent-distribution.mjs",
     "site:html": "html-validate \"site/**/*.html\"",
     "site:js": "node --check site/app.js",
-    "site:check": "npm run format:check && npm run agent:check && npm run site:html && npm run site:js && npm run cloudflare:check",
+    "site:check": "npm run format:check && npm run docs:check && npm run agent:check && npm run site:html && npm run site:js && npm run cloudflare:check",
     "cloudflare:check": "wrangler deploy --dry-run",
-    "deploy:cloudflare": "wrangler deploy"
+    "deploy:cloudflare": "npm run docs:build && wrangler deploy"
   },
   "engines": {
     "node": ">=24"
@@ -23,6 +25,7 @@
   },
   "devDependencies": {
     "html-validate": "11.6.0",
+    "markdown-it": "15.0.0",
     "prettier": "3.9.6",
     "wrangler": "4.115.0"
   }

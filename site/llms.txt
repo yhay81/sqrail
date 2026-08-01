@@ -3,7 +3,7 @@
 > sqrail is a small, read-only SQL-on-files CLI for coding agents.
 
 Canonical documentation: https://sqrails.yhay81.com/docs/
-Source: https://github.com/yhay81/sqrail
+Source and provenance: https://github.com/yhay81/sqrail
 Releases: https://github.com/yhay81/sqrail/releases
 License: MIT
 
@@ -26,8 +26,8 @@ gh skill install yhay81/sqrail sqrail --agent codex --scope user
 Replace `codex` with the active host. Prebuilt archives for Linux, macOS, and
 Windows: https://github.com/yhay81/sqrail/releases
 
-Review-first instructions for every platform and host:
-https://sqrails.yhay81.com/install-agent.md
+Human-readable setup guide: https://sqrails.yhay81.com/docs/agents/
+Agent-readable setup instructions: https://sqrails.yhay81.com/install-agent.md
 
 ## Agent rule
 
@@ -39,7 +39,19 @@ Otherwise trust the stated schema, run one query, and stop after success.
 Use `sqrail --help`, or fetch:
 https://sqrails.yhay81.com/help.txt
 
-## Normative references
+## Human-readable documentation
+
+- Quick start: https://sqrails.yhay81.com/docs/
+- Agent setup: https://sqrails.yhay81.com/docs/agents/
+- CLI contract: https://sqrails.yhay81.com/docs/reference/contract/
+- Agent integration: https://sqrails.yhay81.com/docs/reference/agents/
+- Performance baselines: https://sqrails.yhay81.com/docs/reference/performance/
+- Benchmark policy: https://sqrails.yhay81.com/docs/reference/benchmarks/
+- Platform support: https://sqrails.yhay81.com/docs/reference/platforms/
+- Security boundary: https://sqrails.yhay81.com/docs/security/
+- Contributing: https://sqrails.yhay81.com/docs/contributing/
+
+## Agent-readable sources
 
 - CLI contract: https://github.com/yhay81/sqrail/blob/main/docs/CONTRACT.md
 - Agent integration: https://github.com/yhay81/sqrail/blob/main/docs/AGENT_INTEGRATION.md
