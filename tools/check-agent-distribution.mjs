@@ -89,7 +89,6 @@ for (const required of [
   "brew install yhay81/tap/sqrail",
   "winget show --id yhay81.sqrail --exact",
   "agy plugin install https://github.com/yhay81/sqrail",
-  "gemini skills install https://github.com/yhay81/sqrail",
   "gh skill preview yhay81/sqrail sqrail",
   "gh skill install yhay81/sqrail sqrail --agent AGENT --scope user",
   "npx skills add yhay81/sqrail --skill sqrail --agent AGENT --global --yes",
@@ -101,8 +100,8 @@ for (const required of [
   );
 }
 assert(
-  /consumer\s+sign-in ended on June 18, 2026/.test(bootstrap),
-  "install-agent.md must not present Gemini CLI as the consumer Google route",
+  !/gemini\s+(?:cli|skills\s+install)/i.test(bootstrap),
+  "install-agent.md must use the current AGY/Antigravity route",
 );
 assert(
   !/(?:curl|wget)[^\n]*\|\s*(?:ba)?sh/.test(bootstrap),
