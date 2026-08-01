@@ -710,7 +710,7 @@ h1 {
 }
 
 .manifesto {
-  padding: clamp(120px, 15vw, 230px) 8%;
+  padding: clamp(96px, 10vw, 150px) 8%;
   text-align: center;
 }
 
@@ -722,10 +722,10 @@ h1 {
 .docs h2,
 .install h2 {
   margin: 0;
-  font-size: clamp(43px, 6vw, 88px);
+  font-size: clamp(32px, 3.8vw, 48px);
   font-weight: 540;
-  letter-spacing: -0.065em;
-  line-height: 0.98;
+  letter-spacing: -0.045em;
+  line-height: 1.08;
 }
 
 .manifesto h2 span {
@@ -733,15 +733,15 @@ h1 {
 }
 
 .manifesto > p:last-child {
-  max-width: 720px;
-  margin: 48px auto 0;
+  max-width: 680px;
+  margin: 36px auto 0;
   color: #aeb1a9;
-  font-size: clamp(18px, 1.9vw, 24px);
-  line-height: 1.55;
+  font-size: clamp(16px, 1.4vw, 18px);
+  line-height: 1.65;
 }
 
 .sequence {
-  padding: 130px 0;
+  padding: 108px 0;
   border-top: 1px solid var(--line);
 }
 
@@ -749,7 +749,7 @@ h1 {
   display: grid;
   grid-template-columns: 0.6fr 1.4fr;
   gap: 40px;
-  margin-bottom: 88px;
+  margin-bottom: 64px;
 }
 
 .sequence-heading .section-label {
@@ -757,7 +757,7 @@ h1 {
 }
 
 .sequence h2 {
-  font-size: clamp(45px, 5.3vw, 76px);
+  font-size: clamp(32px, 3.6vw, 46px);
 }
 
 .sequence-list {
@@ -772,7 +772,7 @@ h1 {
   grid-template-columns: 80px minmax(260px, 0.8fr) minmax(320px, 1.2fr);
   gap: 30px;
   align-items: center;
-  min-height: 152px;
+  min-height: 136px;
   border-bottom: 1px solid var(--line);
 }
 
@@ -806,7 +806,7 @@ h1 {
 }
 
 .boundary {
-  padding: 150px 0 0;
+  padding: 112px 0 0;
   border-top: 1px solid var(--line);
 }
 
@@ -823,10 +823,10 @@ h1 {
 
 .boundary h2 {
   margin: 0;
-  font-size: clamp(44px, 4.9vw, 72px);
+  font-size: clamp(32px, 3.4vw, 44px);
   font-weight: 540;
-  letter-spacing: -0.065em;
-  line-height: 0.98;
+  letter-spacing: -0.045em;
+  line-height: 1.08;
 }
 
 .boundary h2 span {
@@ -841,7 +841,7 @@ h1 {
 
 .boundary-table {
   width: 100%;
-  margin-top: 92px;
+  margin-top: 64px;
   border-top: 1px solid var(--line-strong);
   border-collapse: collapse;
 }
@@ -907,13 +907,13 @@ h1 {
 .use-rail {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  margin-top: 94px;
+  margin-top: 72px;
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
 }
 
 .use-rail article {
-  min-height: 250px;
+  min-height: 220px;
   padding: 38px 34px;
   border-right: 1px solid var(--line);
 }
@@ -931,7 +931,7 @@ h1 {
 
 .use-rail h3 {
   margin: 0 0 16px;
-  font-size: 24px;
+  font-size: 21px;
   font-weight: 580;
   letter-spacing: -0.035em;
 }
@@ -948,8 +948,8 @@ h1 {
   grid-template-columns: 0.8fr 1.2fr;
   gap: clamp(50px, 8vw, 130px);
   align-items: center;
-  margin-top: 150px;
-  padding: 150px 7%;
+  margin-top: 112px;
+  padding: 108px 7%;
   border: 1px solid var(--line);
   background:
     radial-gradient(circle at 75% 40%, rgb(202 255 61 / 5%), transparent 32%),
@@ -958,7 +958,7 @@ h1 {
 
 .contract h2 {
   margin-bottom: 30px;
-  font-size: clamp(47px, 5.2vw, 72px);
+  font-size: clamp(30px, 3.3vw, 42px);
 }
 
 .contract-heading > p:not(.section-label) {
@@ -1016,7 +1016,7 @@ h1 {
 }
 
 .proof {
-  padding: 170px 0;
+  padding: 120px 0;
 }
 
 .proof-intro {
@@ -1027,7 +1027,7 @@ h1 {
 }
 
 .proof-intro h2 {
-  font-size: clamp(44px, 4.9vw, 72px);
+  font-size: clamp(32px, 3.4vw, 44px);
 }
 
 .proof-intro > p:last-child {
@@ -1039,13 +1039,13 @@ h1 {
 .metrics {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  margin: 100px 0 30px;
+  margin: 72px 0 30px;
   border-top: 1px solid var(--line-strong);
   border-bottom: 1px solid var(--line-strong);
 }
 
 .metrics > div {
-  padding: 50px 38px 44px;
+  padding: 40px 32px 38px;
   border-right: 1px solid var(--line);
 }
 
@@ -1056,8 +1056,8 @@ h1 {
 .metrics dt {
   margin-bottom: 18px;
   color: var(--acid);
-  font: 570 clamp(48px, 6vw, 88px) / 0.9 var(--mono);
-  letter-spacing: -0.08em;
+  font: 570 clamp(36px, 4.5vw, 56px) / 0.95 var(--mono);
+  letter-spacing: -0.065em;
 }
 
 .metrics dt small {
@@ -1084,7 +1084,7 @@ h1 {
 .safety {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  min-height: 680px;
+  min-height: 560px;
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
 }
@@ -1167,13 +1167,13 @@ h1 {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 80px clamp(45px, 7vw, 110px);
+  padding: 72px clamp(40px, 6vw, 88px);
 }
 
 .safety h2 {
   max-width: 640px;
   margin-bottom: 33px;
-  font-size: clamp(47px, 5vw, 73px);
+  font-size: clamp(32px, 3.4vw, 44px);
 }
 
 .safety-copy > p:not(.section-label) {
@@ -1199,18 +1199,18 @@ h1 {
 }
 
 .docs {
-  padding: 170px 0;
+  padding: 120px 0;
 }
 
 .docs-heading {
   display: grid;
   grid-template-columns: 0.55fr 1.45fr;
   gap: 40px;
-  margin-bottom: 90px;
+  margin-bottom: 64px;
 }
 
 .docs-heading h2 {
-  font-size: clamp(48px, 5.5vw, 80px);
+  font-size: clamp(32px, 3.6vw, 46px);
 }
 
 .docs-index {
@@ -1222,7 +1222,7 @@ h1 {
   grid-template-columns: 70px 0.8fr 1.2fr 30px;
   gap: 25px;
   align-items: center;
-  min-height: 100px;
+  min-height: 88px;
   border-bottom: 1px solid var(--line);
   transition:
     background-color 150ms ease,
@@ -1240,7 +1240,7 @@ h1 {
 }
 
 .docs-index strong {
-  font-size: 18px;
+  font-size: 16px;
 }
 
 .docs-index small {
@@ -1255,7 +1255,7 @@ h1 {
 }
 
 .install {
-  padding: 150px 5%;
+  padding: 108px 5%;
   border: 1px solid var(--line);
   background:
     linear-gradient(115deg, rgb(202 255 61 / 7%), transparent 45%), var(--panel);
@@ -1263,7 +1263,7 @@ h1 {
 }
 
 .install h2 {
-  margin-bottom: 60px;
+  margin-bottom: 42px;
 }
 
 .install-command {
@@ -1357,7 +1357,7 @@ footer > div {
   justify-content: center;
   width: var(--page);
   margin: 0 auto;
-  padding: 100px 0 150px;
+  padding: 72px 0 120px;
 }
 
 .docs-sidebar {
@@ -1387,7 +1387,7 @@ footer > div {
 }
 
 .docs-sidebar a:hover,
-.docs-sidebar a[aria-current="page"] {
+.docs-sidebar a[aria-current="location"] {
   color: var(--acid);
 }
 
@@ -1400,30 +1400,32 @@ footer > div {
 }
 
 .docs-content h1 {
-  max-width: 760px;
-  font-size: clamp(62px, 8vw, 112px);
-  line-height: 0.82;
+  max-width: 680px;
+  font-size: clamp(40px, 5vw, 64px);
+  letter-spacing: -0.065em;
+  line-height: 0.95;
 }
 
 .docs-deck {
   max-width: 680px;
-  margin: 40px 0 75px;
+  margin: 28px 0 56px;
   color: var(--muted-light);
-  font-size: 21px;
-  line-height: 1.6;
+  font-size: 17px;
+  line-height: 1.7;
 }
 
 .docs-content section {
   scroll-margin-top: calc(var(--header-height) + 24px);
-  padding: 60px 0;
+  padding: 48px 0;
   border-top: 1px solid var(--line);
 }
 
 .docs-content h2 {
   margin: 0 0 24px;
-  font-size: clamp(34px, 4vw, 49px);
+  font-size: clamp(27px, 3vw, 36px);
   font-weight: 570;
-  letter-spacing: -0.055em;
+  letter-spacing: -0.04em;
+  line-height: 1.15;
 }
 
 .docs-content h3 {
@@ -1444,7 +1446,7 @@ footer > div {
 .docs-content pre {
   position: relative;
   margin: 26px 0;
-  padding: 28px;
+  padding: 24px;
   overflow-x: auto;
   border: 1px solid var(--line);
   background: #0d0f0d;
@@ -1762,14 +1764,14 @@ footer > div {
   .safety h2,
   .docs h2,
   .install h2 {
-    font-size: 43px;
+    font-size: 34px;
   }
 
   .sequence,
   .boundary,
   .proof,
   .docs {
-    padding: 110px 0;
+    padding: 82px 0;
   }
 
   .boundary {
@@ -1793,8 +1795,8 @@ footer > div {
 
   .contract {
     width: 100%;
-    margin-top: 110px;
-    padding: 90px 22px;
+    margin-top: 82px;
+    padding: 72px 22px;
     border-right: 0;
     border-left: 0;
   }
@@ -1875,7 +1877,7 @@ footer > div {
   }
 
   .safety-copy {
-    padding: 80px 22px;
+    padding: 64px 22px;
   }
 
   .file {
@@ -1899,7 +1901,7 @@ footer > div {
 
   .install {
     width: 100%;
-    padding: 100px 15px;
+    padding: 80px 15px;
     border-right: 0;
     border-left: 0;
   }

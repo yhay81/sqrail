@@ -111,6 +111,7 @@ jobs:
           test -f "dist/${PACKAGE_NAME}/share/sqrail/skills/sqrail/SKILL.md"
           test -f "dist/${PACKAGE_NAME}/share/sqrail/skills/sqrail/agents/openai.yaml"
           test -f "dist/${PACKAGE_NAME}/share/sqrail/plugin.json"
+          test -f "dist/${PACKAGE_NAME}/share/man/man1/sqrail.1"
           test -f "dist/${PACKAGE_NAME}/share/doc/sqrail/licenses/duckdb-third-party/zstd/LICENSE"
           test "$(find "dist/${PACKAGE_NAME}" -type f \( -name '*.a' -o -name '*.h' -o -name '*.hpp' \) | wc -l)" -eq 0
           if [ "$(uname -s)" = Linux ]; then
