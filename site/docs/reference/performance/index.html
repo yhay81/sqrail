@@ -1,0 +1,522 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Reproducible size, startup, memory, and throughput measurements against the pinned DuckDB CLI."
+    />
+    <meta name="theme-color" content="#090a09" />
+    <meta property="og:title" content="Performance baselines — sqrail" />
+    <meta
+      property="og:description"
+      content="Reproducible size, startup, memory, and throughput measurements against the pinned DuckDB CLI."
+    />
+    <meta property="og:type" content="article" />
+    <meta
+      property="og:url"
+      content="https://sqrails.yhay81.com/docs/reference/performance/"
+    />
+    <meta
+      property="og:image"
+      content="https://sqrails.yhay81.com/social-card.png"
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link
+      rel="canonical"
+      href="https://sqrails.yhay81.com/docs/reference/performance/"
+    />
+    <link
+      rel="alternate"
+      type="text/markdown"
+      href="https://raw.githubusercontent.com/yhay81/sqrail/main/docs/BASELINE.md"
+    />
+    <title>Performance baselines — sqrail documentation</title>
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="/app.js" defer></script>
+  </head>
+  <body class="docs-body">
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header" data-site-header>
+      <div class="nav">
+        <div class="nav-brand">
+          <a class="wordmark" href="/" aria-label="sqrail home">
+            <span class="wordmark-mark" aria-hidden="true"></span>
+            sqrail
+          </a>
+          <span class="nav-tagline">Agent-safe SQL on files</span>
+        </div>
+        <nav class="nav-links" aria-label="Primary">
+          <a href="/docs/">Documentation</a>
+          <a href="/docs/agents/">Agent setup</a>
+          <a href="/docs/reference/contract/">Reference</a>
+        </nav>
+        <div class="nav-actions">
+          <a
+            class="github-repo"
+            data-github-repo
+            href="https://github.com/yhay81/sqrail"
+            aria-label="View yhay81/sqrail on GitHub — 1 star"
+          >
+            <svg
+              class="github-icon"
+              viewBox="0 0 16 16"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <path
+                d="M8 0C3.58 0 0 3.64 0 8.13c0 3.59 2.29 6.64 5.47 7.71.4.08.55-.18.55-.39 0-.19-.01-.83-.01-1.51-2.01.38-2.53-.5-2.69-.96-.09-.23-.48-.96-.82-1.15-.28-.15-.68-.54-.01-.55.63-.01 1.08.59 1.23.83.72 1.23 1.87.88 2.33.67.07-.53.28-.88.51-1.08-1.78-.2-3.64-.9-3.64-4.01 0-.89.31-1.62.82-2.19-.08-.2-.36-1.04.08-2.16 0 0 .67-.22 2.2.84A7.48 7.48 0 0 1 8 3.91c.68 0 1.36.09 2 .27 1.53-1.06 2.2-.84 2.2-.84.44 1.12.16 1.96.08 2.16.51.57.82 1.3.82 2.19 0 3.12-1.87 3.81-3.65 4.01.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.47.55.39A8.13 8.13 0 0 0 16 8.13C16 3.64 12.42 0 8 0Z"
+              />
+            </svg>
+            <span class="github-label">GitHub</span>
+            <span class="github-stars">
+              <svg
+                class="github-star-icon"
+                viewBox="0 0 16 16"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <path
+                  d="M8 0.25a0.75 0.75 0 0 1 0.673 0.418l1.882 3.815 4.21 0.612a0.75 0.75 0 0 1 0.416 1.279l-3.046 2.97 0.719 4.193a0.75 0.75 0 0 1-1.088 0.79L8 12.347l-3.766 1.98a0.75 0.75 0 0 1-1.088-0.79l0.719-4.194L0.819 6.374a0.75 0.75 0 0 1 0.416-1.28l4.21-0.611 1.882-3.815A0.75 0.75 0 0 1 8 0.25Z"
+                />
+              </svg>
+              <span
+                class="github-star-count"
+                data-github-stars
+                aria-live="polite"
+                >1</span
+              >
+            </span>
+          </a>
+          <a class="nav-install" href="/docs/">Install</a>
+        </div>
+      </div>
+    </header>
+
+    <main class="docs-shell docs-shell-reference" id="main">
+      <aside class="docs-sidebar" aria-label="Documentation navigation">
+        <p>Documentation</p>
+        <nav class="docs-global-nav" aria-label="Documentation pages">
+          <a href="/docs/">Start here</a>
+          <a href="/docs/agents/">Agent setup</a>
+          <a href="/docs/reference/contract/">CLI contract</a>
+          <a href="/docs/reference/agents/">Agent integration</a>
+          <a href="/docs/reference/performance/" aria-current="page"
+            >Performance</a
+          >
+          <a href="/docs/reference/platforms/">Platforms</a>
+          <a href="/docs/security/">Security</a>
+          <a href="/docs/contributing/">Contributing</a>
+        </nav>
+        <div class="docs-sidebar-sections">
+          <p>On this page</p>
+          <nav class="docs-section-nav" aria-label="Page sections">
+            <a href="#executable" aria-current="location">Executable</a>
+            <a href="#sqrail-versus-the-pinned-duckdb-cli"
+              >sqrail versus the pinned DuckDB CLI</a
+            >
+            <a href="#one-million-row-write-sanity-check"
+              >One-million-row write sanity check</a
+            >
+            <a href="#v0-2-0-host-tuned-development-results"
+              >v0.2.0 host-tuned development results</a
+            >
+            <a href="#v0-2-1-strict-json-streaming-optimization"
+              >v0.2.1 strict JSON streaming optimization</a
+            >
+          </nav>
+        </div>
+      </aside>
+
+      <article class="docs-content docs-reference-content">
+        <p class="eyebrow"><span>Evidence</span> Documentation</p>
+        <h1>Performance baselines</h1>
+        <p class="docs-deck">
+          Reproducible size, startup, memory, and throughput measurements
+          against the pinned DuckDB CLI.
+        </p>
+        <div class="docs-markdown">
+          <p>
+            This document preserves development-host measurements from v0.1.0
+            through v0.2.1. They are historical, hardware-specific evidence
+            rather than current release guarantees. Re-run the committed harness
+            before making a comparison against a newer sqrail, DuckDB, compiler,
+            or machine.
+          </p>
+          <p>
+            This report separates a comparative frontend benchmark from a
+            development sanity check. It is not a query-engine superiority
+            claim: both compared executables contain the same DuckDB source
+            revision.
+          </p>
+          <p>Measured on 2026-07-26:</p>
+          <table>
+            <thead>
+              <tr>
+                <th>Component</th>
+                <th>Value</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Host</td>
+                <td>Apple M2 Pro, 12 CPU cores, 32 GiB RAM</td>
+              </tr>
+              <tr>
+                <td>OS</td>
+                <td>macOS 26.5.1, arm64</td>
+              </tr>
+              <tr>
+                <td>Compiler</td>
+                <td>Apple Clang 21.0.0</td>
+              </tr>
+              <tr>
+                <td>CMake</td>
+                <td>4.4.0</td>
+              </tr>
+              <tr>
+                <td>DuckDB</td>
+                <td>v1.5.5</td>
+              </tr>
+              <tr>
+                <td>sqrail</td>
+                <td>0.1.0</td>
+              </tr>
+            </tbody>
+          </table>
+          <h2 id="executable">Executable</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Metric</th>
+                <th class="align-right">Result</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Unstripped build executable</td>
+                <td class="align-right">43,310,344 bytes</td>
+              </tr>
+              <tr>
+                <td>Stripped release executable</td>
+                <td class="align-right">35,711,416 bytes</td>
+              </tr>
+              <tr>
+                <td>Stripped gzip <code>-9</code> size</td>
+                <td class="align-right">11,760,406 bytes</td>
+              </tr>
+              <tr>
+                <td>Dynamic dependencies</td>
+                <td class="align-right">system libc++ and libSystem only</td>
+              </tr>
+              <tr>
+                <td><code>sqrail --version</code> wall time</td>
+                <td class="align-right">approximately 0.01 s</td>
+              </tr>
+              <tr>
+                <td><code>sqrail --version</code> maximum RSS</td>
+                <td class="align-right">2,932,736 bytes</td>
+              </tr>
+            </tbody>
+          </table>
+          <h2 id="sqrail-versus-the-pinned-duckdb-cli">
+            sqrail versus the pinned DuckDB CLI
+          </h2>
+          <p>
+            The committed harness built both frontends from DuckDB commit
+            <code>d8cdaa33fda8df955cc76ef58a280f68f4cd43fa</code>. The
+            deterministic dataset contains 1,000,000 fact rows, 100,000
+            dimension rows, a 49,668,679-byte Parquet fact file, and a
+            65,666,371-byte CSV fact file.
+          </p>
+          <p>
+            Each timed value is the mean of five warm-cache runs after one
+            warmup, with a 512 MB DuckDB memory limit and two threads. Peak RSS
+            is one separate profiled run. All result pairs had identical row
+            counts and logical checksums.
+          </p>
+          <table>
+            <thead>
+              <tr>
+                <th>Workload</th>
+                <th class="align-right">DuckDB CLI mean</th>
+                <th class="align-right">sqrail mean</th>
+                <th class="align-right">DuckDB CLI RSS</th>
+                <th class="align-right">sqrail RSS</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>selective Parquet scan</td>
+                <td class="align-right">38.87 ms</td>
+                <td class="align-right">38.13 ms</td>
+                <td class="align-right">30.9 MiB</td>
+                <td class="align-right">28.4 MiB</td>
+              </tr>
+              <tr>
+                <td>high-cardinality aggregate</td>
+                <td class="align-right">50.78 ms</td>
+                <td class="align-right">50.86 ms</td>
+                <td class="align-right">49.5 MiB</td>
+                <td class="align-right">44.1 MiB</td>
+              </tr>
+              <tr>
+                <td>fact-dimension join</td>
+                <td class="align-right">45.53 ms</td>
+                <td class="align-right">40.87 ms</td>
+                <td class="align-right">39.4 MiB</td>
+                <td class="align-right">40.7 MiB</td>
+              </tr>
+              <tr>
+                <td>partitioned window</td>
+                <td class="align-right">120.44 ms</td>
+                <td class="align-right">113.28 ms</td>
+                <td class="align-right">71.7 MiB</td>
+                <td class="align-right">83.0 MiB</td>
+              </tr>
+              <tr>
+                <td>CSV to Parquet</td>
+                <td class="align-right">341.25 ms</td>
+                <td class="align-right">327.42 ms</td>
+                <td class="align-right">163.9 MiB</td>
+                <td class="align-right">149.6 MiB</td>
+              </tr>
+            </tbody>
+          </table>
+          <p>
+            At this scale, sqrail adds no measurable systematic runtime penalty.
+            Individual differences should not be interpreted as engine
+            improvements: the query engine, plans, data, settings, and output
+            checks are the same, while the frontends have different startup and
+            command-processing paths. The window case also shows why the project
+            reports memory rather than assuming the smaller interface always
+            uses less.
+          </p>
+          <p>
+            Reproduce with
+            <a
+              href="https://github.com/yhay81/sqrail/blob/main/benchmarks/README.md"
+              >the benchmark instructions</a
+            >.
+          </p>
+          <h2 id="one-million-row-write-sanity-check">
+            One-million-row write sanity check
+          </h2>
+          <p>Command:</p>
+          <pre><code class="language-sh">sqrail run \
+  --memory 64MB \
+  --threads 2 \
+  -o million.parquet \
+  'SELECT i, i % 100 AS bucket, md5(i::VARCHAR) AS digest
+   FROM range(1000000) t(i)'
+</code></pre>
+          <p>Single observed run:</p>
+          <table>
+            <thead>
+              <tr>
+                <th>Metric</th>
+                <th class="align-right">Result</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Wall time</td>
+                <td class="align-right">0.27 s</td>
+              </tr>
+              <tr>
+                <td>Maximum RSS</td>
+                <td class="align-right">54,886,400 bytes</td>
+              </tr>
+              <tr>
+                <td>Output size</td>
+                <td class="align-right">approximately 35 MiB</td>
+              </tr>
+              <tr>
+                <td>Verified rows</td>
+                <td class="align-right">1,000,000</td>
+              </tr>
+              <tr>
+                <td>Verified distinct buckets</td>
+                <td class="align-right">100</td>
+              </tr>
+            </tbody>
+          </table>
+          <p>
+            The dataset is generated rather than scanned, and filesystem caching
+            was not controlled. This result only verifies that direct Parquet
+            output works within the stated 64 MB DuckDB memory limit on the
+            development host.
+          </p>
+          <h2 id="v0-2-0-host-tuned-development-results">
+            v0.2.0 host-tuned development results
+          </h2>
+          <p>
+            These measurements use the same host and DuckDB revision as the
+            v0.1.0 baseline. The portable comparison binary uses a conventional
+            Release build. The host-tuned binary additionally applies ThinLTO
+            and <code>-mcpu=native</code>; it is not portable and is never used
+            for release archives.
+          </p>
+          <table>
+            <thead>
+              <tr>
+                <th>Workload</th>
+                <th class="align-right">Portable mean</th>
+                <th class="align-right">Host-tuned mean</th>
+                <th class="align-right">Elapsed reduction</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>1M-row Parquet grouped aggregate, 15 runs</td>
+                <td class="align-right">105.0 ms</td>
+                <td class="align-right">93.9 ms</td>
+                <td class="align-right">10.5%</td>
+              </tr>
+              <tr>
+                <td>1M-row generated strict JSONL, 10 runs</td>
+                <td class="align-right">612.8 ms</td>
+                <td class="align-right">574.4 ms</td>
+                <td class="align-right">6.3%</td>
+              </tr>
+            </tbody>
+          </table>
+          <p>
+            The grouped aggregate used two threads. Both cohorts were warm-cache
+            measurements; the comparison combines native code generation and
+            ThinLTO and does not isolate their individual contributions.
+          </p>
+          <p>
+            An explicit out-of-core run then fully sorted 10,000,000 Parquet
+            rows with a 128 MiB DuckDB memory limit, two threads, and a 2 GiB
+            spill cap:
+          </p>
+          <table>
+            <thead>
+              <tr>
+                <th>Metric</th>
+                <th class="align-right">Observed value</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Input Parquet</td>
+                <td class="align-right">496,596,101 bytes</td>
+              </tr>
+              <tr>
+                <td>Harness wall time</td>
+                <td class="align-right">2.123 s</td>
+              </tr>
+              <tr>
+                <td>Maximum process RSS</td>
+                <td class="align-right">276,168,704 bytes</td>
+              </tr>
+              <tr>
+                <td>Sampled peak spill</td>
+                <td class="align-right">215,154,688 bytes</td>
+              </tr>
+              <tr>
+                <td>Output Parquet</td>
+                <td class="align-right">121,696,159 bytes</td>
+              </tr>
+              <tr>
+                <td>Verified rows</td>
+                <td class="align-right">10,000,000</td>
+              </tr>
+            </tbody>
+          </table>
+          <p>
+            The spill sampler runs every 10 ms, so its maximum is a lower bound.
+            DuckDB’s memory setting limits its buffer manager rather than total
+            process RSS. The committed <code>run-out-of-core.sh</code> harness
+            refuses to replace results and validates the output row count and
+            logical checksum.
+          </p>
+          <h2 id="v0-2-1-strict-json-streaming-optimization">
+            v0.2.1 strict JSON streaming optimization
+          </h2>
+          <p>
+            The expanded matrix exposed a frontend bottleneck that query-engine
+            tuning cannot fix: converting 10,000,000 Parquet rows to strict
+            JSONL spent most of its time materializing one DuckDB
+            <code>Value</code> and one <code>std::string</code> per row. The
+            revised path reads DuckDB’s unified vector buffer directly and
+            allocates only for rows that contain a non-finite token requiring
+            RFC 8259 normalization.
+          </p>
+          <p>
+            The before and after binaries used the same Release/IPO build tree,
+            Apple Clang 21, DuckDB commit <code>d8cdaa33f</code>, 512 MB memory
+            limit, two threads, and an 8 GiB explicit spill cap. Each result is
+            the mean of five runs after one warmup.
+          </p>
+          <table>
+            <thead>
+              <tr>
+                <th>10M-row Parquet-to-JSONL path</th>
+                <th class="align-right">Mean</th>
+                <th class="align-right">Relative to old sqrail</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>DuckDB CLI <code>COPY</code></td>
+                <td class="align-right">2.207 s</td>
+                <td class="align-right">3.35x faster</td>
+              </tr>
+              <tr>
+                <td>sqrail before vector fast path</td>
+                <td class="align-right">7.398 s</td>
+                <td class="align-right">baseline</td>
+              </tr>
+              <tr>
+                <td>sqrail after vector fast path</td>
+                <td class="align-right">2.728 s</td>
+                <td class="align-right">2.71x faster</td>
+              </tr>
+            </tbody>
+          </table>
+          <p>
+            All three outputs contained 10,000,000 rows and the same logical
+            checksum <code>13911955137382488891</code>. The optimized sqrail
+            path remains 23.6% slower than DuckDB’s direct JSON
+            <code>COPY</code>; that comparison is not semantics-equivalent when
+            data contains NaN or infinities, because DuckDB emits bare
+            non-standard tokens while sqrail maps them to <code>null</code>.
+            Unit and smoke tests verify the strict conversion for scalar and
+            nested non-finite values.
+          </p>
+        </div>
+        <aside class="docs-source-note" aria-label="Machine-readable source">
+          <div>
+            <strong>Prefer plain text?</strong>
+            <span
+              >The rendered page and repository Markdown share one source.</span
+            >
+          </div>
+          <a
+            href="https://raw.githubusercontent.com/yhay81/sqrail/main/docs/BASELINE.md"
+            >Markdown source <span aria-hidden="true">→</span></a
+          >
+        </aside>
+      </article>
+    </main>
+
+    <footer>
+      <a class="wordmark" href="/">
+        <span class="wordmark-mark" aria-hidden="true"></span>
+        sqrail
+      </a>
+      <p>One query at a time.</p>
+      <div>
+        <a href="/docs/">Docs</a>
+        <a href="https://github.com/yhay81/sqrail">Source</a>
+        <a href="https://github.com/yhay81/sqrail/discussions">Community</a>
+        <a href="https://github.com/yhay81/sqrail/releases">Releases</a>
+      </div>
+    </footer>
+  </body>
+</html>

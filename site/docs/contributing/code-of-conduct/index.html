@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="The conduct, reporting, and repair expectations that keep the sqrail community safe and productive."
+    />
+    <meta name="theme-color" content="#090a09" />
+    <meta property="og:title" content="Code of Conduct — sqrail" />
+    <meta
+      property="og:description"
+      content="The conduct, reporting, and repair expectations that keep the sqrail community safe and productive."
+    />
+    <meta property="og:type" content="article" />
+    <meta
+      property="og:url"
+      content="https://sqrails.yhay81.com/docs/contributing/code-of-conduct/"
+    />
+    <meta
+      property="og:image"
+      content="https://sqrails.yhay81.com/social-card.png"
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link
+      rel="canonical"
+      href="https://sqrails.yhay81.com/docs/contributing/code-of-conduct/"
+    />
+    <link
+      rel="alternate"
+      type="text/markdown"
+      href="https://raw.githubusercontent.com/yhay81/sqrail/main/CODE_OF_CONDUCT.md"
+    />
+    <title>Code of Conduct — sqrail documentation</title>
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="/app.js" defer></script>
+  </head>
+  <body class="docs-body">
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header" data-site-header>
+      <div class="nav">
+        <div class="nav-brand">
+          <a class="wordmark" href="/" aria-label="sqrail home">
+            <span class="wordmark-mark" aria-hidden="true"></span>
+            sqrail
+          </a>
+          <span class="nav-tagline">Agent-safe SQL on files</span>
+        </div>
+        <nav class="nav-links" aria-label="Primary">
+          <a href="/docs/">Documentation</a>
+          <a href="/docs/agents/">Agent setup</a>
+          <a href="/docs/reference/contract/">Reference</a>
+        </nav>
+        <div class="nav-actions">
+          <a
+            class="github-repo"
+            data-github-repo
+            href="https://github.com/yhay81/sqrail"
+            aria-label="View yhay81/sqrail on GitHub — 1 star"
+          >
+            <svg
+              class="github-icon"
+              viewBox="0 0 16 16"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <path
+                d="M8 0C3.58 0 0 3.64 0 8.13c0 3.59 2.29 6.64 5.47 7.71.4.08.55-.18.55-.39 0-.19-.01-.83-.01-1.51-2.01.38-2.53-.5-2.69-.96-.09-.23-.48-.96-.82-1.15-.28-.15-.68-.54-.01-.55.63-.01 1.08.59 1.23.83.72 1.23 1.87.88 2.33.67.07-.53.28-.88.51-1.08-1.78-.2-3.64-.9-3.64-4.01 0-.89.31-1.62.82-2.19-.08-.2-.36-1.04.08-2.16 0 0 .67-.22 2.2.84A7.48 7.48 0 0 1 8 3.91c.68 0 1.36.09 2 .27 1.53-1.06 2.2-.84 2.2-.84.44 1.12.16 1.96.08 2.16.51.57.82 1.3.82 2.19 0 3.12-1.87 3.81-3.65 4.01.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.47.55.39A8.13 8.13 0 0 0 16 8.13C16 3.64 12.42 0 8 0Z"
+              />
+            </svg>
+            <span class="github-label">GitHub</span>
+            <span class="github-stars">
+              <svg
+                class="github-star-icon"
+                viewBox="0 0 16 16"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <path
+                  d="M8 0.25a0.75 0.75 0 0 1 0.673 0.418l1.882 3.815 4.21 0.612a0.75 0.75 0 0 1 0.416 1.279l-3.046 2.97 0.719 4.193a0.75 0.75 0 0 1-1.088 0.79L8 12.347l-3.766 1.98a0.75 0.75 0 0 1-1.088-0.79l0.719-4.194L0.819 6.374a0.75 0.75 0 0 1 0.416-1.28l4.21-0.611 1.882-3.815A0.75 0.75 0 0 1 8 0.25Z"
+                />
+              </svg>
+              <span
+                class="github-star-count"
+                data-github-stars
+                aria-live="polite"
+                >1</span
+              >
+            </span>
+          </a>
+          <a class="nav-install" href="/docs/">Install</a>
+        </div>
+      </div>
+    </header>
+
+    <main class="docs-shell docs-shell-reference" id="main">
+      <aside class="docs-sidebar" aria-label="Documentation navigation">
+        <p>Documentation</p>
+        <nav class="docs-global-nav" aria-label="Documentation pages">
+          <a href="/docs/">Start here</a>
+          <a href="/docs/agents/">Agent setup</a>
+          <a href="/docs/reference/contract/">CLI contract</a>
+          <a href="/docs/reference/agents/">Agent integration</a>
+          <a href="/docs/reference/performance/">Performance</a>
+          <a href="/docs/reference/platforms/">Platforms</a>
+          <a href="/docs/security/">Security</a>
+          <a href="/docs/contributing/" aria-current="location">Contributing</a>
+        </nav>
+        <div class="docs-sidebar-sections">
+          <p>On this page</p>
+          <nav class="docs-section-nav" aria-label="Page sections">
+            <a href="#our-pledge" aria-current="location">Our Pledge</a>
+            <a href="#encouraged-behaviors">Encouraged Behaviors</a>
+            <a href="#restricted-behaviors">Restricted Behaviors</a>
+            <a href="#reporting-an-issue">Reporting an Issue</a>
+            <a href="#addressing-and-repairing-harm"
+              >Addressing and Repairing Harm</a
+            >
+            <a href="#scope">Scope</a>
+            <a href="#attribution">Attribution</a>
+          </nav>
+        </div>
+      </aside>
+
+      <article class="docs-content docs-reference-content">
+        <p class="eyebrow"><span>Project</span> Documentation</p>
+        <h1>Code of Conduct</h1>
+        <p class="docs-deck">
+          The conduct, reporting, and repair expectations that keep the sqrail
+          community safe and productive.
+        </p>
+        <div class="docs-markdown">
+          <h2 id="our-pledge">Our Pledge</h2>
+          <p>
+            We pledge to make our community welcoming, safe, and equitable for
+            all.
+          </p>
+          <p>
+            We are committed to fostering an environment that respects and
+            promotes the dignity, rights, and contributions of all individuals,
+            regardless of characteristics including race, ethnicity, caste,
+            color, age, physical characteristics, neurodiversity, disability,
+            sex or gender, gender identity or expression, sexual orientation,
+            language, philosophy or religion, national or social origin,
+            socio-economic position, level of education, or other status. The
+            same privileges of participation are extended to everyone who
+            participates in good faith and in accordance with this Covenant.
+          </p>
+          <h2 id="encouraged-behaviors">Encouraged Behaviors</h2>
+          <p>
+            While acknowledging differences in social norms, we all strive to
+            meet our community’s expectations for positive behavior. We also
+            understand that our words and actions may be interpreted differently
+            than we intend based on culture, background, or native language.
+          </p>
+          <p>
+            With these considerations in mind, we agree to behave mindfully
+            toward each other and act in ways that center our shared values,
+            including:
+          </p>
+          <ol>
+            <li>
+              Respecting the <strong>purpose of our community</strong>, our
+              activities, and our ways of gathering.
+            </li>
+            <li>Engaging <strong>kindly and honestly</strong> with others.</li>
+            <li>
+              Respecting <strong>different viewpoints</strong> and experiences.
+            </li>
+            <li>
+              <strong>Taking responsibility</strong> for our actions and
+              contributions.
+            </li>
+            <li>
+              Gracefully giving and accepting
+              <strong>constructive feedback</strong>.
+            </li>
+            <li>
+              Committing to <strong>repairing harm</strong> when it occurs.
+            </li>
+            <li>
+              Behaving in other ways that promote and sustain the
+              <strong>well-being of our community</strong>.
+            </li>
+          </ol>
+          <h2 id="restricted-behaviors">Restricted Behaviors</h2>
+          <p>
+            We agree to restrict the following behaviors in our community.
+            Instances, threats, and promotion of these behaviors are violations
+            of this Code of Conduct.
+          </p>
+          <ol>
+            <li>
+              <strong>Harassment.</strong> Violating explicitly expressed
+              boundaries or engaging in unnecessary personal attention after any
+              clear request to stop.
+            </li>
+            <li>
+              <strong>Character attacks.</strong> Making insulting, demeaning,
+              or pejorative comments directed at a community member or group of
+              people.
+            </li>
+            <li>
+              <strong>Stereotyping or discrimination.</strong> Characterizing
+              anyone’s personality or behavior on the basis of immutable
+              identities or traits.
+            </li>
+            <li>
+              <strong>Sexualization.</strong> Behaving in a way that would
+              generally be considered inappropriately intimate in the context or
+              purpose of the community.
+            </li>
+            <li>
+              <strong>Violating confidentiality.</strong> Sharing or acting on
+              someone’s personal or private information without their
+              permission.
+            </li>
+            <li>
+              <strong>Endangerment.</strong> Causing, encouraging, or
+              threatening violence or other harm toward any person or group.
+            </li>
+            <li>
+              Behaving in other ways that
+              <strong>threaten the well-being</strong> of our community.
+            </li>
+          </ol>
+          <h3 id="other-restrictions">Other Restrictions</h3>
+          <ol>
+            <li>
+              <strong>Misleading identity.</strong> Impersonating someone else
+              for any reason, or pretending to be someone else to evade
+              enforcement actions.
+            </li>
+            <li>
+              <strong>Failing to credit sources.</strong> Not properly crediting
+              the sources of content you contribute.
+            </li>
+            <li>
+              <strong>Promotional materials.</strong> Sharing marketing or other
+              commercial content in a way that is outside the norms of the
+              community.
+            </li>
+            <li>
+              <strong>Irresponsible communication.</strong> Failing to
+              responsibly present content which includes, links, or describes
+              any other restricted behaviors.
+            </li>
+          </ol>
+          <h2 id="reporting-an-issue">Reporting an Issue</h2>
+          <p>
+            Tensions can occur between community members even when they are
+            trying their best to collaborate. Not every conflict represents a
+            Code of Conduct violation, and this Code of Conduct reinforces
+            encouraged behaviors and norms that can help avoid conflicts and
+            minimize harm.
+          </p>
+          <p>
+            To report a possible violation, email the project maintainer at
+            <a href="mailto:yusuke8h@gmail.com">yusuke8h@gmail.com</a> with the
+            subject <code>[sqrail conduct]</code>. Include links or screenshots,
+            the approximate date, and any context that may help with a fair
+            review. Send reports privately; do not open a public issue or
+            include information that could endanger you or another person. If
+            the report concerns the sole maintainer or content hosted by GitHub,
+            you may instead use
+            <a href="https://support.github.com/contact/report-content"
+              >GitHub’s private content-reporting process</a
+            >.
+          </p>
+          <p>
+            The maintainer takes reports seriously and will make every
+            reasonable effort to respond promptly. Reports will be investigated
+            by reviewing available messages, logs, or other evidence and, when
+            appropriate, speaking separately with the people involved.
+            Information will be shared only as necessary to investigate, protect
+            the community, or comply with law. Enforcement actions are normally
+            handled privately, while an anonymized community notice may be
+            published when it improves safety or clarity.
+          </p>
+          <h2 id="addressing-and-repairing-harm">
+            Addressing and Repairing Harm
+          </h2>
+          <p>
+            If an investigation finds that this Code of Conduct has been
+            violated, the following enforcement ladder may be used based on the
+            incident’s impact on the people involved and the community. Severe
+            violations may skip lower steps.
+          </p>
+          <ol>
+            <li>
+              <strong>Warning</strong>
+              <ul>
+                <li>
+                  Event: A violation involving a single incident or series of
+                  incidents.
+                </li>
+                <li>
+                  Consequence: A private, written warning from the maintainer.
+                </li>
+                <li>
+                  Repair: Acknowledgement of responsibility, clarification of
+                  expectations, or a private written apology may be requested.
+                </li>
+              </ul>
+            </li>
+            <li>
+              <strong>Temporarily limited activities</strong>
+              <ul>
+                <li>
+                  Event: A repeated violation following a warning, or a first
+                  incident with greater impact.
+                </li>
+                <li>
+                  Consequence: A private warning and a time-limited cooldown
+                  from specified channels or interactions.
+                </li>
+                <li>
+                  Repair: The participant respects the cooldown, reflects on the
+                  impact, and returns thoughtfully when the period ends.
+                </li>
+              </ul>
+            </li>
+            <li>
+              <strong>Temporary suspension</strong>
+              <ul>
+                <li>
+                  Event: A pattern that warnings have not resolved, or a single
+                  serious violation.
+                </li>
+                <li>
+                  Consequence: Temporary removal from community spaces, with
+                  written conditions for return.
+                </li>
+                <li>
+                  Repair: The participant respects the suspension and meets the
+                  stated conditions before returning.
+                </li>
+              </ul>
+            </li>
+            <li>
+              <strong>Permanent ban</strong>
+              <ul>
+                <li>
+                  Event: A pattern other steps have failed to resolve, or a
+                  violation so serious that community safety cannot otherwise be
+                  maintained.
+                </li>
+                <li>
+                  Consequence: Permanent removal from community spaces and
+                  communication channels.
+                </li>
+                <li>Repair: There is no possible repair at this level.</li>
+              </ul>
+            </li>
+          </ol>
+          <p>
+            This ladder is a guideline and does not prevent proportionate action
+            that is necessary to protect the community.
+          </p>
+          <h2 id="scope">Scope</h2>
+          <p>
+            This Code of Conduct applies within all sqrail community spaces and
+            also when an individual is officially representing the project in
+            public or other spaces. Examples include using an official address
+            or account, speaking on behalf of the project, or acting as an
+            appointed representative at an online or offline event.
+          </p>
+          <h2 id="attribution">Attribution</h2>
+          <p>
+            This Code of Conduct is adapted from the
+            <a href="https://www.contributor-covenant.org/version/3/0/"
+              >Contributor Covenant, version 3.0</a
+            >.
+          </p>
+          <p>
+            Contributor Covenant is stewarded by the Organization for Ethical
+            Source and licensed under
+            <a href="https://creativecommons.org/licenses/by-sa/4.0/"
+              >CC BY-SA 4.0</a
+            >. Additional enforcement and community guidance is available from
+            the
+            <a href="https://www.contributor-covenant.org/resources/"
+              >Contributor Covenant resources</a
+            >. Its enforcement ladder was inspired by the work of
+            <a href="https://github.com/mozilla/inclusion"
+              >Mozilla’s Code of Conduct team</a
+            >.
+          </p>
+        </div>
+        <aside class="docs-source-note" aria-label="Machine-readable source">
+          <div>
+            <strong>Prefer plain text?</strong>
+            <span
+              >The rendered page and repository Markdown share one source.</span
+            >
+          </div>
+          <a
+            href="https://raw.githubusercontent.com/yhay81/sqrail/main/CODE_OF_CONDUCT.md"
+            >Markdown source <span aria-hidden="true">→</span></a
+          >
+        </aside>
+      </article>
+    </main>
+
+    <footer>
+      <a class="wordmark" href="/">
+        <span class="wordmark-mark" aria-hidden="true"></span>
+        sqrail
+      </a>
+      <p>One query at a time.</p>
+      <div>
+        <a href="/docs/">Docs</a>
+        <a href="https://github.com/yhay81/sqrail">Source</a>
+        <a href="https://github.com/yhay81/sqrail/discussions">Community</a>
+        <a href="https://github.com/yhay81/sqrail/releases">Releases</a>
+      </div>
+    </footer>
+  </body>
+</html>

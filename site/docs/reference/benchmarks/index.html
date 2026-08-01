@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="The rules and workload matrix used to keep every published performance claim reproducible."
+    />
+    <meta name="theme-color" content="#090a09" />
+    <meta property="og:title" content="Benchmark policy — sqrail" />
+    <meta
+      property="og:description"
+      content="The rules and workload matrix used to keep every published performance claim reproducible."
+    />
+    <meta property="og:type" content="article" />
+    <meta
+      property="og:url"
+      content="https://sqrails.yhay81.com/docs/reference/benchmarks/"
+    />
+    <meta
+      property="og:image"
+      content="https://sqrails.yhay81.com/social-card.png"
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link
+      rel="canonical"
+      href="https://sqrails.yhay81.com/docs/reference/benchmarks/"
+    />
+    <link
+      rel="alternate"
+      type="text/markdown"
+      href="https://raw.githubusercontent.com/yhay81/sqrail/main/docs/BENCHMARKS.md"
+    />
+    <title>Benchmark policy — sqrail documentation</title>
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="/app.js" defer></script>
+  </head>
+  <body class="docs-body">
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header" data-site-header>
+      <div class="nav">
+        <div class="nav-brand">
+          <a class="wordmark" href="/" aria-label="sqrail home">
+            <span class="wordmark-mark" aria-hidden="true"></span>
+            sqrail
+          </a>
+          <span class="nav-tagline">Agent-safe SQL on files</span>
+        </div>
+        <nav class="nav-links" aria-label="Primary">
+          <a href="/docs/">Documentation</a>
+          <a href="/docs/agents/">Agent setup</a>
+          <a href="/docs/reference/contract/">Reference</a>
+        </nav>
+        <div class="nav-actions">
+          <a
+            class="github-repo"
+            data-github-repo
+            href="https://github.com/yhay81/sqrail"
+            aria-label="View yhay81/sqrail on GitHub — 1 star"
+          >
+            <svg
+              class="github-icon"
+              viewBox="0 0 16 16"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <path
+                d="M8 0C3.58 0 0 3.64 0 8.13c0 3.59 2.29 6.64 5.47 7.71.4.08.55-.18.55-.39 0-.19-.01-.83-.01-1.51-2.01.38-2.53-.5-2.69-.96-.09-.23-.48-.96-.82-1.15-.28-.15-.68-.54-.01-.55.63-.01 1.08.59 1.23.83.72 1.23 1.87.88 2.33.67.07-.53.28-.88.51-1.08-1.78-.2-3.64-.9-3.64-4.01 0-.89.31-1.62.82-2.19-.08-.2-.36-1.04.08-2.16 0 0 .67-.22 2.2.84A7.48 7.48 0 0 1 8 3.91c.68 0 1.36.09 2 .27 1.53-1.06 2.2-.84 2.2-.84.44 1.12.16 1.96.08 2.16.51.57.82 1.3.82 2.19 0 3.12-1.87 3.81-3.65 4.01.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.47.55.39A8.13 8.13 0 0 0 16 8.13C16 3.64 12.42 0 8 0Z"
+              />
+            </svg>
+            <span class="github-label">GitHub</span>
+            <span class="github-stars">
+              <svg
+                class="github-star-icon"
+                viewBox="0 0 16 16"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <path
+                  d="M8 0.25a0.75 0.75 0 0 1 0.673 0.418l1.882 3.815 4.21 0.612a0.75 0.75 0 0 1 0.416 1.279l-3.046 2.97 0.719 4.193a0.75 0.75 0 0 1-1.088 0.79L8 12.347l-3.766 1.98a0.75 0.75 0 0 1-1.088-0.79l0.719-4.194L0.819 6.374a0.75 0.75 0 0 1 0.416-1.28l4.21-0.611 1.882-3.815A0.75 0.75 0 0 1 8 0.25Z"
+                />
+              </svg>
+              <span
+                class="github-star-count"
+                data-github-stars
+                aria-live="polite"
+                >1</span
+              >
+            </span>
+          </a>
+          <a class="nav-install" href="/docs/">Install</a>
+        </div>
+      </div>
+    </header>
+
+    <main class="docs-shell docs-shell-reference" id="main">
+      <aside class="docs-sidebar" aria-label="Documentation navigation">
+        <p>Documentation</p>
+        <nav class="docs-global-nav" aria-label="Documentation pages">
+          <a href="/docs/">Start here</a>
+          <a href="/docs/agents/">Agent setup</a>
+          <a href="/docs/reference/contract/">CLI contract</a>
+          <a href="/docs/reference/agents/">Agent integration</a>
+          <a href="/docs/reference/performance/" aria-current="location"
+            >Performance</a
+          >
+          <a href="/docs/reference/platforms/">Platforms</a>
+          <a href="/docs/security/">Security</a>
+          <a href="/docs/contributing/">Contributing</a>
+        </nav>
+        <div class="docs-sidebar-sections">
+          <p>On this page</p>
+          <nav class="docs-section-nav" aria-label="Page sections">
+            <a href="#metrics" aria-current="location">Metrics</a>
+            <a href="#initial-workload-matrix">Initial workload matrix</a>
+          </nav>
+        </div>
+      </aside>
+
+      <article class="docs-content docs-reference-content">
+        <p class="eyebrow"><span>Evidence</span> Documentation</p>
+        <h1>Benchmark policy</h1>
+        <p class="docs-deck">
+          The rules and workload matrix used to keep every published performance
+          claim reproducible.
+        </p>
+        <div class="docs-markdown">
+          <p>Performance claims are accepted only when the benchmark is:</p>
+          <ul>
+            <li>reproducible from a committed script</li>
+            <li>run from local storage</li>
+            <li>verified by output checksum</li>
+            <li>measured under an explicit memory budget</li>
+            <li>
+              reported with engine, compiler, OS, CPU, RAM, and storage versions
+            </li>
+            <li>
+              run with cold and warm filesystem cache results kept separate
+            </li>
+          </ul>
+          <p>
+            The committed
+            <a
+              href="https://github.com/yhay81/sqrail/blob/main/benchmarks/README.md"
+              >benchmark harness</a
+            >
+            enforces matching row counts and logical checksums, records
+            hyperfine timing data, and performs a separate peak-RSS run on Linux
+            or macOS. Its versioned environment manifest records binary and
+            dataset digests, compiler, git state, CPU, RAM, storage,
+            architecture, locale, and cache-state evidence.
+          </p>
+          <p>
+            The full matrix runner executes every workload at each declared
+            memory budget. Outputs are deleted after their checksum is recorded
+            by default, bounding disk usage to the input dataset plus one result
+            at a time. Dataset generation refuses to start unless the filesystem
+            has the configured capacity headroom. Each frontend receives an
+            isolated explicit spill directory and an identical spill cap so an
+            engine’s implicit temporary-directory policy cannot skew a
+            low-memory comparison.
+          </p>
+          <h2 id="metrics">Metrics</h2>
+          <ul>
+            <li>wall-clock time</li>
+            <li>CPU time</li>
+            <li>peak resident set size</li>
+            <li>
+              filesystem I/O counters where the host tool exposes comparable
+              units
+            </li>
+            <li>temporary spill bytes</li>
+            <li>output bytes and checksum</li>
+            <li>executable size</li>
+            <li>cold-start latency</li>
+          </ul>
+          <p>
+            The default harness records warm-cache or first-run-uncontrolled
+            cohorts. <code>cold-controlled</code> is accepted only with a
+            non-empty description of the external page-cache control mechanism.
+            First-run timing without that evidence is never reported as
+            cold-cache performance.
+          </p>
+          <h2 id="initial-workload-matrix">Initial workload matrix</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Class</th>
+                <th>Required cases</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Scan</td>
+                <td>
+                  CSV and Parquet; selective narrow and non-selective wide
+                  projection
+                </td>
+              </tr>
+              <tr>
+                <td>Filter</td>
+                <td>selective and non-selective</td>
+              </tr>
+              <tr>
+                <td>Aggregate</td>
+                <td>low and high cardinality</td>
+              </tr>
+              <tr>
+                <td>Join</td>
+                <td>small-large and large-large</td>
+              </tr>
+              <tr>
+                <td>Blocking</td>
+                <td>sort, distinct, and window</td>
+              </tr>
+              <tr>
+                <td>Conversion</td>
+                <td>CSV to Parquet and Parquet to JSONL</td>
+              </tr>
+            </tbody>
+          </table>
+          <p>
+            Each workload is run at 512 MB, 1 GB, and 4 GB where the operating
+            system and dataset size make the budget meaningful.
+          </p>
+          <p>
+            The committed matrix currently contains 12 cases: selective Parquet
+            and CSV scans, a non-selective wide Parquet scan, low- and
+            high-cardinality aggregates, small-large and large-large joins,
+            sort, distinct, window, CSV-to-Parquet, and Parquet-to-JSONL.
+          </p>
+          <p>
+            The first baseline is the upstream DuckDB CLI using equivalent SQL
+            and settings. sqrail must not claim a query-engine speed advantage
+            when both paths execute the same DuckDB plan. Its initial
+            performance claims concern startup, frontend overhead, result
+            streaming, resource configuration, and task completion under a fixed
+            contract.
+          </p>
+        </div>
+        <aside class="docs-source-note" aria-label="Machine-readable source">
+          <div>
+            <strong>Prefer plain text?</strong>
+            <span
+              >The rendered page and repository Markdown share one source.</span
+            >
+          </div>
+          <a
+            href="https://raw.githubusercontent.com/yhay81/sqrail/main/docs/BENCHMARKS.md"
+            >Markdown source <span aria-hidden="true">→</span></a
+          >
+        </aside>
+      </article>
+    </main>
+
+    <footer>
+      <a class="wordmark" href="/">
+        <span class="wordmark-mark" aria-hidden="true"></span>
+        sqrail
+      </a>
+      <p>One query at a time.</p>
+      <div>
+        <a href="/docs/">Docs</a>
+        <a href="https://github.com/yhay81/sqrail">Source</a>
+        <a href="https://github.com/yhay81/sqrail/discussions">Community</a>
+        <a href="https://github.com/yhay81/sqrail/releases">Releases</a>
+      </div>
+    </footer>
+  </body>
+</html>

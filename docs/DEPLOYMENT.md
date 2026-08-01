@@ -17,6 +17,10 @@ Cloudflare Workers Static Assets serves the contents of `site/`. The
 - HTML path and custom 404 behavior
 - static asset directory
 
+Human-readable reference pages in `site/docs/` are generated from the
+repository Markdown by `tools/build-docs.mjs`. The rendered HTML and raw
+Markdown therefore have one source of truth.
+
 The custom domain is configured as a Worker origin. Cloudflare manages its DNS
 record and TLS certificate.
 
@@ -31,6 +35,7 @@ Node.js 24 or newer is required only for site development:
 
 ```sh
 npm ci
+npm run docs:build
 npm run site:check
 ```
 
@@ -63,6 +68,9 @@ After deployment, check the origin, headers, documents, and custom 404:
 
 ```sh
 curl --fail --silent --show-error --head https://sqrails.yhay81.com/
+curl --fail --silent --show-error --head https://sqrails.yhay81.com/docs/agents/
+curl --fail --silent --show-error --head \
+  https://sqrails.yhay81.com/docs/reference/contract/
 curl --fail --silent --show-error https://sqrails.yhay81.com/help.txt
 curl --fail --silent --show-error https://sqrails.yhay81.com/llms.txt
 curl --fail --silent --show-error https://sqrails.yhay81.com/install-agent.md

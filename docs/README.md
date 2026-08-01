@@ -10,22 +10,22 @@
 
 ## Start with the question
 
-| I need to…                        | Read                                                        |
-| --------------------------------- | ----------------------------------------------------------- |
-| install and run a first query     | [3-minute guide](https://sqrails.yhay81.com/docs/)          |
-| install sqrail through an agent   | [AI installer](https://sqrails.yhay81.com/install-agent.md) |
-| integrate sqrail with an agent    | [Agent integration](AGENT_INTEGRATION.md)                   |
-| depend on exact CLI behavior      | [CLI contract](CONTRACT.md)                                 |
-| understand supported systems      | [Platform support](PLATFORMS.md)                            |
-| evaluate performance claims       | [Benchmark policy](BENCHMARKS.md)                           |
-| reproduce historical measurements | [Performance baselines](BASELINE.md)                        |
-| review the v0.3 release criteria  | [v0.3 release gate](V0.3_RELEASE.md)                        |
-| validate or deploy the website    | [Documentation deployment](DEPLOYMENT.md)                   |
-| understand or run the test suites | [Testing architecture](TESTING.md)                          |
-| understand the original design    | [Concept](CONCEPT.md) / [日本語](CONCEPT.ja.md)             |
-| report a vulnerability            | [Security policy](../SECURITY.md)                           |
-| contribute a change               | [Contributing guide](../CONTRIBUTING.md)                    |
-| understand the community roadmap  | [Community growth plan](COMMUNITY_GROWTH.md)                |
+| I need to…                        | Read                                                   |
+| --------------------------------- | ------------------------------------------------------ |
+| install and run a first query     | [3-minute guide](https://sqrails.yhay81.com/docs/)     |
+| install sqrail through an agent   | [Agent setup](https://sqrails.yhay81.com/docs/agents/) |
+| integrate sqrail with an agent    | [Agent integration](AGENT_INTEGRATION.md)              |
+| depend on exact CLI behavior      | [CLI contract](CONTRACT.md)                            |
+| understand supported systems      | [Platform support](PLATFORMS.md)                       |
+| evaluate performance claims       | [Benchmark policy](BENCHMARKS.md)                      |
+| reproduce historical measurements | [Performance baselines](BASELINE.md)                   |
+| review the v0.3 release criteria  | [v0.3 release gate](V0.3_RELEASE.md)                   |
+| validate or deploy the website    | [Documentation deployment](DEPLOYMENT.md)              |
+| understand or run the test suites | [Testing architecture](TESTING.md)                     |
+| understand the original design    | [Concept](CONCEPT.md) / [日本語](CONCEPT.ja.md)        |
+| report a vulnerability            | [Security policy](../SECURITY.md)                      |
+| contribute a change               | [Contributing guide](../CONTRIBUTING.md)               |
+| understand the community roadmap  | [Community growth plan](COMMUNITY_GROWTH.md)           |
 
 ## Contract hierarchy
 
@@ -50,6 +50,10 @@ Otherwise trust the stated schema, run once, and stop after success.
 The website also publishes the same interface as
 [`help.txt`](https://sqrails.yhay81.com/help.txt) and publishes an
 LLM discovery index at
-[`llms.txt`](https://sqrails.yhay81.com/llms.txt). The public
+[`llms.txt`](https://sqrails.yhay81.com/llms.txt). Agents that need a
+review-first installation path can fetch
+[`install-agent.md`](https://sqrails.yhay81.com/install-agent.md); humans get
+the same source rendered as the
+[Agent setup guide](https://sqrails.yhay81.com/docs/agents/). The public
 [`skills/sqrail`](../skills/sqrail/SKILL.md) directory is the canonical Agent
 Skill source.

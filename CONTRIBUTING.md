@@ -69,6 +69,16 @@ cmake --build out/build/release --target sqrail-manpage
 cmake -E copy out/build/release/sqrail.1 docs/man/sqrail.1
 ```
 
+Human-readable reference pages under `site/docs/` are generated from the
+repository Markdown. Do not edit generated pages directly; refresh and verify
+them with:
+
+```sh
+npm ci
+npm run docs:build
+npm run site:check
+```
+
 Format C++ with the repository `.clang-format`. CI enforces the same check with
 `clang-format` 18, so a different major version can disagree; `uvx
 clang-format@18.1.8` provides it when your platform packages another release.
@@ -85,11 +95,11 @@ other development workflows enable every optional suite. Behavioral changes
 must keep the cross-platform Python end-to-end suite portable. POSIX-only
 signal, mode, or filesystem assertions belong in the Bash smoke suite or behind
 an explicit platform condition. The boundaries and CMake options are documented
-in [docs/TESTING.md](docs/TESTING.md).
+in the [testing architecture](docs/TESTING.md).
 
 ## Performance changes
 
-Performance claims must follow [docs/BENCHMARKS.md](docs/BENCHMARKS.md).
+Performance claims must follow the [benchmark policy](docs/BENCHMARKS.md).
 Include the dataset generator parameters, environment metadata, raw hyperfine
 JSON, peak RSS, row counts, and logical checksums. A faster result with different
 output is a correctness failure.

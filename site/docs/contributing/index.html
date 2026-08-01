@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="A focused path from a first issue through tests, performance evidence, and a reviewable pull request."
+    />
+    <meta name="theme-color" content="#090a09" />
+    <meta property="og:title" content="Contributing — sqrail" />
+    <meta
+      property="og:description"
+      content="A focused path from a first issue through tests, performance evidence, and a reviewable pull request."
+    />
+    <meta property="og:type" content="article" />
+    <meta
+      property="og:url"
+      content="https://sqrails.yhay81.com/docs/contributing/"
+    />
+    <meta
+      property="og:image"
+      content="https://sqrails.yhay81.com/social-card.png"
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link
+      rel="canonical"
+      href="https://sqrails.yhay81.com/docs/contributing/"
+    />
+    <link
+      rel="alternate"
+      type="text/markdown"
+      href="https://raw.githubusercontent.com/yhay81/sqrail/main/CONTRIBUTING.md"
+    />
+    <title>Contributing — sqrail documentation</title>
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="/app.js" defer></script>
+  </head>
+  <body class="docs-body">
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header" data-site-header>
+      <div class="nav">
+        <div class="nav-brand">
+          <a class="wordmark" href="/" aria-label="sqrail home">
+            <span class="wordmark-mark" aria-hidden="true"></span>
+            sqrail
+          </a>
+          <span class="nav-tagline">Agent-safe SQL on files</span>
+        </div>
+        <nav class="nav-links" aria-label="Primary">
+          <a href="/docs/">Documentation</a>
+          <a href="/docs/agents/">Agent setup</a>
+          <a href="/docs/reference/contract/">Reference</a>
+        </nav>
+        <div class="nav-actions">
+          <a
+            class="github-repo"
+            data-github-repo
+            href="https://github.com/yhay81/sqrail"
+            aria-label="View yhay81/sqrail on GitHub — 1 star"
+          >
+            <svg
+              class="github-icon"
+              viewBox="0 0 16 16"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <path
+                d="M8 0C3.58 0 0 3.64 0 8.13c0 3.59 2.29 6.64 5.47 7.71.4.08.55-.18.55-.39 0-.19-.01-.83-.01-1.51-2.01.38-2.53-.5-2.69-.96-.09-.23-.48-.96-.82-1.15-.28-.15-.68-.54-.01-.55.63-.01 1.08.59 1.23.83.72 1.23 1.87.88 2.33.67.07-.53.28-.88.51-1.08-1.78-.2-3.64-.9-3.64-4.01 0-.89.31-1.62.82-2.19-.08-.2-.36-1.04.08-2.16 0 0 .67-.22 2.2.84A7.48 7.48 0 0 1 8 3.91c.68 0 1.36.09 2 .27 1.53-1.06 2.2-.84 2.2-.84.44 1.12.16 1.96.08 2.16.51.57.82 1.3.82 2.19 0 3.12-1.87 3.81-3.65 4.01.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.47.55.39A8.13 8.13 0 0 0 16 8.13C16 3.64 12.42 0 8 0Z"
+              />
+            </svg>
+            <span class="github-label">GitHub</span>
+            <span class="github-stars">
+              <svg
+                class="github-star-icon"
+                viewBox="0 0 16 16"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <path
+                  d="M8 0.25a0.75 0.75 0 0 1 0.673 0.418l1.882 3.815 4.21 0.612a0.75 0.75 0 0 1 0.416 1.279l-3.046 2.97 0.719 4.193a0.75 0.75 0 0 1-1.088 0.79L8 12.347l-3.766 1.98a0.75 0.75 0 0 1-1.088-0.79l0.719-4.194L0.819 6.374a0.75 0.75 0 0 1 0.416-1.28l4.21-0.611 1.882-3.815A0.75 0.75 0 0 1 8 0.25Z"
+                />
+              </svg>
+              <span
+                class="github-star-count"
+                data-github-stars
+                aria-live="polite"
+                >1</span
+              >
+            </span>
+          </a>
+          <a class="nav-install" href="/docs/">Install</a>
+        </div>
+      </div>
+    </header>
+
+    <main class="docs-shell docs-shell-reference" id="main">
+      <aside class="docs-sidebar" aria-label="Documentation navigation">
+        <p>Documentation</p>
+        <nav class="docs-global-nav" aria-label="Documentation pages">
+          <a href="/docs/">Start here</a>
+          <a href="/docs/agents/">Agent setup</a>
+          <a href="/docs/reference/contract/">CLI contract</a>
+          <a href="/docs/reference/agents/">Agent integration</a>
+          <a href="/docs/reference/performance/">Performance</a>
+          <a href="/docs/reference/platforms/">Platforms</a>
+          <a href="/docs/security/">Security</a>
+          <a href="/docs/contributing/" aria-current="page">Contributing</a>
+        </nav>
+        <div class="docs-sidebar-sections">
+          <p>On this page</p>
+          <nav class="docs-section-nav" aria-label="Page sections">
+            <a href="#your-first-contribution" aria-current="location"
+              >Your first contribution</a
+            >
+            <a href="#before-proposing-a-feature">Before proposing a feature</a>
+            <a href="#build-and-test">Build and test</a>
+            <a href="#performance-changes">Performance changes</a>
+            <a href="#pull-requests">Pull requests</a>
+          </nav>
+        </div>
+      </aside>
+
+      <article class="docs-content docs-reference-content">
+        <p class="eyebrow"><span>Project</span> Documentation</p>
+        <h1>Contributing</h1>
+        <p class="docs-deck">
+          A focused path from a first issue through tests, performance evidence,
+          and a reviewable pull request.
+        </p>
+        <div class="docs-markdown">
+          <p>
+            sqrail welcomes focused bug reports, reproducible performance
+            evidence, and small changes that preserve its narrow agent-facing
+            contract.
+          </p>
+          <p>
+            Every contribution matters: a minimal reproducer, a documentation
+            correction, an unfamiliar platform report, a benchmark, or a focused
+            patch can all improve the project. You do not need permission to
+            open an issue or submit a small pull request. Please follow the
+            <a href="/docs/contributing/code-of-conduct/">Code of Conduct</a>,
+            and use the
+            <a href="/docs/contributing/support/">support guide</a> to choose
+            the right reporting path.
+          </p>
+          <h2 id="your-first-contribution">Your first contribution</h2>
+          <ol>
+            <li>
+              Search open issues and pull requests to avoid duplicate work.
+            </li>
+            <li>
+              For a non-trivial change, open a feature proposal before investing
+              heavily so the public contract and scope can be discussed early.
+            </li>
+            <li>
+              Fork the repository, branch from the current <code>main</code>,
+              and keep one logical change per branch.
+            </li>
+            <li>
+              Add tests or reproducible evidence, run the relevant checks below,
+              and open a pull request using the repository template.
+            </li>
+          </ol>
+          <p>
+            Issues labeled
+            <a
+              href="https://github.com/yhay81/sqrail/labels/good%20first%20issue"
+              ><code>good first issue</code></a
+            >
+            have bounded scope suitable for a first contribution. If an issue is
+            unclear, asking a focused question is useful work too.
+          </p>
+          <h3 id="claiming-an-issue">Claiming an issue</h3>
+          <p>
+            Comment <code>/take</code> on an unassigned issue if you want to
+            work on it. A maintainer will normally assign it for seven days; ask
+            for more time whenever you need it. If there is no update after that
+            window, the issue may be opened to another contributor. This is
+            coordination, not permission: small pull requests are also welcome
+            without prior assignment.
+          </p>
+          <h2 id="before-proposing-a-feature">Before proposing a feature</h2>
+          <p>
+            The project deliberately has one engine, one SQL dialect, no
+            natural-language layer, no daemon, and no configuration file. A
+            feature proposal should explain why ordinary DuckDB SQL or an
+            existing command option cannot solve the task and how an agent can
+            learn the addition without making <code>--help</code> ambiguous.
+          </p>
+          <h2 id="build-and-test">Build and test</h2>
+          <pre><code class="language-sh">cmake --workflow --preset core
+cmake --workflow --preset dev
+cmake --workflow --preset strict
+cmake --workflow --preset sanitize
+cmake --workflow --preset thread
+cmake --preset fuzz
+cmake --build --preset fuzz
+out/build/fuzz/sqrail-strict-json-fuzz -max_total_time=30
+out/build/fuzz/sqrail-cli-fuzz -max_total_time=30
+CMAKE_PREFIX_PATH=/path/to/duckdb cmake --workflow --preset system
+clang-format-18 --dry-run --Werror src/*.cpp src/*.hpp tests/*.cpp fuzz/*.cpp \
+  benchmarks/agent-eval/launcher.c
+shellcheck tests/*.sh benchmarks/*.sh
+actionlint
+GH_TOKEN=$(gh auth token) zizmor --pedantic .
+</code></pre>
+          <p>
+            The committed <code>docs/man/sqrail.1</code> is generated from the
+            built executable and <code>docs/man/sqrail.h2m</code>. After
+            changing the CLI help or version, install <code>help2man</code> and
+            refresh it with:
+          </p>
+          <pre><code class="language-sh">cmake --preset release
+cmake --build out/build/release --target sqrail-manpage
+cmake -E copy out/build/release/sqrail.1 docs/man/sqrail.1
+</code></pre>
+          <p>
+            Human-readable reference pages under <code>site/docs/</code> are
+            generated from the repository Markdown. Do not edit generated pages
+            directly; refresh and verify them with:
+          </p>
+          <pre><code class="language-sh">npm ci
+npm run docs:build
+npm run site:check
+</code></pre>
+          <p>
+            Format C++ with the repository <code>.clang-format</code>. CI
+            enforces the same check with <code>clang-format</code> 18, so a
+            different major version can disagree;
+            <code>uvx clang-format@18.1.8</code> provides it when your platform
+            packages another release. Give Zizmor a <code>GH_TOKEN</code> so it
+            runs the online audits CI performs, including the action reference
+            checks a local run otherwise skips. GitHub Actions additionally run
+            CodeQL and audit every workflow with Actionlint and Zizmor. The
+            <code>windows-x64</code> preset follows the Windows 2025 hosted
+            image and uses Visual Studio 2026 with a CMake version that provides
+            the <code>Visual Studio 18 2026</code> generator; the Windows 11
+            Arm64 runner continues to use Visual Studio 2022 through the
+            <code>windows-arm64</code> preset. Both select the static MSVC
+            runtime and the Release configuration.
+          </p>
+          <p>
+            The <code>core</code> workflow runs Catch2-based native unit tests
+            without Python. The other development workflows enable every
+            optional suite. Behavioral changes must keep the cross-platform
+            Python end-to-end suite portable. POSIX-only signal, mode, or
+            filesystem assertions belong in the Bash smoke suite or behind an
+            explicit platform condition. The boundaries and CMake options are
+            documented in the
+            <a href="/docs/contributing/testing/">testing architecture</a>.
+          </p>
+          <h2 id="performance-changes">Performance changes</h2>
+          <p>
+            Performance claims must follow the
+            <a href="/docs/reference/benchmarks/">benchmark policy</a>. Include
+            the dataset generator parameters, environment metadata, raw
+            hyperfine JSON, peak RSS, row counts, and logical checksums. A
+            faster result with different output is a correctness failure.
+          </p>
+          <h2 id="pull-requests">Pull requests</h2>
+          <ul>
+            <li>Keep unrelated changes separate.</li>
+            <li>Add a regression test for behavioral fixes.</li>
+            <li>
+              Update <code>docs/CONTRACT.md</code> and
+              <code>--help</code> together when the public CLI changes.
+            </li>
+            <li>
+              Do not update the DuckDB revision without documenting and
+              benchmarking the change.
+            </li>
+            <li>
+              Confirm that <code>git diff --check</code>,
+              <code>clang-format</code>, the smoke test, ShellCheck, Actionlint,
+              and Zizmor pass.
+            </li>
+          </ul>
+          <p>
+            Reviews focus on the documented contract, correctness, safety,
+            portability, performance evidence, and whether an agent can learn
+            the interface reliably. Feedback should explain the technical reason
+            and, where possible, a concrete path forward. Contributions remain
+            credited in Git history; substantial user-visible changes may also
+            be acknowledged in release notes.
+          </p>
+        </div>
+        <aside class="docs-source-note" aria-label="Machine-readable source">
+          <div>
+            <strong>Prefer plain text?</strong>
+            <span
+              >The rendered page and repository Markdown share one source.</span
+            >
+          </div>
+          <a
+            href="https://raw.githubusercontent.com/yhay81/sqrail/main/CONTRIBUTING.md"
+            >Markdown source <span aria-hidden="true">→</span></a
+          >
+        </aside>
+      </article>
+    </main>
+
+    <footer>
+      <a class="wordmark" href="/">
+        <span class="wordmark-mark" aria-hidden="true"></span>
+        sqrail
+      </a>
+      <p>One query at a time.</p>
+      <div>
+        <a href="/docs/">Docs</a>
+        <a href="https://github.com/yhay81/sqrail">Source</a>
+        <a href="https://github.com/yhay81/sqrail/discussions">Community</a>
+        <a href="https://github.com/yhay81/sqrail/releases">Releases</a>
+      </div>
+    </footer>
+  </body>
+</html>

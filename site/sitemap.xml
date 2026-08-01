@@ -11,18 +11,58 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://sqrails.yhay81.com/install-agent.md</loc>
+    <loc>https://sqrails.yhay81.com/docs/agents/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://sqrails.yhay81.com/docs/reference/contract/</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://sqrails.yhay81.com/help.txt</loc>
+    <loc>https://sqrails.yhay81.com/docs/reference/agents/</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://sqrails.yhay81.com/llms.txt</loc>
+    <loc>https://sqrails.yhay81.com/docs/reference/performance/</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://sqrails.yhay81.com/docs/reference/benchmarks/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://sqrails.yhay81.com/docs/reference/platforms/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://sqrails.yhay81.com/docs/security/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://sqrails.yhay81.com/docs/contributing/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://sqrails.yhay81.com/docs/contributing/testing/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://sqrails.yhay81.com/docs/contributing/support/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://sqrails.yhay81.com/docs/contributing/code-of-conduct/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
   </url>
 </urlset>

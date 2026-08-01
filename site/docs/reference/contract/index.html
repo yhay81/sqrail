@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Normative commands, query behavior, streams, resource controls, schemas, and diagnostics."
+    />
+    <meta name="theme-color" content="#090a09" />
+    <meta property="og:title" content="CLI contract — sqrail" />
+    <meta
+      property="og:description"
+      content="Normative commands, query behavior, streams, resource controls, schemas, and diagnostics."
+    />
+    <meta property="og:type" content="article" />
+    <meta
+      property="og:url"
+      content="https://sqrails.yhay81.com/docs/reference/contract/"
+    />
+    <meta
+      property="og:image"
+      content="https://sqrails.yhay81.com/social-card.png"
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link
+      rel="canonical"
+      href="https://sqrails.yhay81.com/docs/reference/contract/"
+    />
+    <link
+      rel="alternate"
+      type="text/markdown"
+      href="https://raw.githubusercontent.com/yhay81/sqrail/main/docs/CONTRACT.md"
+    />
+    <title>CLI contract — sqrail documentation</title>
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="/app.js" defer></script>
+  </head>
+  <body class="docs-body">
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header" data-site-header>
+      <div class="nav">
+        <div class="nav-brand">
+          <a class="wordmark" href="/" aria-label="sqrail home">
+            <span class="wordmark-mark" aria-hidden="true"></span>
+            sqrail
+          </a>
+          <span class="nav-tagline">Agent-safe SQL on files</span>
+        </div>
+        <nav class="nav-links" aria-label="Primary">
+          <a href="/docs/">Documentation</a>
+          <a href="/docs/agents/">Agent setup</a>
+          <a href="/docs/reference/contract/">Reference</a>
+        </nav>
+        <div class="nav-actions">
+          <a
+            class="github-repo"
+            data-github-repo
+            href="https://github.com/yhay81/sqrail"
+            aria-label="View yhay81/sqrail on GitHub — 1 star"
+          >
+            <svg
+              class="github-icon"
+              viewBox="0 0 16 16"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <path
+                d="M8 0C3.58 0 0 3.64 0 8.13c0 3.59 2.29 6.64 5.47 7.71.4.08.55-.18.55-.39 0-.19-.01-.83-.01-1.51-2.01.38-2.53-.5-2.69-.96-.09-.23-.48-.96-.82-1.15-.28-.15-.68-.54-.01-.55.63-.01 1.08.59 1.23.83.72 1.23 1.87.88 2.33.67.07-.53.28-.88.51-1.08-1.78-.2-3.64-.9-3.64-4.01 0-.89.31-1.62.82-2.19-.08-.2-.36-1.04.08-2.16 0 0 .67-.22 2.2.84A7.48 7.48 0 0 1 8 3.91c.68 0 1.36.09 2 .27 1.53-1.06 2.2-.84 2.2-.84.44 1.12.16 1.96.08 2.16.51.57.82 1.3.82 2.19 0 3.12-1.87 3.81-3.65 4.01.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.47.55.39A8.13 8.13 0 0 0 16 8.13C16 3.64 12.42 0 8 0Z"
+              />
+            </svg>
+            <span class="github-label">GitHub</span>
+            <span class="github-stars">
+              <svg
+                class="github-star-icon"
+                viewBox="0 0 16 16"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <path
+                  d="M8 0.25a0.75 0.75 0 0 1 0.673 0.418l1.882 3.815 4.21 0.612a0.75 0.75 0 0 1 0.416 1.279l-3.046 2.97 0.719 4.193a0.75 0.75 0 0 1-1.088 0.79L8 12.347l-3.766 1.98a0.75 0.75 0 0 1-1.088-0.79l0.719-4.194L0.819 6.374a0.75 0.75 0 0 1 0.416-1.28l4.21-0.611 1.882-3.815A0.75 0.75 0 0 1 8 0.25Z"
+                />
+              </svg>
+              <span
+                class="github-star-count"
+                data-github-stars
+                aria-live="polite"
+                >1</span
+              >
+            </span>
+          </a>
+          <a class="nav-install" href="/docs/">Install</a>
+        </div>
+      </div>
+    </header>
+
+    <main class="docs-shell docs-shell-reference" id="main">
+      <aside class="docs-sidebar" aria-label="Documentation navigation">
+        <p>Documentation</p>
+        <nav class="docs-global-nav" aria-label="Documentation pages">
+          <a href="/docs/">Start here</a>
+          <a href="/docs/agents/">Agent setup</a>
+          <a href="/docs/reference/contract/" aria-current="page"
+            >CLI contract</a
+          >
+          <a href="/docs/reference/agents/">Agent integration</a>
+          <a href="/docs/reference/performance/">Performance</a>
+          <a href="/docs/reference/platforms/">Platforms</a>
+          <a href="/docs/security/">Security</a>
+          <a href="/docs/contributing/">Contributing</a>
+        </nav>
+        <div class="docs-sidebar-sections">
+          <p>On this page</p>
+          <nav class="docs-section-nav" aria-label="Page sections">
+            <a href="#commands" aria-current="location">Commands</a>
+            <a href="#query-contract">Query contract</a>
+            <a href="#formats">Formats</a>
+            <a href="#standard-streams">Standard streams</a>
+            <a href="#resource-controls">Resource controls</a>
+            <a href="#check-output">Check output</a>
+            <a href="#schema-output">Schema output</a>
+            <a href="#diagnostics">Diagnostics</a>
+          </nav>
+        </div>
+      </aside>
+
+      <article class="docs-content docs-reference-content">
+        <p class="eyebrow"><span>Reference</span> Documentation</p>
+        <h1>CLI contract</h1>
+        <p class="docs-deck">
+          Normative commands, query behavior, streams, resource controls,
+          schemas, and diagnostics.
+        </p>
+        <div class="docs-markdown">
+          <p>
+            This document defines the sqrail v0.3 command and process contract.
+          </p>
+          <h2 id="commands">Commands</h2>
+          <pre><code class="language-text">sqrail schema [--memory SIZE] [--threads N] [--timeout DURATION]
+              [--max-input-files N] [--strict-schema] FILE...
+sqrail check [-t NAME=PATH]... [--memory SIZE] [--threads N]
+             [--timeout DURATION] [--max-rows N] [--max-input-files N]
+             [--max-sql-bytes SIZE] [--strict-schema] [SQL|-]
+sqrail run [-t NAME=PATH]... [-o FILE] [--memory SIZE] [--threads N]
+           [--spill DIR [--max-spill SIZE]] [--timeout DURATION]
+           [--max-rows N] [--max-output-bytes SIZE] [--max-input-files N]
+           [--max-sql-bytes SIZE] [--stats] [--strict-schema] [SQL|-]
+sqrail --help
+sqrail --version
+</code></pre>
+          <p>
+            Options may appear before or after the SQL positional argument.
+            Every option that takes a value may appear at most once, except
+            <code>-t</code>, which may be repeated for distinct case-insensitive
+            table names. <code>--</code> ends option parsing, which allows a SQL
+            argument or schema path beginning with <code>-</code>.
+          </p>
+          <p>
+            <code>NAME</code> must match <code>[A-Za-z_][A-Za-z0-9_]*</code>.
+            <code>PATH</code> may name one regular file, a glob whose matches
+            have one format, or a directory containing a partitioned Parquet
+            dataset. Directory traversal is recursive and ignores non-Parquet
+            files. Matches are canonicalized, sorted, deduplicated, and must be
+            non-empty. The first <code>=</code> separates a table name from its
+            path.
+          </p>
+          <p>
+            A multi-file binding is read by column name. Columns introduced or
+            removed between files are included in the combined schema and
+            missing values become <code>null</code>.
+            <code>--strict-schema</code> instead requires every matched file to
+            have identical column names, order, and inferred types; otherwise
+            the command fails with <code>SCHEMA_MISMATCH</code>. This option is
+            available to <code>run</code>, <code>check</code>, and
+            <code>schema</code>.
+          </p>
+          <h2 id="query-contract">Query contract</h2>
+          <ul>
+            <li>
+              SQL is the dialect of the DuckDB version reported by
+              <code>sqrail --version</code>.
+            </li>
+            <li>Exactly one statement is accepted.</li>
+            <li>
+              Its parsed statement type must be <code>SELECT</code>; this
+              includes <code>VALUES</code> and queries beginning with
+              <code>WITH</code>.
+            </li>
+            <li>
+              DDL, DML, <code>COPY</code>, <code>ATTACH</code>,
+              <code>INSTALL</code>, <code>LOAD</code>, PRAGMA statements, and
+              multiple statements are rejected.
+            </li>
+            <li>Bound files are temporary views and are never modified.</li>
+            <li>
+              Row order is undefined unless the query contains
+              <code>ORDER BY</code>.
+            </li>
+          </ul>
+          <p>
+            After table binding, sqrail allowlists the exact canonical input
+            files and disables DuckDB external access. Extension autoloading,
+            automatic installation, and community extensions are disabled before
+            the configuration is locked. Unbound file-reading functions
+            therefore cannot open arbitrary local paths.
+          </p>
+          <h2 id="formats">Formats</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Extension</th>
+                <th class="align-right">Input</th>
+                <th class="align-right">Output</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>.csv</code></td>
+                <td class="align-right">yes</td>
+                <td class="align-right">yes</td>
+              </tr>
+              <tr>
+                <td><code>.tsv</code>, <code>.tab</code></td>
+                <td class="align-right">yes</td>
+                <td class="align-right">yes</td>
+              </tr>
+              <tr>
+                <td><code>.json</code></td>
+                <td class="align-right">yes</td>
+                <td class="align-right">yes, one JSON array</td>
+              </tr>
+              <tr>
+                <td><code>.jsonl</code>, <code>.ndjson</code></td>
+                <td class="align-right">yes</td>
+                <td class="align-right">yes, one object per line</td>
+              </tr>
+              <tr>
+                <td><code>.parquet</code></td>
+                <td class="align-right">yes</td>
+                <td class="align-right">yes</td>
+              </tr>
+            </tbody>
+          </table>
+          <p>
+            Text formats may additionally end in <code>.gz</code> or
+            <code>.zst</code>. External compression of Parquet and
+            <code>.bz2</code>/<code>.xz</code> streams are rejected.
+          </p>
+          <h2 id="standard-streams">Standard streams</h2>
+          <p>
+            Without <code>-o</code>, each result row is encoded as one typed
+            JSON object followed by a newline on stdout. JSON is RFC
+            8259-compatible: non-finite floating-point values are represented as
+            <code>null</code>, including inside nested lists and structs. No
+            status text is written to stdout.
+          </p>
+          <p>
+            With <code>-o</code>, successful execution is silent. The output
+            format follows the file extension. On POSIX, the completed temporary
+            file is atomically linked to the requested name, which fails if that
+            name already exists, and the private temporary name is then removed.
+            A filesystem that cannot create a same-directory hard link returns
+            <code>OUTPUT_COMMIT</code> rather than weakening the no-overwrite
+            guarantee. On Windows, a no-replace, write-through move provides the
+            corresponding commit. POSIX outputs have no group or other
+            permissions. Windows outputs have a protected DACL for the current
+            user and do not inherit access rules.
+          </p>
+          <p>
+            With <code>--stats</code>, a successful <code>run</code> writes
+            exactly one compact JSON object to stderr after the result is
+            complete:
+          </p>
+          <pre><code class="language-json">{
+  &quot;schema_version&quot;: 1,
+  &quot;sqrail_version&quot;: &quot;0.3.3&quot;,
+  &quot;ok&quot;: true,
+  &quot;command&quot;: &quot;run&quot;,
+  &quot;rows&quot;: 3,
+  &quot;bytes&quot;: 57,
+  &quot;elapsed_ms&quot;: 18,
+  &quot;input_files&quot;: 1,
+  &quot;destination&quot;: &quot;stdout&quot;
+}
+</code></pre>
+          <p>
+            <code>rows</code> and <code>bytes</code> describe the emitted
+            result, <code>input_files</code> counts resolved files across all
+            bindings, and <code>destination</code> is <code>stdout</code> or
+            <code>file</code>. No success statistics are emitted after a
+            failure. <code>--stats</code> is not accepted by <code>check</code>.
+          </p>
+          <p>
+            Streaming stdout cannot be rolled back. If execution fails after
+            rows have already been emitted, stdout may contain a valid partial
+            JSONL prefix. Use <code>-o</code> when the consumer requires
+            all-or-nothing output.
+          </p>
+          <h2 id="resource-controls">Resource controls</h2>
+          <ul>
+            <li>
+              <code>--memory SIZE</code> accepts a positive decimal number
+              followed by <code>B</code>, <code>KB</code>, <code>MB</code>,
+              <code>GB</code>, <code>TB</code>, <code>KiB</code>,
+              <code>MiB</code>, <code>GiB</code>, or <code>TiB</code>. Common
+              <code>K</code>, <code>M</code>, <code>G</code>, and
+              <code>T</code> short forms are also accepted for DuckDB resource
+              limits.
+            </li>
+            <li>
+              <code>--threads N</code> accepts an integer from 1 through 1024.
+            </li>
+            <li>
+              <code>--spill DIR</code> creates the root when necessary, then
+              creates a unique, owner-only process workspace beneath it as
+              DuckDB’s temporary directory. Existing sibling files are not
+              allowlisted, and the workspace is removed after DuckDB closes.
+            </li>
+            <li>
+              <code>--max-spill SIZE</code> requires <code>--spill</code>,
+              accepts the same resource-size syntax as <code>--memory</code>,
+              and caps DuckDB temporary storage.
+            </li>
+            <li>
+              <code>--timeout DURATION</code> accepts a positive duration from
+              <code>1ms</code> through 7 days using <code>ms</code>,
+              <code>s</code>, or <code>m</code>. Its absolute deadline begins
+              when command handling starts and covers input discovery, schema
+              inference, planning, execution, and output finalization.
+            </li>
+            <li>
+              <code>--max-rows N</code> accepts an integer from 1 through
+              9223372036854775806. sqrail requests at most
+              <code>N + 1</code> final rows and returns
+              <code>RESULT_LIMIT</code> if the extra row exists. A file
+              destination is not committed after this failure. Streaming stdout
+              may already contain a valid prefix of at most <code>N</code> rows.
+            </li>
+            <li>
+              <code>--max-output-bytes SIZE</code> accepts the explicit
+              <code>B</code>, <code>KB</code>, <code>MB</code>, <code>GB</code>,
+              <code>TB</code>, <code>KiB</code>, <code>MiB</code>,
+              <code>GiB</code>, and <code>TiB</code> byte-size units and
+              interrupts file output after it grows beyond the cap. The
+              <code>K</code>/<code>M</code>/<code>G</code>/<code>T</code>
+              resource shorthands are deliberately excluded from exact byte
+              caps. Its decimal part may have at most six digits and is
+              converted to an exact integer byte count by truncating any
+              sub-byte remainder. JSONL stdout is checked before each buffered
+              write. File destinations are never committed on
+              <code>OUTPUT_LIMIT</code>; stdout may already contain a valid
+              prefix.
+            </li>
+            <li>
+              <code>--max-input-files N</code> accepts an integer from 1 through
+              1000000000 and stops recursive directory or glob expansion as soon
+              as the cumulative count exceeds the cap.
+            </li>
+            <li>
+              <code>--max-sql-bytes SIZE</code> uses the same exact byte-size
+              syntax as <code>--max-output-bytes</code> and bounds either the
+              positional SQL string or incremental stdin reads before parsing.
+            </li>
+          </ul>
+          <p>
+            <code>check</code> accepts <code>--memory</code>,
+            <code>--threads</code>, <code>--timeout</code>,
+            <code>--max-rows</code>, <code>--max-input-files</code>,
+            <code>--max-sql-bytes</code>, and <code>--strict-schema</code>, but
+            not output, output-byte, spill, or stats options.
+            <code>schema</code> accepts <code>--memory</code>,
+            <code>--threads</code>, <code>--timeout</code>,
+            <code>--max-input-files</code>, and <code>--strict-schema</code>.
+            The memory value is a DuckDB memory limit, not a hard
+            operating-system RSS limit. sqrail sets
+            <code>preserve_insertion_order=false</code>. Without
+            <code>--spill</code>, external temporary storage is disabled.
+          </p>
+          <h2 id="check-output">Check output</h2>
+          <p>
+            <code>check</code> binds inputs, validates the read-only statement,
+            and emits result-column metadata, resolved input counts, and a
+            strict JSON physical plan without executing the query:
+          </p>
+          <pre><code class="language-json">{
+  &quot;schema_version&quot;: 1,
+  &quot;sqrail_version&quot;: &quot;0.3.3&quot;,
+  &quot;ok&quot;: true,
+  &quot;columns&quot;: [{ &quot;name&quot;: &quot;total&quot;, &quot;type&quot;: &quot;HUGEINT&quot;, &quot;nullable&quot;: true }],
+  &quot;inputs&quot;: [{ &quot;table&quot;: &quot;sales&quot;, &quot;files&quot;: 1 }],
+  &quot;plan&quot;: [{ &quot;name&quot;: &quot;UNGROUPED_AGGREGATE&quot;, &quot;children&quot;: [], &quot;extra_info&quot;: {} }]
+}
+</code></pre>
+          <p>
+            With <code>--max-rows</code>, the reported columns and plan describe
+            the bounded wrapper that execution would use.
+          </p>
+          <h2 id="schema-output">Schema output</h2>
+          <p><code>schema</code> writes one JSON object per input path:</p>
+          <pre><code class="language-json">{
+  &quot;schema_version&quot;: 1,
+  &quot;sqrail_version&quot;: &quot;0.3.3&quot;,
+  &quot;file&quot;: &quot;/absolute/data.csv&quot;,
+  &quot;files&quot;: 1,
+  &quot;columns&quot;: [{ &quot;name&quot;: &quot;id&quot;, &quot;type&quot;: &quot;BIGINT&quot;, &quot;nullable&quot;: true }]
+}
+</code></pre>
+          <h2 id="diagnostics">Diagnostics</h2>
+          <p>
+            Every handled failure writes exactly one UTF-8 JSON object to
+            stderr. Invalid bytes in operating-system arguments are replaced
+            with U+FFFD:
+          </p>
+          <pre><code class="language-json">{
+  &quot;schema_version&quot;: 1,
+  &quot;sqrail_version&quot;: &quot;0.3.3&quot;,
+  &quot;ok&quot;: false,
+  &quot;code&quot;: &quot;INPUT_NOT_FOUND&quot;,
+  &quot;message&quot;: &quot;input file not found: missing.csv&quot;
+}
+</code></pre>
+          <p>
+            <code>SIGINT</code> and <code>SIGTERM</code> interrupt active
+            planning, schema inference, or execution and return exit 4 with
+            <code>QUERY_INTERRUPTED</code>; private output and spill artifacts
+            are removed. <code>SIGPIPE</code> is converted to an exit 5
+            <code>STDOUT_WRITE</code> diagnostic so the same cleanup runs when a
+            downstream stdout consumer closes early. Windows console Ctrl+C and
+            Ctrl+Break use the same structured interruption path.
+          </p>
+          <p>
+            All machine-readable objects currently use
+            <code>schema_version: 1</code> and include the emitting
+            <code>sqrail_version</code>. Additive fields may appear within a
+            schema version; consumers must ignore unknown fields. A removal,
+            rename, type change, or semantic incompatibility requires a new
+            <code>schema_version</code>.
+          </p>
+          <p>Exit codes are stable:</p>
+          <table>
+            <thead>
+              <tr>
+                <th class="align-right">Exit</th>
+                <th>Class</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="align-right">0</td>
+                <td>success</td>
+              </tr>
+              <tr>
+                <td class="align-right">2</td>
+                <td>command usage</td>
+              </tr>
+              <tr>
+                <td class="align-right">3</td>
+                <td>input file or format</td>
+              </tr>
+              <tr>
+                <td class="align-right">4</td>
+                <td>SQL parse, bind, or execution</td>
+              </tr>
+              <tr>
+                <td class="align-right">5</td>
+                <td>output path or commit</td>
+              </tr>
+              <tr>
+                <td class="align-right">70</td>
+                <td>unexpected internal failure</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <aside class="docs-source-note" aria-label="Machine-readable source">
+          <div>
+            <strong>Prefer plain text?</strong>
+            <span
+              >The rendered page and repository Markdown share one source.</span
+            >
+          </div>
+          <a
+            href="https://raw.githubusercontent.com/yhay81/sqrail/main/docs/CONTRACT.md"
+            >Markdown source <span aria-hidden="true">→</span></a
+          >
+        </aside>
+      </article>
+    </main>
+
+    <footer>
+      <a class="wordmark" href="/">
+        <span class="wordmark-mark" aria-hidden="true"></span>
+        sqrail
+      </a>
+      <p>One query at a time.</p>
+      <div>
+        <a href="/docs/">Docs</a>
+        <a href="https://github.com/yhay81/sqrail">Source</a>
+        <a href="https://github.com/yhay81/sqrail/discussions">Community</a>
+        <a href="https://github.com/yhay81/sqrail/releases">Releases</a>
+      </div>
+    </footer>
+  </body>
+</html>
