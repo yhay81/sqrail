@@ -1,6 +1,6 @@
 {
   "name": "sqrail-site",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "private": true,
   "description": "Validation and Cloudflare deployment tooling for the sqrail documentation site",
   "scripts": {
@@ -22,12 +22,12 @@
   "allowScripts": {
     "esbuild@0.28.1": true,
     "fsevents": false,
-    "workerd@1.20260722.1": true
+    "workerd@1.20260730.1": true
   },
   "devDependencies": {
     "html-validate": "11.6.0",
     "markdown-it": "15.0.0",
     "prettier": "3.9.6",
-    "wrangler": "4.115.0"
+    "wrangler": "4.118.0"
   }
 }
