@@ -91,6 +91,18 @@ for (const file of docsFiles) {
     /<a class="nav-install" href="\/docs\/">Install<\/a>/,
     `${relative}: Install must lead to the quick start`,
   );
+
+  if (relative !== "site/docs/index.html") {
+    inOrder(
+      compact(source),
+      [
+        compact('<article class="docs-content docs-reference-content">'),
+        compact('<aside class="docs-page-sidebar" aria-label="On this page">'),
+        compact('<nav class="docs-section-nav" aria-label="Page sections">'),
+      ],
+      `${relative} page table of contents`,
+    );
+  }
 }
 
 console.log(

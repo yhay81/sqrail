@@ -21,12 +21,15 @@ if (siteHeader) {
   );
 }
 
-const docsSidebarLinks = [
-  ...document.querySelectorAll('.docs-sidebar a[href^="#"]'),
+const docsSectionLinks = [
+  ...document.querySelectorAll('.docs-section-nav a[href^="#"]'),
 ];
-if (docsSidebarLinks.length) {
-  const docsSections = docsSidebarLinks
-    .map((link) => ({ link, section: document.querySelector(link.hash) }))
+if (docsSectionLinks.length) {
+  const docsSections = docsSectionLinks
+    .map((link) => ({
+      link,
+      section: document.getElementById(decodeURIComponent(link.hash.slice(1))),
+    }))
     .filter(({ section }) => section);
   let docsFrame = 0;
 
@@ -43,7 +46,7 @@ if (docsSidebarLinks.length) {
     docsSections.forEach((candidate) => {
       if (candidate.section.offsetTop <= readingLine) current = candidate;
     });
-    docsSidebarLinks.forEach((link) => link.removeAttribute("aria-current"));
+    docsSectionLinks.forEach((link) => link.removeAttribute("aria-current"));
     current?.link.setAttribute("aria-current", "location");
     docsFrame = 0;
   };
