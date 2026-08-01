@@ -103,6 +103,14 @@ jobs:
         run: cmake --preset release
       - name: Build
         run: cmake --build --preset release
+      - name: Verify manual page
+        if: runner.os == 'Linux' && runner.arch == 'X64'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends help2man
+          cmake --preset release
+          cmake --build out/build/release --target sqrail-manpage
+          cmake -E compare_files out/build/release/sqrail.1 docs/man/sqrail.1
       - name: Test
         run: ctest --preset release
       - name: Verify published help
@@ -126,6 +134,7 @@ jobs:
           test -f install/share/sqrail/skills/sqrail/SKILL.md
           test -f install/share/sqrail/skills/sqrail/agents/openai.yaml
           test -f install/share/sqrail/plugin.json
+          test -f install/share/man/man1/sqrail.1
           test -f install/share/doc/sqrail/licenses/duckdb-third-party/zstd/LICENSE
           test "$(find install -type f \( -name '*.a' -o -name '*.h' -o -name '*.hpp' \) | wc -l)" -eq 0
       - name: Verify Linux runtime
@@ -249,6 +258,7 @@ jobs:
           test -f install/share/sqrail/skills/sqrail/SKILL.md
           test -f install/share/sqrail/skills/sqrail/agents/openai.yaml
           test -f install/share/sqrail/plugin.json
+          test -f install/share/man/man1/sqrail.1
           test ! -d install/share/doc/sqrail/licenses/duckdb-third-party
           test "$(find install -type f \( -name '*.a' -o -name '*.h' -o -name '*.hpp' \) | wc -l)" -eq 0
       - name: Verify DuckDB runtime

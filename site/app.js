@@ -21,6 +21,44 @@ if (siteHeader) {
   );
 }
 
+const docsSidebarLinks = [
+  ...document.querySelectorAll('.docs-sidebar a[href^="#"]'),
+];
+if (docsSidebarLinks.length) {
+  const docsSections = docsSidebarLinks
+    .map((link) => ({ link, section: document.querySelector(link.hash) }))
+    .filter(({ section }) => section);
+  let docsFrame = 0;
+
+  const syncDocsNavigation = () => {
+    const headerHeight = Number.parseFloat(
+      getComputedStyle(document.documentElement).getPropertyValue(
+        "--header-height",
+      ),
+    );
+    const readingLine =
+      window.scrollY + headerHeight + window.innerHeight * 0.35;
+    let current = docsSections[0];
+
+    docsSections.forEach((candidate) => {
+      if (candidate.section.offsetTop <= readingLine) current = candidate;
+    });
+    docsSidebarLinks.forEach((link) => link.removeAttribute("aria-current"));
+    current?.link.setAttribute("aria-current", "location");
+    docsFrame = 0;
+  };
+
+  const scheduleDocsNavigation = () => {
+    if (!docsFrame) {
+      docsFrame = window.requestAnimationFrame(syncDocsNavigation);
+    }
+  };
+
+  syncDocsNavigation();
+  window.addEventListener("scroll", scheduleDocsNavigation, { passive: true });
+  window.addEventListener("resize", scheduleDocsNavigation);
+}
+
 const githubStarNodes = [...document.querySelectorAll("[data-github-stars]")];
 const githubRepoLinks = [...document.querySelectorAll("[data-github-repo]")];
 if (githubStarNodes.length) {

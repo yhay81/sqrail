@@ -59,6 +59,16 @@ actionlint
 GH_TOKEN=$(gh auth token) zizmor --pedantic .
 ```
 
+The committed `docs/man/sqrail.1` is generated from the built executable and
+`docs/man/sqrail.h2m`. After changing the CLI help or version, install
+`help2man` and refresh it with:
+
+```sh
+cmake --preset release
+cmake --build out/build/release --target sqrail-manpage
+cmake -E copy out/build/release/sqrail.1 docs/man/sqrail.1
+```
+
 Format C++ with the repository `.clang-format`. CI enforces the same check with
 `clang-format` 18, so a different major version can disagree; `uvx
 clang-format@18.1.8` provides it when your platform packages another release.

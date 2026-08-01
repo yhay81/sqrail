@@ -368,6 +368,13 @@ install(
   RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
   COMPONENT sqrail
 )
+if(UNIX)
+  install(
+    FILES docs/man/sqrail.1
+    DESTINATION "${CMAKE_INSTALL_MANDIR}/man1"
+    COMPONENT sqrail
+  )
+endif()
 install(
   FILES README.md LICENSE THIRD_PARTY_NOTICES.md CHANGELOG.md SECURITY.md
   DESTINATION "${CMAKE_INSTALL_DOCDIR}"
@@ -434,6 +441,28 @@ if(SQRAIL_DUCKDB_PROVIDER STREQUAL "BUNDLED")
       PATTERN "COPYING*"
       PATTERN "NOTICE*"
   )
+endif()
+
+find_program(SQRAIL_HELP2MAN help2man)
+if(SQRAIL_HELP2MAN)
+  set(SQRAIL_GENERATED_MANPAGE "${CMAKE_CURRENT_BINARY_DIR}/sqrail.1")
+  add_custom_command(
+    OUTPUT "${SQRAIL_GENERATED_MANPAGE}"
+    COMMAND
+      "${CMAKE_COMMAND}" -E env
+      "SOURCE_DATE_EPOCH=1785542400"
+      "${SQRAIL_HELP2MAN}"
+      --no-info
+      --section=1
+      --name=run\ bounded\ read-only\ SQL\ over\ local\ files
+      --include=${CMAKE_CURRENT_SOURCE_DIR}/docs/man/sqrail.h2m
+      --output=${SQRAIL_GENERATED_MANPAGE}
+      "$<TARGET_FILE:sqrail>"
+    DEPENDS sqrail "${CMAKE_CURRENT_SOURCE_DIR}/docs/man/sqrail.h2m"
+    COMMENT "Generating sqrail(1) from the executable help contract"
+    VERBATIM
+  )
+  add_custom_target(sqrail-manpage DEPENDS "${SQRAIL_GENERATED_MANPAGE}")
 endif()
 
 if(
