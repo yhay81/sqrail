@@ -33,10 +33,10 @@ jobs:
             --remap "^https://sqrails[.]yhay81[.]com file://${{ github.workspace }}/site"
             --remap "https://github[.]com/${{ github.repository }}/blob/main https://github.com/${{ github.repository }}/blob/${{ github.sha }}"
             --remap "https://github[.]com/${{ github.repository }}/tree/main https://github.com/${{ github.repository }}/tree/${{ github.sha }}"
-            --remap "https://github[.]com/${{ github.repository }}/releases/tag/v0[.]3[.]3 https://github.com/${{ github.repository }}/commit/${{ github.sha }}"
-            --remap "https://github[.]com/${{ github.repository }}/releases/download/v0[.]3[.]3/.* https://github.com/${{ github.repository }}/commit/${{ github.sha }}"
-            --remap "https://github[.]com/${{ github.repository }}/compare/v0[.]3[.]2[.][.][.]v0[.]3[.]3 https://github.com/${{ github.repository }}/commit/${{ github.sha }}"
-            --remap "https://github[.]com/${{ github.repository }}/compare/v0[.]3[.]3[.][.][.]HEAD https://github.com/${{ github.repository }}/commit/${{ github.sha }}"
+            --remap "https://github[.]com/${{ github.repository }}/releases/tag/v0[.]3[.]4 https://github.com/${{ github.repository }}/commit/${{ github.sha }}"
+            --remap "https://github[.]com/${{ github.repository }}/releases/download/v0[.]3[.]4/.* https://github.com/${{ github.repository }}/commit/${{ github.sha }}"
+            --remap "https://github[.]com/${{ github.repository }}/compare/v0[.]3[.]3[.][.][.]v0[.]3[.]4 https://github.com/${{ github.repository }}/commit/${{ github.sha }}"
+            --remap "https://github[.]com/${{ github.repository }}/compare/v0[.]3[.]4[.][.][.]HEAD https://github.com/${{ github.repository }}/commit/${{ github.sha }}"
             --exclude "^https?://github[.]com/yhay81/sqrail/compare/"
             --exclude-path node_modules
             --exclude-path out

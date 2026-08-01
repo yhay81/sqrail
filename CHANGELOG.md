@@ -5,6 +5,23 @@ versions follow semantic versioning.
 
 ## [Unreleased]
 
+## [0.3.4] - 2026-08-02
+
+### Added
+
+- a generated, self-contained technical documentation site with stable routes,
+  source-linked references, and human-readable navigation
+- a standard Unix manual page installed by source builds and Homebrew, with CI
+  verifying that the checked-in page matches the executable
+
+### Changed
+
+- the documentation hierarchy, typography, and navigation for a denser technical
+  presentation, including a conventional right-side page outline
+- agent installation guidance to balance rendered documentation with a compact
+  raw Markdown bootstrap and minimize legacy Gemini CLI-specific text
+- the pinned Cloudflare deployment toolchain to Wrangler 4.118.0
+
 ## [0.3.3] - 2026-08-01
 
 ### Added
@@ -180,7 +197,8 @@ versions follow semantic versioning.
 - Linux and macOS release archives for x86-64 and Arm64
 - SHA-256 checksums and build-provenance attestations
 
-[Unreleased]: https://github.com/yhay81/sqrail/compare/v0.3.3...HEAD
+[Unreleased]: https://github.com/yhay81/sqrail/compare/v0.3.4...HEAD
+[0.3.4]: https://github.com/yhay81/sqrail/compare/v0.3.3...v0.3.4
 [0.3.3]: https://github.com/yhay81/sqrail/compare/v0.3.2...v0.3.3
 [0.3.2]: https://github.com/yhay81/sqrail/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/yhay81/sqrail/compare/v0.3.0...v0.3.1
