@@ -9,9 +9,10 @@
     "format": "prettier --write .htmlvalidate.json package.json plugin.json \"*.md\" \"docs/*.md\" \"benchmarks/*.md\" \"benchmarks/agent-eval/*.md\" \".github/**/*.md\" \".github/**/*.yml\" \"skills/**/*.md\" \"skills/**/*.yaml\" \"site/**/*.html\" \"site/**/*.md\" site/styles.css site/app.js \"tools/*.mjs\" wrangler.jsonc",
     "format:check": "prettier --check .htmlvalidate.json package.json plugin.json \"*.md\" \"docs/*.md\" \"benchmarks/*.md\" \"benchmarks/agent-eval/*.md\" \".github/**/*.md\" \".github/**/*.yml\" \"skills/**/*.md\" \"skills/**/*.yaml\" \"site/**/*.html\" \"site/**/*.md\" site/styles.css site/app.js \"tools/*.mjs\" wrangler.jsonc",
     "agent:check": "node tools/check-agent-distribution.mjs",
+    "site:navigation": "node tools/check-site-navigation.mjs",
     "site:html": "html-validate \"site/**/*.html\"",
     "site:js": "node --check site/app.js",
-    "site:check": "npm run format:check && npm run docs:check && npm run agent:check && npm run site:html && npm run site:js && npm run cloudflare:check",
+    "site:check": "npm run format:check && npm run docs:check && npm run agent:check && npm run site:navigation && npm run site:html && npm run site:js && npm run cloudflare:check",
     "cloudflare:check": "wrangler deploy --dry-run",
     "deploy:cloudflare": "npm run docs:build && wrangler deploy"
   },

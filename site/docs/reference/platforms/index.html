@@ -50,9 +50,11 @@
           <span class="nav-tagline">Agent-safe SQL on files</span>
         </div>
         <nav class="nav-links" aria-label="Primary">
-          <a href="/docs/">Documentation</a>
+          <a href="/docs/">Get started</a>
           <a href="/docs/agents/">Agent setup</a>
-          <a href="/docs/reference/contract/">Reference</a>
+          <a href="/docs/reference/contract/" aria-current="location"
+            >Reference</a
+          >
         </nav>
         <div class="nav-actions">
           <a
@@ -98,16 +100,39 @@
 
     <main class="docs-shell docs-shell-reference" id="main">
       <aside class="docs-sidebar" aria-label="Documentation navigation">
-        <p>Documentation</p>
+        <p class="docs-sidebar-title">sqrail docs</p>
         <nav class="docs-global-nav" aria-label="Documentation pages">
-          <a href="/docs/">Start here</a>
-          <a href="/docs/agents/">Agent setup</a>
-          <a href="/docs/reference/contract/">CLI contract</a>
-          <a href="/docs/reference/agents/">Agent integration</a>
-          <a href="/docs/reference/performance/">Performance</a>
-          <a href="/docs/reference/platforms/" aria-current="page">Platforms</a>
-          <a href="/docs/security/">Security</a>
-          <a href="/docs/contributing/">Contributing</a>
+          <div class="docs-nav-group">
+            <p>Start</p>
+            <div>
+              <a href="/docs/">Quick start</a
+              ><a href="/docs/agents/">Agent setup</a>
+            </div>
+          </div>
+          <div class="docs-nav-group">
+            <p>Use</p>
+            <div>
+              <a href="/docs/reference/contract/">CLI contract</a
+              ><a href="/docs/reference/agents/">Agent integration</a>
+            </div>
+          </div>
+          <div class="docs-nav-group">
+            <p>Operate</p>
+            <div>
+              <a href="/docs/reference/performance/">Performance</a
+              ><a href="/docs/reference/benchmarks/">Benchmark policy</a
+              ><a href="/docs/reference/platforms/" aria-current="page"
+                >Platforms</a
+              ><a href="/docs/security/">Security</a>
+            </div>
+          </div>
+          <div class="docs-nav-group">
+            <p>Project</p>
+            <div>
+              <a href="/docs/contributing/">Contributing</a
+              ><a href="/docs/contributing/support/">Support</a>
+            </div>
+          </div>
         </nav>
         <div class="docs-sidebar-sections">
           <p>On this page</p>
@@ -122,7 +147,7 @@
       </aside>
 
       <article class="docs-content docs-reference-content">
-        <p class="eyebrow"><span>Reference</span> Documentation</p>
+        <p class="eyebrow"><span>Reference</span> sqrail docs</p>
         <h1>Platform support</h1>
         <p class="docs-deck">
           Release targets, support tiers, filesystem semantics, and the exact
