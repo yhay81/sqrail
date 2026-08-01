@@ -121,15 +121,37 @@ const pages = [
   },
 ];
 
-const primaryNavigation = [
-  ["Start here", "/docs/"],
-  ["Agent setup", "/docs/agents/"],
-  ["CLI contract", "/docs/reference/contract/"],
-  ["Agent integration", "/docs/reference/agents/"],
-  ["Performance", "/docs/reference/performance/"],
-  ["Platforms", "/docs/reference/platforms/"],
-  ["Security", "/docs/security/"],
-  ["Contributing", "/docs/contributing/"],
+const documentationNavigation = [
+  {
+    label: "Start",
+    links: [
+      ["Quick start", "/docs/"],
+      ["Agent setup", "/docs/agents/"],
+    ],
+  },
+  {
+    label: "Use",
+    links: [
+      ["CLI contract", "/docs/reference/contract/"],
+      ["Agent integration", "/docs/reference/agents/"],
+    ],
+  },
+  {
+    label: "Operate",
+    links: [
+      ["Performance", "/docs/reference/performance/"],
+      ["Benchmark policy", "/docs/reference/benchmarks/"],
+      ["Platforms", "/docs/reference/platforms/"],
+      ["Security", "/docs/security/"],
+    ],
+  },
+  {
+    label: "Project",
+    links: [
+      ["Contributing", "/docs/contributing/"],
+      ["Support", "/docs/contributing/support/"],
+    ],
+  },
 ];
 
 const publicRoutes = new Map([
@@ -255,17 +277,26 @@ const renderRepositoryLink = () => `
   </a>`;
 
 const renderPageNavigation = (page) =>
-  primaryNavigation
-    .map(([label, route]) => {
-      const current =
-        route === page.route
-          ? "page"
-          : route === page.navRoute
-            ? "location"
-            : null;
-      return `
-        <a href="${route}"${current ? ` aria-current="${current}"` : ""}>${label}</a>`;
-    })
+  documentationNavigation
+    .map(
+      ({ label, links }) => `
+        <div class="docs-nav-group">
+          <p>${label}</p>
+          <div>
+            ${links
+              .map(([linkLabel, route]) => {
+                const current =
+                  route === page.route
+                    ? "page"
+                    : route === page.navRoute
+                      ? "location"
+                      : null;
+                return `<a href="${route}"${current ? ` aria-current="${current}"` : ""}>${linkLabel}</a>`;
+              })
+              .join("")}
+          </div>
+        </div>`,
+    )
     .join("");
 
 const renderSectionNavigation = (headings) =>
@@ -321,9 +352,15 @@ const renderPage = async (page, source) => {
           <span class="nav-tagline">Agent-safe SQL on files</span>
         </div>
         <nav class="nav-links" aria-label="Primary">
-          <a href="/docs/">Documentation</a>
-          <a href="/docs/agents/">Agent setup</a>
-          <a href="/docs/reference/contract/">Reference</a>
+          <a href="/docs/"${page.route === "/docs/" ? ' aria-current="page"' : ""}>Get started</a>
+          <a href="/docs/agents/"${page.route === "/docs/agents/" ? ' aria-current="page"' : ""}>Agent setup</a>
+          <a href="/docs/reference/contract/"${
+            page.route === "/docs/reference/contract/"
+              ? ' aria-current="page"'
+              : page.route !== "/docs/agents/"
+                ? ' aria-current="location"'
+                : ""
+          }>Reference</a>
         </nav>
         <div class="nav-actions">
           ${renderRepositoryLink()}
@@ -334,7 +371,7 @@ const renderPage = async (page, source) => {
 
     <main class="docs-shell docs-shell-reference" id="main">
       <aside class="docs-sidebar" aria-label="Documentation navigation">
-        <p>Documentation</p>
+        <p class="docs-sidebar-title">sqrail docs</p>
         <nav class="docs-global-nav" aria-label="Documentation pages">
           ${renderPageNavigation(page)}
         </nav>
@@ -347,7 +384,7 @@ const renderPage = async (page, source) => {
       </aside>
 
       <article class="docs-content docs-reference-content">
-        <p class="eyebrow"><span>${escapeHtml(page.category)}</span> Documentation</p>
+        <p class="eyebrow"><span>${escapeHtml(page.category)}</span> sqrail docs</p>
         <h1>${title}</h1>
         <p class="docs-deck">${description}</p>
         <div class="docs-markdown">

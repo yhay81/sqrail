@@ -39,7 +39,7 @@
           <span class="nav-tagline">Agent-safe SQL on files</span>
         </div>
         <nav class="nav-links" aria-label="Primary">
-          <a href="/docs/" aria-current="page">Documentation</a>
+          <a href="/docs/" aria-current="page">Get started</a>
           <a href="/docs/agents/">Agent setup</a>
           <a href="/docs/reference/contract/">Reference</a>
         </nav>
@@ -80,32 +80,64 @@
               >
             </span>
           </a>
-          <a class="nav-install" href="#install">Install</a>
+          <a class="nav-install" href="/docs/">Install</a>
         </div>
       </div>
     </header>
 
     <main class="docs-shell" id="main">
-      <aside class="docs-sidebar">
-        <p>On this page</p>
-        <nav aria-label="Documentation sections">
-          <a href="#install" aria-current="location">Install</a>
-          <a href="#agent-skill">Agent Skill</a>
-          <a href="#first-query">First query</a>
-          <a href="#three-verbs">Three verbs</a>
-          <a href="#limits">Boundaries</a>
-          <a href="#files">File formats</a>
-          <a href="#reference">Reference</a>
+      <aside class="docs-sidebar" aria-label="Documentation navigation">
+        <p class="docs-sidebar-title">sqrail docs</p>
+        <nav class="docs-global-nav" aria-label="Documentation pages">
+          <div class="docs-nav-group">
+            <p>Start</p>
+            <div>
+              <a href="/docs/" aria-current="page">Quick start</a>
+              <a href="/docs/agents/">Agent setup</a>
+            </div>
+          </div>
+          <div class="docs-nav-group">
+            <p>Use</p>
+            <div>
+              <a href="/docs/reference/contract/">CLI contract</a>
+              <a href="/docs/reference/agents/">Agent integration</a>
+            </div>
+          </div>
+          <div class="docs-nav-group">
+            <p>Operate</p>
+            <div>
+              <a href="/docs/reference/performance/">Performance</a>
+              <a href="/docs/reference/benchmarks/">Benchmark policy</a>
+              <a href="/docs/reference/platforms/">Platforms</a>
+              <a href="/docs/security/">Security</a>
+            </div>
+          </div>
+          <div class="docs-nav-group">
+            <p>Project</p>
+            <div>
+              <a href="/docs/contributing/">Contributing</a>
+              <a href="/docs/contributing/support/">Support</a>
+            </div>
+          </div>
         </nav>
       </aside>
 
       <article class="docs-content">
-        <p class="eyebrow"><span>Start here</span> 3-minute guide</p>
-        <h1>Bind. Check.<br />Run.</h1>
+        <p class="eyebrow"><span>Quick start</span> 3-minute guide</p>
+        <h1>Get started.</h1>
         <p class="docs-deck">
-          sqrail gives coding agents one predictable path from SQL and local
-          files to machine-readable output.
+          Install one executable, run a bounded query, then follow the human or
+          agent path that matches your work.
         </p>
+        <nav class="docs-page-index" aria-label="Quick start steps">
+          <a href="#install"><span>01</span>Install</a>
+          <a href="#agent-skill"><span>02</span>Agent Skill</a>
+          <a href="#first-query"><span>03</span>First query</a>
+          <a href="#three-verbs"><span>04</span>Three verbs</a>
+          <a href="#limits"><span>05</span>Boundaries</a>
+          <a href="#files"><span>06</span>File formats</a>
+          <a href="#reference"><span>07</span>Reference</a>
+        </nav>
 
         <section id="install">
           <p class="section-label">01 / Install</p>
@@ -139,10 +171,9 @@ gh skill install yhay81/sqrail sqrail \
           <p>
             Replace <code>codex</code> with the current host, such as
             <code>claude-code</code>, <code>cursor</code>, or
-            <code>github-copilot</code>. Google's current consumer route,
-            AGY/Antigravity CLI, uses
+            <code>github-copilot</code>. AGY/Antigravity CLI uses
             <code>agy plugin install https://github.com/yhay81/sqrail</code>. An
-            complete flow is available in the
+            end-to-end flow is available in the
             <a class="text-link" href="/docs/agents/">
               Agent setup guide <span aria-hidden="true">→</span>
             </a>
@@ -254,39 +285,70 @@ SQL</code></pre>
         <section id="reference">
           <p class="section-label">07 / Reference</p>
           <h2>Follow the contract.<br />Audit the evidence.</h2>
-          <div class="doc-links">
-            <a href="/docs/reference/contract/">
-              <strong>CLI contract →</strong>
-              <small>Normative behavior, JSON schemas, and exit codes</small>
-            </a>
-            <a href="/docs/reference/agents/">
-              <strong>Agent integration →</strong>
-              <small>Context, invocation, and stop-condition guidance</small>
-            </a>
-            <a href="/docs/reference/performance/">
-              <strong>Performance baselines →</strong>
-              <small>Measured size, startup, memory, and throughput</small>
-            </a>
-            <a href="/docs/reference/benchmarks/">
-              <strong>Benchmark policy →</strong>
-              <small>Reproducible performance claims and harnesses</small>
-            </a>
-            <a href="/docs/reference/platforms/">
-              <strong>Platform support →</strong>
-              <small>Release targets and tested support tiers</small>
-            </a>
-            <a href="/docs/security/">
-              <strong>Security boundary →</strong>
-              <small>Threat model, guarantees, and non-goals</small>
-            </a>
-            <a href="/docs/contributing/">
-              <strong>Contributing →</strong>
-              <small>How to propose a focused, verifiable change</small>
-            </a>
-            <a href="https://github.com/yhay81/sqrail/discussions">
-              <strong>Community Q&amp;A →</strong>
-              <small>Ask a question or share a working integration</small>
-            </a>
+          <div class="doc-groups">
+            <div class="doc-group" role="group" aria-labelledby="reference-use">
+              <h3 id="reference-use">Use</h3>
+              <div class="doc-links">
+                <a href="/docs/reference/contract/">
+                  <strong>CLI contract →</strong>
+                  <small
+                    >Normative behavior, JSON schemas, and exit codes</small
+                  >
+                </a>
+                <a href="/docs/reference/agents/">
+                  <strong>Agent integration →</strong>
+                  <small
+                    >Context, invocation, and stop-condition guidance</small
+                  >
+                </a>
+                <a href="/docs/security/">
+                  <strong>Security boundary →</strong>
+                  <small>Threat model, guarantees, and non-goals</small>
+                </a>
+              </div>
+            </div>
+            <div
+              class="doc-group"
+              role="group"
+              aria-labelledby="reference-operate"
+            >
+              <h3 id="reference-operate">Operate</h3>
+              <div class="doc-links">
+                <a href="/docs/reference/performance/">
+                  <strong>Performance baselines →</strong>
+                  <small>Measured size, startup, memory, and throughput</small>
+                </a>
+                <a href="/docs/reference/benchmarks/">
+                  <strong>Benchmark policy →</strong>
+                  <small>Reproducible performance claims and harnesses</small>
+                </a>
+                <a href="/docs/reference/platforms/">
+                  <strong>Platform support →</strong>
+                  <small>Release targets and tested support tiers</small>
+                </a>
+              </div>
+            </div>
+            <div
+              class="doc-group"
+              role="group"
+              aria-labelledby="reference-project"
+            >
+              <h3 id="reference-project">Project</h3>
+              <div class="doc-links">
+                <a href="/docs/contributing/">
+                  <strong>Contributing →</strong>
+                  <small>How to propose a focused, verifiable change</small>
+                </a>
+                <a href="/docs/contributing/support/">
+                  <strong>Support →</strong>
+                  <small>Choose the right public or private channel</small>
+                </a>
+                <a href="https://github.com/yhay81/sqrail/discussions">
+                  <strong>Community Q&amp;A →</strong>
+                  <small>Ask a question or share a working integration</small>
+                </a>
+              </div>
+            </div>
           </div>
           <div class="machine-docs">
             <strong>For agents</strong>

@@ -59,9 +59,9 @@
           <span class="nav-tagline">Agent-safe SQL on files</span>
         </div>
         <nav class="nav-links" aria-label="Primary">
-          <a href="#workflow">Workflow</a>
-          <a href="#boundary">Why sqrail</a>
-          <a href="/docs/">Docs</a>
+          <a href="/docs/">Get started</a>
+          <a href="/docs/agents/">Agent setup</a>
+          <a href="/docs/reference/contract/">Reference</a>
         </nav>
         <div class="nav-actions">
           <a
@@ -100,7 +100,7 @@
               >
             </span>
           </a>
-          <a class="nav-install" href="#get-sqrail">Install</a>
+          <a class="nav-install" href="/docs/">Install</a>
         </div>
       </div>
     </header>
@@ -266,14 +266,12 @@
               </div>
             </div>
             <p class="install-aside">
+              <a href="/docs/">Get started <span aria-hidden="true">→</span></a>
               <a href="/docs/agents/"
                 >Agent setup <span aria-hidden="true">→</span></a
               >
-              <a href="/docs/"
-                >3-minute guide <span aria-hidden="true">→</span></a
-              >
-              <a href="https://github.com/yhay81/sqrail/releases/tag/v0.3.3"
-                >Arm64 &amp; checksums <span aria-hidden="true">→</span></a
+              <a href="/docs/reference/contract/"
+                >CLI reference <span aria-hidden="true">→</span></a
               >
             </p>
           </div>
@@ -400,30 +398,13 @@
       </section>
 
       <section
-        class="manifesto reveal"
-        id="model"
-        aria-labelledby="model-title"
-      >
-        <p class="section-label">The operating model</p>
-        <h2 id="model-title">
-          The model writes SQL.<br />
-          <span>sqrail holds the boundary.</span>
-        </h2>
-        <p>
-          Canonical file binding, streamed execution, atomic output, explicit
-          resource limits, and strict JSON diagnostics—without teaching an agent
-          another query language.
-        </p>
-      </section>
-
-      <section
         class="sequence reveal"
         id="workflow"
         aria-labelledby="sequence-title"
       >
         <div class="sequence-heading">
           <p class="section-label">Three verbs</p>
-          <h2 id="sequence-title">A decision rail, not a toolbox.</h2>
+          <h2 id="sequence-title">Three commands. One path.</h2>
         </div>
         <ol class="sequence-list">
           <li>
@@ -626,40 +607,44 @@ Errors are one stderr JSON.</code></pre>
 
       <section class="docs reveal" aria-labelledby="docs-title">
         <div class="docs-heading">
-          <p class="section-label">Documentation</p>
-          <h2 id="docs-title">
-            Follow the contract.<br />Verify the evidence.
-          </h2>
+          <p class="section-label">Choose the next step</p>
+          <h2 id="docs-title">Start quickly.<br />Go deeper when needed.</h2>
         </div>
         <nav class="docs-index" aria-label="Documentation">
           <a href="/docs/">
             <span>01</span>
-            <strong>Quick start</strong>
+            <strong>Get started</strong>
             <small>Install, bind, inspect, run</small>
             <i aria-hidden="true">→</i>
           </a>
-          <a href="/docs/reference/contract/">
+          <a href="/docs/agents/">
             <span>02</span>
+            <strong>Agent setup</strong>
+            <small>Install the CLI and optional Skill</small>
+            <i aria-hidden="true">→</i>
+          </a>
+          <a href="/docs/reference/contract/">
+            <span>03</span>
             <strong>CLI contract</strong>
             <small>Normative behavior and exit codes</small>
             <i aria-hidden="true">→</i>
           </a>
-          <a href="/docs/reference/benchmarks/">
-            <span>03</span>
-            <strong>Benchmark policy</strong>
-            <small>Equivalent work or no claim</small>
-            <i aria-hidden="true">→</i>
-          </a>
-          <a href="/docs/reference/platforms/">
+          <a href="/docs/reference/performance/">
             <span>04</span>
-            <strong>Platform support</strong>
-            <small>Tested release tiers</small>
+            <strong>Performance</strong>
+            <small>Baselines and benchmark policy</small>
             <i aria-hidden="true">→</i>
           </a>
-          <a href="https://github.com/yhay81/sqrail/discussions">
+          <a href="/docs/security/">
             <span>05</span>
-            <strong>Community</strong>
-            <small>Ask, share, and contribute</small>
+            <strong>Security</strong>
+            <small>Guarantees, boundaries, and non-goals</small>
+            <i aria-hidden="true">→</i>
+          </a>
+          <a href="/docs/contributing/">
+            <span>06</span>
+            <strong>Contributing</strong>
+            <small>Issues, tests, and reviewable changes</small>
             <i aria-hidden="true">→</i>
           </a>
         </nav>
@@ -685,6 +670,13 @@ Errors are one stderr JSON.</code></pre>
           </button>
         </div>
         <p>Linux, macOS, and Windows · Arm64 and x86-64 · MIT licensed</p>
+        <nav class="install-next" aria-label="After installation">
+          <a href="/docs/">Open the quick start →</a>
+          <a href="/docs/agents/">Set up an agent →</a>
+          <a href="https://github.com/yhay81/sqrail/releases"
+            >Other platforms →</a
+          >
+        </nav>
       </section>
     </main>
 
