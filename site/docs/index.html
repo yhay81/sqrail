@@ -21,6 +21,11 @@
     />
     <meta name="twitter:card" content="summary_large_image" />
     <link rel="canonical" href="https://sqrails.yhay81.com/docs/" />
+    <link
+      rel="alternate"
+      type="text/markdown"
+      href="https://raw.githubusercontent.com/yhay81/sqrail/main/docs/README.md"
+    />
     <title>Documentation — sqrail</title>
     <link rel="icon" href="/icon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="/styles.css" />
@@ -85,7 +90,7 @@
       </div>
     </header>
 
-    <main class="docs-shell" id="main">
+    <main class="docs-shell docs-shell-reference" id="main">
       <aside class="docs-sidebar" aria-label="Documentation navigation">
         <p class="docs-sidebar-title">sqrail docs</p>
         <nav class="docs-global-nav" aria-label="Documentation pages">
@@ -116,29 +121,30 @@
             <p>Project</p>
             <div>
               <a href="/docs/contributing/">Contributing</a>
+              <a href="/docs/contributing/testing/">Testing</a>
               <a href="/docs/contributing/support/">Support</a>
+              <a href="/docs/contributing/code-of-conduct/">Code of Conduct</a>
             </div>
           </div>
         </nav>
       </aside>
 
-      <article class="docs-content">
-        <p class="eyebrow"><span>Quick start</span> 3-minute guide</p>
+      <article class="docs-content docs-reference-content">
+        <div class="docs-page-meta">
+          <p class="eyebrow"><span>Quick start</span> 3-minute guide</p>
+          <a
+            class="docs-markdown-link"
+            href="https://raw.githubusercontent.com/yhay81/sqrail/main/docs/README.md"
+            type="text/markdown"
+          >
+            Markdown <span aria-hidden="true">↗</span>
+          </a>
+        </div>
         <h1>Get started.</h1>
         <p class="docs-deck">
           Install one executable, run a bounded query, then follow the human or
           agent path that matches your work.
         </p>
-        <nav class="docs-page-index" aria-label="Quick start steps">
-          <a href="#install"><span>01</span>Install</a>
-          <a href="#agent-skill"><span>02</span>Agent Skill</a>
-          <a href="#first-query"><span>03</span>First query</a>
-          <a href="#three-verbs"><span>04</span>Three verbs</a>
-          <a href="#limits"><span>05</span>Boundaries</a>
-          <a href="#files"><span>06</span>File formats</a>
-          <a href="#reference"><span>07</span>Reference</a>
-        </nav>
-
         <section id="install">
           <p class="section-label">01 / Install</p>
           <h2>One executable.</h2>
@@ -369,7 +375,34 @@ SQL</code></pre>
             </div>
           </div>
         </section>
+
+        <nav
+          class="docs-pagination"
+          aria-label="Previous and next documentation pages"
+        >
+          <span class="docs-pagination-empty" aria-hidden="true"></span>
+          <a
+            class="docs-pagination-link docs-pagination-next"
+            href="/docs/agents/"
+          >
+            <span>Next</span>
+            <strong>Agent setup <span aria-hidden="true">→</span></strong>
+          </a>
+        </nav>
       </article>
+
+      <aside class="docs-page-sidebar" aria-label="On this page">
+        <p>On this page</p>
+        <nav class="docs-section-nav" aria-label="Page sections">
+          <a href="#install" aria-current="location">Install</a>
+          <a href="#agent-skill">Agent Skill</a>
+          <a href="#first-query">First query</a>
+          <a href="#three-verbs">Three verbs</a>
+          <a href="#limits">Boundaries</a>
+          <a href="#files">File formats</a>
+          <a href="#reference">Reference</a>
+        </nav>
+      </aside>
     </main>
 
     <footer>

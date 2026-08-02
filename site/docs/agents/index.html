@@ -121,14 +121,25 @@
             <p>Project</p>
             <div>
               <a href="/docs/contributing/">Contributing</a
-              ><a href="/docs/contributing/support/">Support</a>
+              ><a href="/docs/contributing/testing/">Testing</a
+              ><a href="/docs/contributing/support/">Support</a
+              ><a href="/docs/contributing/code-of-conduct/">Code of Conduct</a>
             </div>
           </div>
         </nav>
       </aside>
 
       <article class="docs-content docs-reference-content">
-        <p class="eyebrow"><span>Guide</span> sqrail docs</p>
+        <div class="docs-page-meta">
+          <p class="eyebrow"><span>Guide</span> sqrail docs</p>
+          <a
+            class="docs-markdown-link"
+            href="https://sqrails.yhay81.com/install-agent.md"
+            type="text/markdown"
+          >
+            Markdown <span aria-hidden="true">↗</span>
+          </a>
+        </div>
         <h1>Agent setup</h1>
         <p class="docs-deck">
           Install sqrail and its optional Agent Skill with a review-first path
@@ -221,18 +232,27 @@ gh skill install yhay81/sqrail sqrail --agent AGENT --scope user
             required query once, and stop after success.
           </p>
         </div>
-        <aside class="docs-source-note" aria-label="Machine-readable source">
-          <div>
-            <strong>Prefer plain text?</strong>
-            <span
-              >This page and the agent-readable installer share one
-              source.</span
-            >
-          </div>
-          <a href="https://sqrails.yhay81.com/install-agent.md"
-            >Markdown source <span aria-hidden="true">→</span></a
+
+        <nav
+          class="docs-pagination"
+          aria-label="Previous and next documentation pages"
+        >
+          <a
+            class="docs-pagination-link docs-pagination-previous"
+            href="/docs/"
           >
-        </aside>
+            <span>Previous</span>
+            <strong><span aria-hidden="true">←</span> Quick start</strong>
+          </a>
+
+          <a
+            class="docs-pagination-link docs-pagination-next"
+            href="/docs/reference/contract/"
+          >
+            <span>Next</span>
+            <strong>CLI contract <span aria-hidden="true">→</span></strong>
+          </a>
+        </nav>
       </article>
 
       <aside class="docs-page-sidebar" aria-label="On this page">

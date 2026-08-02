@@ -1,3 +1,6 @@
 # Python is used only for repository tests, benchmarks, and release tooling.
 # The shipped CLI and its runtime are C++.
 *.py -linguist-detectable
+
+# The checked-in site is documentation, not the implementation language.
+site/** linguist-documentation

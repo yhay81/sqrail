@@ -39,7 +39,54 @@ const docsGroups = [
   ["Start", "Quick start", "Agent setup"],
   ["Use", "CLI contract", "Agent integration"],
   ["Operate", "Performance", "Benchmark policy", "Platforms", "Security"],
-  ["Project", "Contributing", "Support"],
+  ["Project", "Contributing", "Testing", "Support", "Code of Conduct"],
+];
+
+const docsSequence = [
+  ["site/docs/index.html", "/docs/", "Quick start"],
+  ["site/docs/agents/index.html", "/docs/agents/", "Agent setup"],
+  [
+    "site/docs/reference/contract/index.html",
+    "/docs/reference/contract/",
+    "CLI contract",
+  ],
+  [
+    "site/docs/reference/agents/index.html",
+    "/docs/reference/agents/",
+    "Agent integration",
+  ],
+  [
+    "site/docs/reference/performance/index.html",
+    "/docs/reference/performance/",
+    "Performance baselines",
+  ],
+  [
+    "site/docs/reference/benchmarks/index.html",
+    "/docs/reference/benchmarks/",
+    "Benchmark policy",
+  ],
+  [
+    "site/docs/reference/platforms/index.html",
+    "/docs/reference/platforms/",
+    "Platform support",
+  ],
+  ["site/docs/security/index.html", "/docs/security/", "Security boundary"],
+  ["site/docs/contributing/index.html", "/docs/contributing/", "Contributing"],
+  [
+    "site/docs/contributing/testing/index.html",
+    "/docs/contributing/testing/",
+    "Testing architecture",
+  ],
+  [
+    "site/docs/contributing/support/index.html",
+    "/docs/contributing/support/",
+    "Support",
+  ],
+  [
+    "site/docs/contributing/code-of-conduct/index.html",
+    "/docs/contributing/code-of-conduct/",
+    "Code of Conduct",
+  ],
 ];
 
 const homepage = await readFile(path.join(root, "site/index.html"), "utf8");
@@ -52,18 +99,18 @@ const quickStart = await readFile(
   path.join(root, "site/docs/index.html"),
   "utf8",
 );
-const quickStartSteps = [
-  ...quickStart.matchAll(/<a href="#([^"]+)"><span>(\d+)<\/span>([^<]+)<\/a>/g),
-].map(([, id, number, label]) => ({ id, number, label }));
 const quickStartSections = [
   ...quickStart.matchAll(
     /<section id="([^"]+)">\s*<p class="section-label">(\d+) \/ ([^<]+)<\/p>/g,
   ),
-].map(([, id, number, label]) => ({ id, number, label }));
+].map(([, id]) => id);
+const quickStartPageSections = [
+  ...quickStart.matchAll(/<a href="#([^"]+)"(?: aria-current="location")?>/g),
+].map(([, id]) => id);
 assert.deepEqual(
-  quickStartSteps,
+  quickStartPageSections,
   quickStartSections,
-  "quick-start index must match every numbered section",
+  "quick-start table of contents must match every numbered section",
 );
 
 for (const file of docsFiles) {
@@ -92,15 +139,43 @@ for (const file of docsFiles) {
     `${relative}: Install must lead to the quick start`,
   );
 
-  if (relative !== "site/docs/index.html") {
-    inOrder(
-      compact(source),
-      [
-        compact('<article class="docs-content docs-reference-content">'),
-        compact('<aside class="docs-page-sidebar" aria-label="On this page">'),
-        compact('<nav class="docs-section-nav" aria-label="Page sections">'),
-      ],
-      `${relative} page table of contents`,
+  inOrder(
+    compact(source),
+    [
+      compact('<article class="docs-content docs-reference-content">'),
+      compact('<div class="docs-page-meta">'),
+      compact('<a class="docs-markdown-link"'),
+      compact('<nav class="docs-pagination"'),
+      compact('<aside class="docs-page-sidebar" aria-label="On this page">'),
+      compact('<nav class="docs-section-nav" aria-label="Page sections">'),
+    ],
+    `${relative} document chrome`,
+  );
+}
+
+for (const [index, [file, , title]] of docsSequence.entries()) {
+  const source = await readFile(path.join(root, file), "utf8");
+  const previous = docsSequence[index - 1];
+  const next = docsSequence[index + 1];
+
+  if (previous) {
+    assert.ok(
+      compact(source).includes(
+        compact(
+          `class="docs-pagination-link docs-pagination-previous" href="${previous[1]}"`,
+        ),
+      ),
+      `${file}: ${title} must link back to ${previous[2]}`,
+    );
+  }
+  if (next) {
+    assert.ok(
+      compact(source).includes(
+        compact(
+          `class="docs-pagination-link docs-pagination-next" href="${next[1]}"`,
+        ),
+      ),
+      `${file}: ${title} must link forward to ${next[2]}`,
     );
   }
 }
