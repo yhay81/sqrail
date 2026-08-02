@@ -130,14 +130,26 @@
             <div>
               <a href="/docs/contributing/" aria-current="location"
                 >Contributing</a
-              ><a href="/docs/contributing/support/">Support</a>
+              ><a href="/docs/contributing/testing/" aria-current="page"
+                >Testing</a
+              ><a href="/docs/contributing/support/">Support</a
+              ><a href="/docs/contributing/code-of-conduct/">Code of Conduct</a>
             </div>
           </div>
         </nav>
       </aside>
 
       <article class="docs-content docs-reference-content">
-        <p class="eyebrow"><span>Project</span> sqrail docs</p>
+        <div class="docs-page-meta">
+          <p class="eyebrow"><span>Project</span> sqrail docs</p>
+          <a
+            class="docs-markdown-link"
+            href="https://raw.githubusercontent.com/yhay81/sqrail/main/docs/TESTING.md"
+            type="text/markdown"
+          >
+            Markdown <span aria-hidden="true">↗</span>
+          </a>
+        </div>
         <h1>Testing architecture</h1>
         <p class="docs-deck">
           Test layers, workflow placement, sanitizers, fuzzing, and checks for
@@ -279,18 +291,27 @@ npm run site:check
             in AGY 1.1.8.
           </p>
         </div>
-        <aside class="docs-source-note" aria-label="Machine-readable source">
-          <div>
-            <strong>Prefer plain text?</strong>
-            <span
-              >The rendered page and repository Markdown share one source.</span
-            >
-          </div>
+
+        <nav
+          class="docs-pagination"
+          aria-label="Previous and next documentation pages"
+        >
           <a
-            href="https://raw.githubusercontent.com/yhay81/sqrail/main/docs/TESTING.md"
-            >Markdown source <span aria-hidden="true">→</span></a
+            class="docs-pagination-link docs-pagination-previous"
+            href="/docs/contributing/"
           >
-        </aside>
+            <span>Previous</span>
+            <strong><span aria-hidden="true">←</span> Contributing</strong>
+          </a>
+
+          <a
+            class="docs-pagination-link docs-pagination-next"
+            href="/docs/contributing/support/"
+          >
+            <span>Next</span>
+            <strong>Support <span aria-hidden="true">→</span></strong>
+          </a>
+        </nav>
       </article>
 
       <aside class="docs-page-sidebar" aria-label="On this page">

@@ -131,14 +131,25 @@
             <p>Project</p>
             <div>
               <a href="/docs/contributing/">Contributing</a
-              ><a href="/docs/contributing/support/">Support</a>
+              ><a href="/docs/contributing/testing/">Testing</a
+              ><a href="/docs/contributing/support/">Support</a
+              ><a href="/docs/contributing/code-of-conduct/">Code of Conduct</a>
             </div>
           </div>
         </nav>
       </aside>
 
       <article class="docs-content docs-reference-content">
-        <p class="eyebrow"><span>Evidence</span> sqrail docs</p>
+        <div class="docs-page-meta">
+          <p class="eyebrow"><span>Evidence</span> sqrail docs</p>
+          <a
+            class="docs-markdown-link"
+            href="https://raw.githubusercontent.com/yhay81/sqrail/main/docs/BENCHMARKS.md"
+            type="text/markdown"
+          >
+            Markdown <span aria-hidden="true">↗</span>
+          </a>
+        </div>
         <h1>Benchmark policy</h1>
         <p class="docs-deck">
           The rules and workload matrix used to keep every published performance
@@ -258,18 +269,29 @@
             contract.
           </p>
         </div>
-        <aside class="docs-source-note" aria-label="Machine-readable source">
-          <div>
-            <strong>Prefer plain text?</strong>
-            <span
-              >The rendered page and repository Markdown share one source.</span
-            >
-          </div>
+
+        <nav
+          class="docs-pagination"
+          aria-label="Previous and next documentation pages"
+        >
           <a
-            href="https://raw.githubusercontent.com/yhay81/sqrail/main/docs/BENCHMARKS.md"
-            >Markdown source <span aria-hidden="true">→</span></a
+            class="docs-pagination-link docs-pagination-previous"
+            href="/docs/reference/performance/"
           >
-        </aside>
+            <span>Previous</span>
+            <strong
+              ><span aria-hidden="true">←</span> Performance baselines</strong
+            >
+          </a>
+
+          <a
+            class="docs-pagination-link docs-pagination-next"
+            href="/docs/reference/platforms/"
+          >
+            <span>Next</span>
+            <strong>Platform support <span aria-hidden="true">→</span></strong>
+          </a>
+        </nav>
       </article>
 
       <aside class="docs-page-sidebar" aria-label="On this page">

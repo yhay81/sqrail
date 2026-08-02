@@ -130,14 +130,25 @@
             <p>Project</p>
             <div>
               <a href="/docs/contributing/">Contributing</a
-              ><a href="/docs/contributing/support/">Support</a>
+              ><a href="/docs/contributing/testing/">Testing</a
+              ><a href="/docs/contributing/support/">Support</a
+              ><a href="/docs/contributing/code-of-conduct/">Code of Conduct</a>
             </div>
           </div>
         </nav>
       </aside>
 
       <article class="docs-content docs-reference-content">
-        <p class="eyebrow"><span>Reference</span> sqrail docs</p>
+        <div class="docs-page-meta">
+          <p class="eyebrow"><span>Reference</span> sqrail docs</p>
+          <a
+            class="docs-markdown-link"
+            href="https://raw.githubusercontent.com/yhay81/sqrail/main/docs/PLATFORMS.md"
+            type="text/markdown"
+          >
+            Markdown <span aria-hidden="true">↗</span>
+          </a>
+        </div>
         <h1>Platform support</h1>
         <p class="docs-deck">
           Release targets, support tiers, filesystem semantics, and the exact
@@ -260,18 +271,27 @@
             then rebuilds and attests each archive.
           </p>
         </div>
-        <aside class="docs-source-note" aria-label="Machine-readable source">
-          <div>
-            <strong>Prefer plain text?</strong>
-            <span
-              >The rendered page and repository Markdown share one source.</span
-            >
-          </div>
+
+        <nav
+          class="docs-pagination"
+          aria-label="Previous and next documentation pages"
+        >
           <a
-            href="https://raw.githubusercontent.com/yhay81/sqrail/main/docs/PLATFORMS.md"
-            >Markdown source <span aria-hidden="true">→</span></a
+            class="docs-pagination-link docs-pagination-previous"
+            href="/docs/reference/benchmarks/"
           >
-        </aside>
+            <span>Previous</span>
+            <strong><span aria-hidden="true">←</span> Benchmark policy</strong>
+          </a>
+
+          <a
+            class="docs-pagination-link docs-pagination-next"
+            href="/docs/security/"
+          >
+            <span>Next</span>
+            <strong>Security boundary <span aria-hidden="true">→</span></strong>
+          </a>
+        </nav>
       </article>
 
       <aside class="docs-page-sidebar" aria-label="On this page">

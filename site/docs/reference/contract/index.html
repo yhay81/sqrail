@@ -128,14 +128,25 @@
             <p>Project</p>
             <div>
               <a href="/docs/contributing/">Contributing</a
-              ><a href="/docs/contributing/support/">Support</a>
+              ><a href="/docs/contributing/testing/">Testing</a
+              ><a href="/docs/contributing/support/">Support</a
+              ><a href="/docs/contributing/code-of-conduct/">Code of Conduct</a>
             </div>
           </div>
         </nav>
       </aside>
 
       <article class="docs-content docs-reference-content">
-        <p class="eyebrow"><span>Reference</span> sqrail docs</p>
+        <div class="docs-page-meta">
+          <p class="eyebrow"><span>Reference</span> sqrail docs</p>
+          <a
+            class="docs-markdown-link"
+            href="https://raw.githubusercontent.com/yhay81/sqrail/main/docs/CONTRACT.md"
+            type="text/markdown"
+          >
+            Markdown <span aria-hidden="true">↗</span>
+          </a>
+        </div>
         <h1>CLI contract</h1>
         <p class="docs-deck">
           Normative commands, query behavior, streams, resource controls,
@@ -482,18 +493,27 @@ sqrail --version
             </tbody>
           </table>
         </div>
-        <aside class="docs-source-note" aria-label="Machine-readable source">
-          <div>
-            <strong>Prefer plain text?</strong>
-            <span
-              >The rendered page and repository Markdown share one source.</span
-            >
-          </div>
+
+        <nav
+          class="docs-pagination"
+          aria-label="Previous and next documentation pages"
+        >
           <a
-            href="https://raw.githubusercontent.com/yhay81/sqrail/main/docs/CONTRACT.md"
-            >Markdown source <span aria-hidden="true">→</span></a
+            class="docs-pagination-link docs-pagination-previous"
+            href="/docs/agents/"
           >
-        </aside>
+            <span>Previous</span>
+            <strong><span aria-hidden="true">←</span> Agent setup</strong>
+          </a>
+
+          <a
+            class="docs-pagination-link docs-pagination-next"
+            href="/docs/reference/agents/"
+          >
+            <span>Next</span>
+            <strong>Agent integration <span aria-hidden="true">→</span></strong>
+          </a>
+        </nav>
       </article>
 
       <aside class="docs-page-sidebar" aria-label="On this page">

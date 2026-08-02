@@ -121,6 +121,11 @@ const pages = [
   },
 ];
 
+const pageSequence = [
+  { route: "/docs/", title: "Quick start" },
+  ...pages.map(({ route, title }) => ({ route, title })),
+];
+
 const documentationNavigation = [
   {
     label: "Start",
@@ -149,7 +154,9 @@ const documentationNavigation = [
     label: "Project",
     links: [
       ["Contributing", "/docs/contributing/"],
+      ["Testing", "/docs/contributing/testing/"],
       ["Support", "/docs/contributing/support/"],
+      ["Code of Conduct", "/docs/contributing/code-of-conduct/"],
     ],
   },
 ];
@@ -307,6 +314,36 @@ const renderSectionNavigation = (headings) =>
     )
     .join("");
 
+const renderAdjacentPageLink = (page, direction) => {
+  if (!page)
+    return '<span class="docs-pagination-empty" aria-hidden="true"></span>';
+  const isPrevious = direction === "previous";
+  const arrow = isPrevious ? "←" : "→";
+  const label = isPrevious ? "Previous" : "Next";
+  const className = isPrevious
+    ? "docs-pagination-previous"
+    : "docs-pagination-next";
+  const title = escapeHtml(page.title);
+
+  return `
+    <a class="docs-pagination-link ${className}" href="${page.route}">
+      <span>${label}</span>
+      <strong>${isPrevious ? `<span aria-hidden="true">${arrow}</span> ` : ""}${title}${isPrevious ? "" : ` <span aria-hidden="true">${arrow}</span>`}</strong>
+    </a>`;
+};
+
+const renderPagePagination = (page) => {
+  const index = pageSequence.findIndex(({ route }) => route === page.route);
+  const previous = index > 0 ? pageSequence[index - 1] : null;
+  const next = index >= 0 ? (pageSequence[index + 1] ?? null) : null;
+
+  return `
+    <nav class="docs-pagination" aria-label="Previous and next documentation pages">
+      ${renderAdjacentPageLink(previous, "previous")}
+      ${renderAdjacentPageLink(next, "next")}
+    </nav>`;
+};
+
 const renderPage = async (page, source) => {
   const rendered = renderMarkdown(page, source);
   const sourceUrl = githubRawUrl(page.source);
@@ -314,10 +351,6 @@ const renderPage = async (page, source) => {
   const canonical = `https://sqrails.yhay81.com${page.route}`;
   const title = escapeHtml(page.title);
   const description = escapeHtml(page.description);
-  const sourceNote =
-    page.source === "site/install-agent.md"
-      ? "This page and the agent-readable installer share one source."
-      : "The rendered page and repository Markdown share one source.";
 
   const html = `<!doctype html>
 <html lang="en">
@@ -378,19 +411,18 @@ const renderPage = async (page, source) => {
       </aside>
 
       <article class="docs-content docs-reference-content">
-        <p class="eyebrow"><span>${escapeHtml(page.category)}</span> sqrail docs</p>
+        <div class="docs-page-meta">
+          <p class="eyebrow"><span>${escapeHtml(page.category)}</span> sqrail docs</p>
+          <a class="docs-markdown-link" href="${machineUrl}" type="text/markdown">
+            Markdown <span aria-hidden="true">↗</span>
+          </a>
+        </div>
         <h1>${title}</h1>
         <p class="docs-deck">${description}</p>
         <div class="docs-markdown">
           ${rendered.html}
         </div>
-        <aside class="docs-source-note" aria-label="Machine-readable source">
-          <div>
-            <strong>Prefer plain text?</strong>
-            <span>${sourceNote}</span>
-          </div>
-          <a href="${machineUrl}">Markdown source <span aria-hidden="true">→</span></a>
-        </aside>
+        ${renderPagePagination(page)}
       </article>
 
       <aside class="docs-page-sidebar" aria-label="On this page">
