@@ -1,0 +1,25 @@
+name: self-hosted build
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: self-hosted-build-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Native build on Mac mini
+    runs-on: [self-hosted, macOS, ARM64, home-macmini]
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Configure
+        run: /opt/homebrew/bin/cmake --preset release
+      - name: Build
+        run: /opt/homebrew/bin/cmake --build --preset release
