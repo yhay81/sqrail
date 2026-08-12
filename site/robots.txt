@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://sqrails.yhay81.com/sitemap.xml
+Sitemap: https://sqrail.yhay81.com/sitemap.xml

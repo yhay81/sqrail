@@ -6,7 +6,7 @@
   "preview_urls": true,
   "routes": [
     {
-      "pattern": "sqrails.yhay81.com",
+      "pattern": "sqrail.yhay81.com",
       "custom_domain": true,
     },
   ],

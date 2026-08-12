@@ -1,11 +1,11 @@
 # Documentation deployment
 
-> `sqrails.yhay81.com` is a static-assets Worker with configuration kept in the
+> `sqrail.yhay81.com` is a static-assets Worker with configuration kept in the
 > repository.
 
 [Documentation index](README.md) ·
 [Cloudflare Worker configuration](../wrangler.jsonc) ·
-[Published site](https://sqrails.yhay81.com)
+[Published site](https://sqrail.yhay81.com)
 
 ## Architecture
 
@@ -13,7 +13,7 @@ Cloudflare Workers Static Assets serves the contents of `site/`. The
 `wrangler.jsonc` file is the source of truth for:
 
 - Worker name: `sqrails`
-- custom domain: `sqrails.yhay81.com`
+- custom domain: `sqrail.yhay81.com`
 - HTML path and custom 404 behavior
 - static asset directory
 
@@ -27,7 +27,7 @@ record and TLS certificate.
 GitHub Pages is intentionally disabled. Keeping a second public deployment
 would create a stale-documentation risk and an ambiguous canonical URL.
 Canonical, Open Graph, sitemap, repository, and agent-discovery URLs all use
-`https://sqrails.yhay81.com`.
+`https://sqrail.yhay81.com`.
 
 ## Validate locally
 
@@ -67,15 +67,15 @@ authentication.
 After deployment, check the origin, headers, documents, and custom 404:
 
 ```sh
-curl --fail --silent --show-error --head https://sqrails.yhay81.com/
-curl --fail --silent --show-error --head https://sqrails.yhay81.com/docs/agents/
+curl --fail --silent --show-error --head https://sqrail.yhay81.com/
+curl --fail --silent --show-error --head https://sqrail.yhay81.com/docs/agents/
 curl --fail --silent --show-error --head \
-  https://sqrails.yhay81.com/docs/reference/contract/
-curl --fail --silent --show-error https://sqrails.yhay81.com/help.txt
-curl --fail --silent --show-error https://sqrails.yhay81.com/llms.txt
-curl --fail --silent --show-error https://sqrails.yhay81.com/install-agent.md
+  https://sqrail.yhay81.com/docs/reference/contract/
+curl --fail --silent --show-error https://sqrail.yhay81.com/help.txt
+curl --fail --silent --show-error https://sqrail.yhay81.com/llms.txt
+curl --fail --silent --show-error https://sqrail.yhay81.com/install-agent.md
 curl --silent --show-error --output /dev/null --write-out '%{http_code}\n' \
-  https://sqrails.yhay81.com/not-a-real-path
+  https://sqrail.yhay81.com/not-a-real-path
 ```
 
 The last command must report `404`. The main response must include the security

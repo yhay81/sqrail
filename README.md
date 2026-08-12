@@ -1,5 +1,5 @@
 <div align="center">
-  <a href="https://sqrails.yhay81.com">
+  <a href="https://sqrail.yhay81.com">
     <img
       src="site/social-card.svg"
       width="720"
@@ -20,9 +20,9 @@
   </p>
 
   <p>
-    <a href="https://sqrails.yhay81.com">Website</a>
+    <a href="https://sqrail.yhay81.com">Website</a>
     ·
-    <a href="https://sqrails.yhay81.com/docs/">3-minute guide</a>
+    <a href="https://sqrail.yhay81.com/docs/">3-minute guide</a>
     ·
     <a href="docs/CONTRACT.md">Contract</a>
     ·
@@ -68,8 +68,8 @@ SQL
 
 The interface has three verbs: `schema` when names and types are unknown,
 `check` to plan without execution, and `run` to execute once. See the
-[3-minute guide](https://sqrails.yhay81.com/docs/) or give an agent the canonical
-[195-word help](https://sqrails.yhay81.com/help.txt).
+[3-minute guide](https://sqrail.yhay81.com/docs/) or give an agent the canonical
+[195-word help](https://sqrail.yhay81.com/help.txt).
 
 ## Install
 
@@ -111,7 +111,7 @@ agy plugin install https://github.com/yhay81/sqrail
 ```
 
 The stable
-[AI installer](https://sqrails.yhay81.com/install-agent.md) gives an agent a
+[AI installer](https://sqrail.yhay81.com/install-agent.md) gives an agent a
 review-first path to install both the executable and Skill, with an `npx
 skills` fallback when GitHub CLI is unavailable.
 

@@ -68,7 +68,7 @@ versions follow semantic versioning.
 ### Changed
 
 - canonical project and community links from the legacy GitHub Pages deployment
-  to `sqrails.yhay81.com`
+  to `sqrail.yhay81.com`
 - GitHub language statistics to identify C++ as the shipped implementation
 
 ## [0.3.0] - 2026-07-28

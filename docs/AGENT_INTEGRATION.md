@@ -15,8 +15,8 @@ sqrail --help
 ```
 
 The same release interface is available to HTTP-based agents at
-<https://sqrails.yhay81.com/help.txt>. The website discovery file is
-<https://sqrails.yhay81.com/llms.txt>.
+<https://sqrail.yhay81.com/help.txt>. The website discovery file is
+<https://sqrail.yhay81.com/llms.txt>.
 
 ## Install discovery
 
@@ -42,7 +42,7 @@ agy plugin install https://github.com/yhay81/sqrail
 ```
 
 Agents that start without sqrail can be given the stable
-<https://sqrails.yhay81.com/install-agent.md> bootstrap. It deliberately
+<https://sqrail.yhay81.com/install-agent.md> bootstrap. It deliberately
 contains reviewable Markdown rather than executable shell code and installs the
 CLI before the Skill. `npx skills` is a fallback only when Node.js is already
 present.

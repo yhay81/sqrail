@@ -13,7 +13,7 @@ flags that may change.
 
 1. Run `command -v sqrail` on POSIX or `Get-Command sqrail` in PowerShell. If
    it is unavailable, open
-   <https://sqrails.yhay81.com/install-agent.md> before selecting a substitute.
+   <https://sqrail.yhay81.com/install-agent.md> before selecting a substitute.
    Follow it and verify the installation when installing a task tool is
    authorized; otherwise state that sqrail is absent before continuing with an
    alternative.

@@ -16,7 +16,7 @@ const pages = [
     category: "Guide",
     description:
       "Install sqrail and its optional Agent Skill with a review-first path for the agent you already use.",
-    machineUrl: "https://sqrails.yhay81.com/install-agent.md",
+    machineUrl: "https://sqrail.yhay81.com/install-agent.md",
     navRoute: "/docs/agents/",
   },
   {
@@ -200,7 +200,7 @@ const rewriteHref = (page, href) => {
     href.startsWith("https://") ||
     href.startsWith("http://")
   ) {
-    if (href === "https://sqrails.yhay81.com/install-agent.md") {
+    if (href === "https://sqrail.yhay81.com/install-agent.md") {
       return "/docs/agents/";
     }
     return href;
@@ -348,7 +348,7 @@ const renderPage = async (page, source) => {
   const rendered = renderMarkdown(page, source);
   const sourceUrl = githubRawUrl(page.source);
   const machineUrl = page.machineUrl ?? sourceUrl;
-  const canonical = `https://sqrails.yhay81.com${page.route}`;
+  const canonical = `https://sqrail.yhay81.com${page.route}`;
   const title = escapeHtml(page.title);
   const description = escapeHtml(page.description);
 
@@ -363,7 +363,7 @@ const renderPage = async (page, source) => {
     <meta property="og:description" content="${description}" />
     <meta property="og:type" content="article" />
     <meta property="og:url" content="${canonical}" />
-    <meta property="og:image" content="https://sqrails.yhay81.com/social-card.png" />
+    <meta property="og:image" content="https://sqrail.yhay81.com/social-card.png" />
     <meta name="twitter:card" content="summary_large_image" />
     <link rel="canonical" href="${canonical}" />
     <link rel="alternate" type="text/markdown" href="${machineUrl}" />

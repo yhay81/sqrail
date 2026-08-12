@@ -114,7 +114,7 @@ for (const [document, label] of [
   [discovery, "site/llms.txt"],
 ]) {
   assert(
-    document.includes("https://sqrails.yhay81.com/install-agent.md"),
+    document.includes("https://sqrail.yhay81.com/install-agent.md"),
     `${label} must link to the stable agent installer`,
   );
 }

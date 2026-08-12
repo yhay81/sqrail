@@ -2,8 +2,8 @@
 
 > Bind a file. Check the plan. Run one read-only query.
 
-[Website](https://sqrails.yhay81.com) ·
-[3-minute guide](https://sqrails.yhay81.com/docs/) ·
+[Website](https://sqrail.yhay81.com) ·
+[3-minute guide](https://sqrail.yhay81.com/docs/) ·
 [Source](https://github.com/yhay81/sqrail) ·
 [Releases](https://github.com/yhay81/sqrail/releases) ·
 [Community](https://github.com/yhay81/sqrail/discussions)
@@ -12,8 +12,8 @@
 
 | I need to…                        | Read                                                   |
 | --------------------------------- | ------------------------------------------------------ |
-| install and run a first query     | [3-minute guide](https://sqrails.yhay81.com/docs/)     |
-| install sqrail through an agent   | [Agent setup](https://sqrails.yhay81.com/docs/agents/) |
+| install and run a first query     | [3-minute guide](https://sqrail.yhay81.com/docs/)     |
+| install sqrail through an agent   | [Agent setup](https://sqrail.yhay81.com/docs/agents/) |
 | integrate sqrail with an agent    | [Agent integration](AGENT_INTEGRATION.md)              |
 | depend on exact CLI behavior      | [CLI contract](CONTRACT.md)                            |
 | understand supported systems      | [Platform support](PLATFORMS.md)                       |
@@ -48,12 +48,12 @@ Otherwise trust the stated schema, run once, and stop after success.
 ```
 
 The website also publishes the same interface as
-[`help.txt`](https://sqrails.yhay81.com/help.txt) and publishes an
+[`help.txt`](https://sqrail.yhay81.com/help.txt) and publishes an
 LLM discovery index at
-[`llms.txt`](https://sqrails.yhay81.com/llms.txt). Agents that need a
+[`llms.txt`](https://sqrail.yhay81.com/llms.txt). Agents that need a
 review-first installation path can fetch
-[`install-agent.md`](https://sqrails.yhay81.com/install-agent.md); humans get
+[`install-agent.md`](https://sqrail.yhay81.com/install-agent.md); humans get
 the same source rendered as the
-[Agent setup guide](https://sqrails.yhay81.com/docs/agents/). The public
+[Agent setup guide](https://sqrail.yhay81.com/docs/agents/). The public
 [`skills/sqrail`](../skills/sqrail/SKILL.md) directory is the canonical Agent
 Skill source.
