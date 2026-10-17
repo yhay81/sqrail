@@ -122,6 +122,22 @@ TEST_CASE("invalid and conflicting options have stable error codes", "[cli]") {
 		      [](const int argc, char **argv) { return sqrail::ParseSchema(argc, argv); });
 	});
 	CheckError("EMPTY_SQL", []() { static_cast<void>(sqrail::NormalizeQuery(" ; \n")); });
+	CheckError("EMPTY_SQL", []() { static_cast<void>(sqrail::NormalizeQuery(" ; \r\n")); });
+}
+
+TEST_CASE("CRLF query text normalizes like LF", "[cli]") {
+	const std::vector<std::pair<std::string, std::string>> cases {
+	    {"SELECT 1;\r\n", "SELECT 1"},
+	    {"SELECT 1 ;\r\n;\r\n \r\n", "SELECT 1"},
+	    {"\r\nSELECT\r\n  1\r\n", "\r\nSELECT\r\n  1"},
+	    {"SELECT 1; -- note\r\n", "SELECT 1; -- note"},
+	};
+	for (std::size_t index = 0; index < cases.size(); ++index) {
+		CAPTURE(index);
+		CHECK(sqrail::NormalizeQuery(cases[index].first) == cases[index].second);
+	}
+	CheckError("EMPTY_SQL", []() { static_cast<void>(sqrail::NormalizeQuery("\r\n;\r\n;\r\n")); });
+	CheckError("EMPTY_SQL", []() { static_cast<void>(sqrail::NormalizeQuery("\r\n \r\n")); });
 }
 
 TEST_CASE("query text and exact resource sizes round-trip", "[cli]") {
