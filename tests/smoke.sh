@@ -150,6 +150,25 @@ json_output="$test_dir/result.jsonl.gz"
 test "$("$sqrail_bin" run -t compressed="$json_output" \
   'SELECT sum(amount) AS total FROM compressed')" = '{"total":45}'
 
+tsv_gzip_output="$test_dir/result.tsv.gz"
+"$sqrail_bin" run -t sales="$test_dir/sales.csv" -o "$tsv_gzip_output" \
+  'SELECT drug_id, name, amount FROM sales ORDER BY drug_id, amount'
+gzip -t "$tsv_gzip_output"
+test "$(gzip -dc "$tsv_gzip_output")" = \
+  "$(printf 'drug_id\tname\tamount\n1\talpha\t10\n1\talpha\t15\n2\tbeta\t20')"
+
+tsv_zstd_output="$test_dir/result.tsv.zst"
+"$sqrail_bin" run -t sales="$test_dir/sales.csv" -o "$tsv_zstd_output" \
+  'SELECT drug_id, name, amount FROM sales'
+
+for tsv_output in "$tsv_gzip_output" "$tsv_zstd_output"; do
+  "$sqrail_bin" schema "$tsv_output" | python3 -c \
+    'import json,sys; value=json.load(sys.stdin); assert [(column["name"], column["type"]) for column in value["columns"]] == [("drug_id", "BIGINT"), ("name", "VARCHAR"), ("amount", "BIGINT")]'
+  test "$("$sqrail_bin" run -t compressed="$tsv_output" \
+    'SELECT name, sum(amount) AS total FROM compressed GROUP BY name ORDER BY name')" = \
+    "$(printf '%s\n' '{"name":"alpha","total":25}' '{"name":"beta","total":20}')"
+done
+
 strict_json=$("$sqrail_bin" run \
   "SELECT 'NaN' AS text, CAST('NaN' AS DOUBLE) AS special, [CAST('Infinity' AS DOUBLE)] AS nested")
 printf '%s\n' "$strict_json" | python3 -c \
@@ -161,7 +180,8 @@ strict_json_file="$test_dir/strict.json.zst"
 "$sqrail_bin" run -t strict="$strict_json_file" \
   'SELECT count(*) AS rows FROM strict WHERE value IS NULL' | grep -q '"rows":3'
 
-python3 - "$test_dir/result.parquet" "$gzip_output" "$json_output" <<'PY'
+python3 - "$test_dir/result.parquet" "$gzip_output" "$json_output" \
+  "$tsv_gzip_output" "$tsv_zstd_output" <<'PY'
 import os
 import stat
 import sys
