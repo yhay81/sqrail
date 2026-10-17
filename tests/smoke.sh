@@ -460,6 +460,22 @@ for signal_name in TERM INT; do
   test "$(find "$signal_spill" -name '.sqrail-spill-*' | wc -l | tr -d ' ')" = "0"
 done
 
+# Run every sh block of the cookbook in order in an empty directory, then
+# require each line of its text blocks, the documented output, to appear.
+recipes_doc="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/docs/RECIPES.md"
+recipes_dir="$test_dir/recipes"
+mkdir -p "$recipes_dir/bin"
+ln -s "$(cd "$(dirname "$sqrail_bin")" && pwd)/$(basename "$sqrail_bin")" "$recipes_dir/bin/sqrail"
+awk '/^```sh$/ { block = 1; next } /^```$/ { block = 0 } block' "$recipes_doc" > "$recipes_dir/recipes.sh"
+awk '/^```text$/ { block = 1; next } /^```$/ { block = 0 } block' "$recipes_doc" > "$recipes_dir/expected.txt"
+test -s "$recipes_dir/recipes.sh"
+test -s "$recipes_dir/expected.txt"
+(cd "$recipes_dir" && PATH="$recipes_dir/bin:$PATH" bash -euo pipefail recipes.sh >recipes.out 2>recipes.err)
+while IFS= read -r expected_line; do
+  grep -qF -- "$expected_line" "$recipes_dir/recipes.out"
+done < "$recipes_dir/expected.txt"
+grep -q '"ok":true,"command":"run"' "$recipes_dir/recipes.err"
+
 help_text=$("$sqrail_bin" --help)
 printf '%s\n' "$help_text" | grep -q 'Names/types result: schema once'
 printf '%s\n' "$help_text" | grep -q 'run once, and stop after success'
