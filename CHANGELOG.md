@@ -5,6 +5,11 @@ versions follow semantic versioning.
 
 ## [Unreleased]
 
+### Added
+
+- a static Bash completion file for the documented commands and options,
+  installed as `share/bash-completion/completions/sqrail` on Linux and macOS
+
 ### Changed
 
 - the pinned DuckDB engine to v1.5.6, a bug-fix release that corrects several

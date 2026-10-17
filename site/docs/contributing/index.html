@@ -223,7 +223,7 @@ out/build/fuzz/sqrail-cli-fuzz -max_total_time=30
 CMAKE_PREFIX_PATH=/path/to/duckdb cmake --workflow --preset system
 clang-format-18 --dry-run --Werror src/*.cpp src/*.hpp tests/*.cpp fuzz/*.cpp \
   benchmarks/agent-eval/launcher.c
-shellcheck tests/*.sh benchmarks/*.sh
+shellcheck tests/*.sh benchmarks/*.sh completions/sqrail.bash
 actionlint
 GH_TOKEN=$(gh auth token) zizmor --pedantic .
 </code></pre>
