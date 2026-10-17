@@ -5,6 +5,15 @@ versions follow semantic versioning.
 
 ## [Unreleased]
 
+### Changed
+
+- the pinned DuckDB engine to v1.5.6, a bug-fix release that corrects several
+  wrong-result optimizer rewrites, fixes Parquet `TIME_NS` round trips, and
+  hardens temporary-file reads
+- the pinned Catch2 test framework to v3.16.1
+- the pinned documentation toolchain to Wrangler 4.149.0, html-validate
+  11.16.2, markdown-it 15.0.2, and Prettier 3.9.10
+
 ### Fixed
 
 - `schema` now rejects unknown options with `UNKNOWN_OPTION` (exit 2), as `run`
@@ -21,6 +30,11 @@ versions follow semantic versioning.
   between DuckDB statements, such as while sqrail validates a large query;
   DuckDB clears a pending interrupt whenever a statement starts, so sqrail now
   repeats the request until execution stops
+
+### Security
+
+- the documentation toolchain lockfile no longer resolves packages with known
+  fast-uri, undici, sharp, or markdown-it advisories
 
 ## [0.3.4] - 2026-08-02
 

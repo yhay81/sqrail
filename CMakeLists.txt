@@ -161,10 +161,10 @@ if(SQRAIL_DUCKDB_PROVIDER STREQUAL "BUNDLED")
   # Official sqrail releases deliberately pin one engine revision so their SQL
   # behavior is reproducible. Distribution packages can instead select SYSTEM
   # and track their packaged DuckDB dependency.
-  set(DUCKDB_VERSION "v1.5.5" CACHE STRING "Pinned DuckDB release")
+  set(DUCKDB_VERSION "v1.5.6" CACHE STRING "Pinned DuckDB release")
   set(
     DUCKDB_REVISION
-    "d8cdaa33fda8df955cc76ef58a280f68f4cd43fa"
+    "069cc9f9b5be802405797faecc284961b07c70ef"
     CACHE STRING
     "Pinned DuckDB git revision"
   )
@@ -478,9 +478,9 @@ if(SQRAIL_BUILD_TESTS)
   include(FetchContent)
   set(
     SQRAIL_CATCH2_REVISION
-    "8b08d4d79514f45f7e4ce2a607ac9c94e920d1bb"
+    "08092139210881f01a34e60c5f2fd6afa0ea4024"
     CACHE STRING
-    "Pinned Catch2 v3.15.3 git revision"
+    "Pinned Catch2 v3.16.1 git revision"
   )
   set(CATCH_BUILD_TESTING OFF CACHE BOOL "" FORCE)
   set(CATCH_INSTALL_DOCS OFF CACHE BOOL "" FORCE)
