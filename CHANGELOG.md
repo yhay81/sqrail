@@ -5,6 +5,11 @@ versions follow semantic versioning.
 
 ## [Unreleased]
 
+### Fixed
+
+- benchmark `summary.tsv` timing columns now read both hyperfine 1.x and 2.x
+  JSON exports instead of being `null` under hyperfine 2.x
+
 ## [0.3.4] - 2026-08-02
 
 ### Added
