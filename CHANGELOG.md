@@ -5,6 +5,13 @@ versions follow semantic versioning.
 
 ## [Unreleased]
 
+### Fixed
+
+- `--timeout` expiry and `SIGINT`/`SIGTERM` are no longer lost when they arrive
+  between DuckDB statements, such as while sqrail validates a large query;
+  DuckDB clears a pending interrupt whenever a statement starts, so sqrail now
+  repeats the request until execution stops
+
 ## [0.3.4] - 2026-08-02
 
 ### Added

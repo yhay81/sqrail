@@ -36,4 +36,5 @@ run_checked \
   "$repository_directory/src/platform.cpp" \
   "$repository_directory/src/result.cpp" \
   "$repository_directory/tests/cli_test.cpp" \
+  "$repository_directory/tests/control_test.cpp" \
   "$repository_directory/tests/json_test.cpp"

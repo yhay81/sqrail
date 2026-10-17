@@ -518,6 +518,27 @@ if(SQRAIL_BUILD_TESTS)
     DISCOVERY_MODE PRE_TEST
     PROPERTIES TIMEOUT 120
   )
+
+  # The interruption test links the embedded engine a second time. Skip it in
+  # whole-program optimized trees, where that would repeat the slowest link.
+  if(NOT CMAKE_INTERPROCEDURAL_OPTIMIZATION)
+    add_executable(sqrail-control-test tests/control_test.cpp src/control.cpp)
+    target_include_directories(sqrail-control-test SYSTEM PRIVATE "${SQRAIL_DUCKDB_INCLUDE_DIRS}")
+    target_link_libraries(
+      sqrail-control-test
+      PRIVATE sqrail_cli ${SQRAIL_DUCKDB_LIBRARIES} Catch2::Catch2WithMain
+    )
+    if(WIN32 AND SQRAIL_DUCKDB_PROVIDER STREQUAL "BUNDLED")
+      target_compile_definitions(sqrail-control-test PRIVATE DUCKDB_STATIC_BUILD)
+    endif()
+    sqrail_enable_project_warnings(sqrail-control-test)
+    catch_discover_tests(
+      sqrail-control-test
+      TEST_PREFIX "sqrail-control-unit/"
+      DISCOVERY_MODE PRE_TEST
+      PROPERTIES TIMEOUT 120
+    )
+  endif()
 endif()
 
 if(
