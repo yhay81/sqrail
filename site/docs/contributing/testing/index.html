@@ -177,7 +177,10 @@
                 <td>native unit</td>
                 <td><code>SQRAIL_BUILD_TESTS</code></td>
                 <td>C++20 + Catch2</td>
-                <td>CLI parsing, limits, query normalization, strict JSON</td>
+                <td>
+                  CLI parsing, limits, query normalization, strict JSON,
+                  timeouts
+                </td>
               </tr>
               <tr>
                 <td>CLI integration</td>
@@ -228,6 +231,12 @@
             Windows presets inherit the full test configuration used by CI. The
             <code>fuzz</code> preset turns off every other test layer and builds
             only the two libFuzzer targets.
+          </p>
+          <p>
+            The execution-control unit test links the embedded DuckDB engine.
+            Trees built with whole-program optimization, such as
+            <code>release</code> and the presets derived from it, skip that test
+            instead of repeating the engine’s slowest link step.
           </p>
           <p>For a production-only build, disable native tests too:</p>
           <pre><code class="language-sh">cmake -S . -B out/build/product -G Ninja \

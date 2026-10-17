@@ -8,7 +8,7 @@ Python interpreter, while repository CI still exercises every layer.
 
 | Layer            | CMake option                      | Runtime                | Responsibility                                                   |
 | ---------------- | --------------------------------- | ---------------------- | ---------------------------------------------------------------- |
-| native unit      | `SQRAIL_BUILD_TESTS`              | C++20 + Catch2         | CLI parsing, limits, query normalization, strict JSON            |
+| native unit      | `SQRAIL_BUILD_TESTS`              | C++20 + Catch2         | CLI parsing, limits, query normalization, strict JSON, timeouts  |
 | CLI integration  | `SQRAIL_BUILD_INTEGRATION_TESTS`  | Python 3; Bash on Unix | real processes, files, signals, races, limits, platform behavior |
 | agent evaluation | `SQRAIL_BUILD_AGENT_TESTS`        | Python 3               | blinded experiment runner, oracle, reports, environment capture  |
 | release tools    | `SQRAIL_BUILD_RELEASE_TOOL_TESTS` | Python 3               | deterministic archives and SPDX SBOM generation                  |
@@ -38,6 +38,10 @@ cmake --workflow --preset dev
 The `dev`, `release`, `strict`, `sanitize`, `thread`, `system`, and Windows
 presets inherit the full test configuration used by CI. The `fuzz` preset turns
 off every other test layer and builds only the two libFuzzer targets.
+
+The execution-control unit test links the embedded DuckDB engine. Trees built
+with whole-program optimization, such as `release` and the presets derived from
+it, skip that test instead of repeating the engine's slowest link step.
 
 For a production-only build, disable native tests too:
 

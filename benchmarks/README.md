@@ -9,7 +9,7 @@ Requirements:
 
 - Bash
 - CMake 3.25+, Ninja, and a C++20 compiler
-- `hyperfine`
+- `hyperfine` 1.x or 2.x
 - `jq`
 - Python 3 and GNU/BSD `time` for the out-of-core resource harness
 - `llvm-profdata` matching the Clang compiler for PGO training

@@ -169,15 +169,18 @@ run_case() {
       --arg output_bytes "$output_bytes" \
       --arg rows "$rows" \
       --arg checksum "$checksum" \
-      '[
+      '.results[0] as $result
+      | ($result.summary.time_wall_clock.mean // $result.mean
+          // error("unsupported hyperfine JSON format")) as $mean
+      | [
         $case_name,
         $engine,
-        (.results[0].mean | tostring),
-        (.results[0].stddev | tostring),
-        (.results[0].min | tostring),
-        (.results[0].max | tostring),
-        (.results[0].user | tostring),
-        (.results[0].system | tostring),
+        ($mean | tostring),
+        (($result.summary.time_wall_clock.stddev // $result.stddev) | tostring),
+        (($result.summary.time_wall_clock.min // $result.min) | tostring),
+        (($result.summary.time_wall_clock.max // $result.max) | tostring),
+        (($result.summary.time_user.mean // $result.user) | tostring),
+        (($result.summary.time_system.mean // $result.system) | tostring),
         $rss,
         $output_bytes,
         $rows,

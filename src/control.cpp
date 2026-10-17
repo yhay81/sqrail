@@ -129,22 +129,26 @@ private:
 			const auto pending_signal = interrupted_signal.load(std::memory_order_relaxed);
 			if (pending_signal != 0) {
 				received_signal.store(pending_signal);
-				lock.unlock();
-				connection.Interrupt();
-				return;
+				break;
 			}
 			if (timeout_enabled && std::chrono::steady_clock::now() >= deadline) {
 				timed_out.store(true);
-				lock.unlock();
-				connection.Interrupt();
-				return;
+				break;
 			}
 			lock.unlock();
 			CheckOutputLimit();
-			if (output_limited.load()) {
-				return;
-			}
 			lock.lock();
+			if (output_limited.load()) {
+				break;
+			}
+		}
+		// DuckDB clears a pending interrupt whenever a statement starts, so a
+		// single request is lost between statements. Repeat it until Stop().
+		while (!complete) {
+			lock.unlock();
+			connection.Interrupt();
+			lock.lock();
+			condition.wait_for(lock, std::chrono::milliseconds(5), [this]() { return complete; });
 		}
 	}
 

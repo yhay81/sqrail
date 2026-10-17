@@ -180,13 +180,13 @@
     {
       "name": "core",
       "configurePreset": "core",
-      "targets": ["sqrail", "sqrail-json-test", "sqrail-cli-test"],
+      "targets": ["sqrail", "sqrail-json-test", "sqrail-cli-test", "sqrail-control-test"],
       "jobs": 2
     },
     {
       "name": "dev",
       "configurePreset": "dev",
-      "targets": ["sqrail", "sqrail-json-test", "sqrail-cli-test"],
+      "targets": ["sqrail", "sqrail-json-test", "sqrail-cli-test", "sqrail-control-test"],
       "jobs": 2
     },
     {
@@ -198,13 +198,13 @@
     {
       "name": "strict",
       "configurePreset": "strict",
-      "targets": ["sqrail-static-analysis", "sqrail-json-test", "sqrail-cli-test"],
+      "targets": ["sqrail-static-analysis", "sqrail-json-test", "sqrail-cli-test", "sqrail-control-test"],
       "jobs": 2
     },
     {
       "name": "sanitize",
       "configurePreset": "sanitize",
-      "targets": ["sqrail", "sqrail-json-test", "sqrail-cli-test"],
+      "targets": ["sqrail", "sqrail-json-test", "sqrail-cli-test", "sqrail-control-test"],
       "jobs": 4
     },
     {
@@ -216,7 +216,7 @@
     {
       "name": "thread",
       "configurePreset": "thread",
-      "targets": ["sqrail", "sqrail-json-test", "sqrail-cli-test"],
+      "targets": ["sqrail", "sqrail-json-test", "sqrail-cli-test", "sqrail-control-test"],
       "jobs": 4
     },
     {
@@ -288,7 +288,7 @@
       },
       "filter": {
         "include": {
-            "name": "sqrail-(json|cli|agent-eval|blind-agent-eval|agent-oracle|agent-runner|package-tools|benchmark-environment)-unit"
+            "name": "sqrail-(json|cli|control|agent-eval|blind-agent-eval|agent-oracle|agent-runner|package-tools|benchmark-environment)-unit"
         }
       }
     },

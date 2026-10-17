@@ -248,6 +248,27 @@ class CrossPlatformTest(unittest.TestCase):
         if spill.exists():
             self.assertEqual(list(spill.glob(".sqrail-spill-*")), [])
 
+    def test_crlf_sql_on_stdin(self) -> None:
+        queries = [
+            (
+                b"-- comment 1\r\nSELECT 1 AS one,\r\n--comment 2\r\n2 AS two; -- another comment\r\n",
+                {"one": 1, "two": 2},
+            ),
+            (b"SELECT 1 AS one; \r\n \r\n", {"one": 1}),
+            (b"\r\nSELECT\r\n  'a' AS letter\r\n;\r\n\r\n", {"letter": "a"}),
+        ]
+        for sql, row in queries:
+            with self.subTest(sql=sql):
+                result = invoke("run", "-", stdin=sql)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual([json.loads(line) for line in result.stdout.splitlines()], [row])
+
+        for sql in (b" ; \r\n", b"\r\n;\r\n;\r\n", b"\r\n \r\n"):
+            with self.subTest(sql=sql):
+                empty = invoke("run", "-", stdin=sql)
+                self.assertEqual(empty.returncode, 2)
+                self.assertEqual(diagnostic(empty)["code"], "EMPTY_SQL")
+
 
 if __name__ == "__main__":
     unittest.main()
