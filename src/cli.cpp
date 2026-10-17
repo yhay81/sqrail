@@ -381,8 +381,13 @@ RunOptions ParseRun(int argc, char **argv, const bool check_only) {
 			throw SqrailError(EXIT_OUTPUT, "OUTPUT_EXISTS", "output already exists: " + options.output.string());
 		}
 		const fs::path parent = options.output.parent_path();
-		if (!parent.empty() && !fs::is_directory(parent)) {
+		const auto parent_status = error || parent.empty() ? fs::file_status() : fs::status(parent, error);
+		if (fs::status_known(parent_status) && !fs::is_directory(parent_status)) {
 			throw SqrailError(EXIT_OUTPUT, "OUTPUT_DIRECTORY", "output directory does not exist: " + parent.string());
+		}
+		if (error) {
+			throw SqrailError(EXIT_OUTPUT, "OUTPUT_DIRECTORY",
+			                  "cannot access output directory: " + parent.string() + ": " + error.message());
 		}
 	}
 
@@ -434,8 +439,10 @@ SchemaOptions ParseSchema(int argc, char **argv) {
 			}
 			options.strict_schema = true;
 			has_strict_schema = true;
-		} else {
+		} else if (positional_only || argument.empty() || argument == "-" || argument.front() != '-') {
 			options.sources.push_back(argument);
+		} else {
+			throw SqrailError(EXIT_USAGE, "UNKNOWN_OPTION", "unknown option: " + argument);
 		}
 	}
 	if (options.sources.empty()) {

@@ -14,6 +14,17 @@ versions follow semantic versioning.
 - the pinned documentation toolchain to Wrangler 4.149.0, html-validate
   11.16.2, markdown-it 15.0.2, and Prettier 3.9.10
 
+### Fixed
+
+- `schema` now rejects unknown options with `UNKNOWN_OPTION` (exit 2), as `run`
+  and `check` do, instead of reading them as input paths and failing with
+  `INPUT_NOT_FOUND` (exit 3); a schema path that begins with `-` must now
+  follow `--`
+- inputs and outputs behind a directory that cannot be accessed now fail with
+  `INPUT_NOT_FOUND` (exit 3) or `OUTPUT_DIRECTORY` (exit 5) and the operating
+  system's reason instead of `INTERNAL` (exit 70) or, for some outputs,
+  `QUERY_FAILED` (exit 4)
+
 ### Security
 
 - the documentation toolchain lockfile no longer resolves packages with known

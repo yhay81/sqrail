@@ -3,7 +3,7 @@ set -euo pipefail
 
 sqrail_bin=${1:?sqrail binary path is required}
 test_dir=$(mktemp -d)
-trap 'rm -rf "$test_dir"' EXIT
+trap 'chmod -R u+rwx "$test_dir" 2>/dev/null || true; rm -rf "$test_dir"' EXIT
 
 expect_error() {
   expected_status=$1
@@ -334,6 +334,23 @@ expect_error 3 UNSUPPORTED_COMPRESSION "$test_dir/compression.json" \
 gzip -c "$test_dir/result.parquet" > "$test_dir/result.parquet.gz"
 expect_error 3 UNSUPPORTED_COMPRESSION "$test_dir/parquet-compression.json" \
   "$sqrail_bin" schema "$test_dir/result.parquet.gz"
+
+# Paths behind an inaccessible directory are input and output failures, not
+# internal ones. Root bypasses directory permissions, so it skips this case.
+if [ "$(id -u)" -ne 0 ]; then
+  mkdir -p "$test_dir/locked/sub"
+  cp "$test_dir/sales.csv" "$test_dir/locked/sub/in.csv"
+  chmod 000 "$test_dir/locked"
+  expect_error 3 INPUT_NOT_FOUND "$test_dir/locked-input.json" \
+    "$sqrail_bin" run -t sales="$test_dir/locked/sub/in.csv" 'SELECT * FROM sales'
+  expect_error 3 INPUT_NOT_FOUND "$test_dir/locked-schema.json" \
+    "$sqrail_bin" schema "$test_dir/locked/sub/in.csv"
+  expect_error 5 OUTPUT_DIRECTORY "$test_dir/locked-nested-output.json" \
+    "$sqrail_bin" run -o "$test_dir/locked/sub/out.csv" 'SELECT 1 AS value'
+  expect_error 5 OUTPUT_DIRECTORY "$test_dir/locked-output.json" \
+    "$sqrail_bin" run -o "$test_dir/locked/out.jsonl" 'SELECT 1 AS value'
+  chmod 700 "$test_dir/locked"
+fi
 
 # Two processes targeting the same absent path must never both succeed or
 # replace one another. The atomic hard-link commit makes exactly one winner.
