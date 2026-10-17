@@ -15,6 +15,8 @@ versions follow semantic versioning.
   `INPUT_NOT_FOUND` (exit 3) or `OUTPUT_DIRECTORY` (exit 5) and the operating
   system's reason instead of `INTERNAL` (exit 70) or, for some outputs,
   `QUERY_FAILED` (exit 4)
+- benchmark `summary.tsv` timing columns now read both hyperfine 1.x and 2.x
+  JSON exports instead of being `null` under hyperfine 2.x
 - `--timeout` expiry and `SIGINT`/`SIGTERM` are no longer lost when they arrive
   between DuckDB statements, such as while sqrail validates a large query;
   DuckDB clears a pending interrupt whenever a statement starts, so sqrail now
