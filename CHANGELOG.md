@@ -9,6 +9,9 @@ versions follow semantic versioning.
 
 - a static Bash completion file for the documented commands and options,
   installed as `share/bash-completion/completions/sqrail` on Linux and macOS
+- release-archive verification steps for macOS, Linux, and PowerShell that
+  compare an archive with its exact `SHA256SUMS` entry and check the GitHub
+  provenance and SBOM attestations
 
 ### Changed
 

@@ -23,6 +23,54 @@ POSIX systems and other C++20 toolchains may build from source, but are
 best-effort until they have a maintained CI lane. No FreeBSD, musl, 32-bit, or
 big-endian release artifact is currently claimed.
 
+## Verify a release archive
+
+Every release publishes `SHA256SUMS`, which lists the SHA-256 digest of each
+archive and SBOM as `<digest>  ./<asset name>`. Download it next to the archive
+and compare the archive with its own entry before extracting it. Each command
+prints `OK` only when the digest matches. A mismatch, or an archive name with
+no entry, fails with a nonzero exit status; do not extract the archive then.
+
+macOS, with the built-in `shasum`:
+
+```sh
+archive=sqrail-v0.3.4-macos-arm64.tar.gz
+awk -v name="./$archive" '$2 == name' SHA256SUMS | shasum -a 256 -c -
+```
+
+Linux, with GNU coreutils `sha256sum`:
+
+```sh
+archive=sqrail-v0.3.4-linux-x86_64.tar.gz
+awk -v name="./$archive" '$2 == name' SHA256SUMS | sha256sum -c -
+```
+
+Windows PowerShell:
+
+```powershell
+$archive = "sqrail-v0.3.4-windows-x86_64.zip"
+$entry = Get-Content SHA256SUMS | Where-Object { $_.EndsWith("  ./$archive") }
+$actual = (Get-FileHash $archive -Algorithm SHA256).Hash
+if ($entry -and $entry.Split(" ")[0] -eq $actual) { "OK $archive" } else { throw "SHA-256 mismatch: $archive" }
+```
+
+Each command selects only the entry whose name is exactly `./` followed by the
+archive name. Replace the version and target with the archive you downloaded;
+the asset names are listed on the
+[release page](https://github.com/yhay81/sqrail/releases/latest).
+
+A matching checksum shows that the download is intact, not who built it. Each
+archive also has GitHub build-provenance and SPDX SBOM
+[attestations](https://github.com/yhay81/sqrail/attestations), its SBOM is
+published as `sqrail-<version>-<target>.spdx.json`, and `SHA256SUMS` has its
+own provenance attestation. With GitHub CLI:
+
+```sh
+gh attestation verify sqrail-v0.3.4-linux-x86_64.tar.gz --repo yhay81/sqrail
+gh attestation verify sqrail-v0.3.4-linux-x86_64.tar.gz --repo yhay81/sqrail \
+  --predicate-type https://spdx.dev/Document/v2.3
+```
+
 ## Filesystem and process semantics
 
 - POSIX output files use owner read/write permissions and spill workspaces use

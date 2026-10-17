@@ -81,6 +81,15 @@ The v0.3 release workflow produces prebuilt archives for Linux, macOS, and
 Windows on x86-64 and Arm64 for the
 [Releases](https://github.com/yhay81/sqrail/releases) page. Each v0.3 release includes
 `SHA256SUMS`, an SPDX SBOM, and GitHub build-provenance and SBOM attestations.
+Check an archive against its own `SHA256SUMS` entry before extracting it, for
+example on Linux:
+
+```sh
+awk -v name=./sqrail-v0.3.4-linux-x86_64.tar.gz '$2 == name' SHA256SUMS | sha256sum -c -
+```
+
+[Platform support](docs/PLATFORMS.md#verify-a-release-archive) shows the macOS
+and PowerShell equivalents and how to verify the attestations.
 
 Extract the archive and place `bin/sqrail` on `PATH`. No language runtime,
 package manager, daemon, or database server is required. Linux archives target
