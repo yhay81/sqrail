@@ -109,6 +109,18 @@ TEST_CASE("invalid and conflicting options have stable error codes", "[cli]") {
 		Parse({"sqrail", "schema", "--timeout", "1s", "--timeout", "2s", "data.csv"},
 		      [](const int argc, char **argv) { return sqrail::ParseSchema(argc, argv); });
 	});
+	CheckError("UNKNOWN_OPTION", []() {
+		Parse({"sqrail", "schema", "--memroy", "1GB", "data.csv"},
+		      [](const int argc, char **argv) { return sqrail::ParseSchema(argc, argv); });
+	});
+	CheckError("UNKNOWN_OPTION", []() {
+		Parse({"sqrail", "schema", "-t", "data=data.csv"},
+		      [](const int argc, char **argv) { return sqrail::ParseSchema(argc, argv); });
+	});
+	CheckError("UNKNOWN_OPTION", []() {
+		Parse({"sqrail", "schema", "--help"},
+		      [](const int argc, char **argv) { return sqrail::ParseSchema(argc, argv); });
+	});
 	CheckError("EMPTY_SQL", []() { static_cast<void>(sqrail::NormalizeQuery(" ; \n")); });
 }
 
