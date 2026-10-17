@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
+import shutil
 import subprocess
 import sys
 import tarfile
@@ -16,7 +18,21 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SBOM = ROOT / "tools" / "generate-sbom.py"
 PACKAGE = ROOT / "tools" / "package-release.py"
+COMPLETION = ROOT / "completions" / "sqrail.bash"
 EPOCH = 1_700_000_000
+
+# Completes the last argument as bash would after splitting the command line
+# at COMP_WORDBREAKS, then prints one candidate per line.
+COMPLETE = """
+source "$1"
+shift
+COMP_WORDS=("$@")
+COMP_CWORD=$((${#COMP_WORDS[@]} - 1))
+_sqrail
+for candidate in "${COMPREPLY[@]}"; do
+  printf '%s\\n' "$candidate"
+done
+"""
 
 
 class PackageToolsTest(unittest.TestCase):
@@ -89,6 +105,110 @@ class PackageToolsTest(unittest.TestCase):
                 self.assertTrue(
                     all(not name.startswith("/") for name in archive.namelist())
                 )
+
+    @unittest.skipUnless(os.environ.get("SQRAIL_BUILD_DIR"), "requires a built CMake tree")
+    def test_install_layout(self) -> None:
+        datadir = os.environ.get("SQRAIL_INSTALL_DATADIR", "share")
+        with tempfile.TemporaryDirectory() as directory:
+            prefix = Path(directory)
+            subprocess.run(
+                [
+                    os.environ.get("SQRAIL_CMAKE", "cmake"),
+                    "--install",
+                    os.environ["SQRAIL_BUILD_DIR"],
+                    "--prefix",
+                    str(prefix),
+                    "--component",
+                    "sqrail",
+                ],
+                check=True,
+                stdout=subprocess.DEVNULL,
+            )
+            completion = prefix / datadir / "bash-completion" / "completions" / "sqrail"
+            self.assertEqual(completion.read_bytes(), COMPLETION.read_bytes())
+
+
+@unittest.skipIf(os.name == "nt" or shutil.which("bash") is None, "Bash completion is POSIX-only")
+class BashCompletionTest(unittest.TestCase):
+    def setUp(self) -> None:
+        self.temporary = tempfile.TemporaryDirectory()
+        root = Path(self.temporary.name)
+        self.work = root / "work"
+        (self.work / "data").mkdir(parents=True)
+        (self.work / "spill dir").mkdir()
+        for name in ("data.csv", "other.parquet", "-odd.csv"):
+            (self.work / name).touch()
+        # A sqrail stub on PATH records any attempt to run the CLI.
+        self.marker = root / "sqrail-ran"
+        self.bin = root / "bin"
+        self.bin.mkdir()
+        stub = self.bin / "sqrail"
+        stub.write_text(f"#!/bin/sh\ntouch '{self.marker}'\n", encoding="utf-8")
+        stub.chmod(0o755)
+
+    def tearDown(self) -> None:
+        self.temporary.cleanup()
+
+    def complete(self, *words: str) -> list[str]:
+        environment = dict(os.environ, PATH=f"{self.bin}{os.pathsep}{os.environ.get('PATH', '')}")
+        result = subprocess.run(
+            ["bash", "-c", COMPLETE, "bash", str(COMPLETION), *words],
+            cwd=self.work,
+            env=environment,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        self.assertEqual(result.stderr, "")
+        self.assertFalse(self.marker.exists(), "completion must not run sqrail")
+        return result.stdout.splitlines()
+
+    def test_syntax(self) -> None:
+        subprocess.run(["bash", "-n", str(COMPLETION)], check=True)
+
+    def test_commands_and_options(self) -> None:
+        self.assertEqual(self.complete("sqrail", ""), ["schema", "check", "run", "--help", "--version"])
+        self.assertEqual(self.complete("sqrail", "r"), ["run"])
+        self.assertEqual(
+            self.complete("sqrail", "schema", "-"),
+            ["--memory", "--threads", "--timeout", "--max-input-files", "--strict-schema", "--"],
+        )
+        self.assertEqual(
+            self.complete("sqrail", "check", "-"),
+            [
+                "-t",
+                "--memory",
+                "--threads",
+                "--timeout",
+                "--max-rows",
+                "--max-input-files",
+                "--max-sql-bytes",
+                "--strict-schema",
+                "--",
+            ],
+        )
+        self.assertEqual(
+            self.complete("sqrail", "run", "--max-"),
+            ["--max-spill", "--max-rows", "--max-output-bytes", "--max-input-files", "--max-sql-bytes"],
+        )
+        self.assertEqual(self.complete("sqrail", "run", "--st"), ["--stats", "--strict-schema"])
+        for option in ("-t", "--memory", "--threads", "--max-spill", "--timeout", "--max-rows"):
+            with self.subTest(option=option):
+                self.assertEqual(self.complete("sqrail", "run", option, ""), [])
+        self.assertEqual(self.complete("sqrail", "run", "SELECT"), [])
+        self.assertEqual(self.complete("sqrail", "--version", ""), [])
+
+    def test_paths(self) -> None:
+        self.assertEqual(sorted(self.complete("sqrail", "schema", "da")), ["data", "data.csv"])
+        self.assertEqual(sorted(self.complete("sqrail", "schema", "--", "-")), ["-odd.csv"])
+        self.assertEqual(
+            sorted(self.complete("sqrail", "run", "-t", "sales", "=")),
+            ["-odd.csv", "data", "data.csv", "other.parquet", "spill dir"],
+        )
+        self.assertEqual(self.complete("sqrail", "check", "-t", "sales", "=", "o"), ["other.parquet"])
+        self.assertEqual(self.complete("sqrail", "run", "-o", "o"), ["other.parquet"])
+        self.assertEqual(sorted(self.complete("sqrail", "run", "--spill", "")), ["data", "spill dir"])
+        self.assertEqual(sorted(self.complete("sqrail", "run", "-", "<", "da")), ["data", "data.csv"])
 
 
 if __name__ == "__main__":

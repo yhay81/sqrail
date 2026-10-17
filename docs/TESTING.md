@@ -11,7 +11,7 @@ Python interpreter, while repository CI still exercises every layer.
 | native unit      | `SQRAIL_BUILD_TESTS`              | C++20 + Catch2         | CLI parsing, limits, query normalization, strict JSON, timeouts  |
 | CLI integration  | `SQRAIL_BUILD_INTEGRATION_TESTS`  | Python 3; Bash on Unix | real processes, files, signals, races, limits, platform behavior |
 | agent evaluation | `SQRAIL_BUILD_AGENT_TESTS`        | Python 3               | blinded experiment runner, oracle, reports, environment capture  |
-| release tools    | `SQRAIL_BUILD_RELEASE_TOOL_TESTS` | Python 3               | deterministic archives and SPDX SBOM generation                  |
+| release tools    | `SQRAIL_BUILD_RELEASE_TOOL_TESTS` | Python 3               | deterministic archives, SPDX SBOMs, install layout, completion   |
 
 `SQRAIL_BUILD_TESTS` defaults to `ON`. The three Python-backed layers default
 to `OFF`, so an ordinary source configure does not require a Python

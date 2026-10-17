@@ -48,3 +48,19 @@ every target. Before a release tag, all six bundled lanes, the system-DuckDB
 lanes, Clang static analysis, ASan/UBSan, ThreadSanitizer, both fuzz targets,
 and package reproducibility checks must be green for the exact commit. A
 signed annotated tag then rebuilds and attests each archive.
+
+## Shell completion
+
+On Linux and macOS, `cmake --install` places a static Bash completion file at
+`share/bash-completion/completions/sqrail` under the installation prefix. It
+completes the three commands and their documented options, and paths after
+`schema`, `-t NAME=`, `-o`, and `--spill`. It never runs sqrail, opens data
+files, or makes network calls.
+
+bash-completion 2 loads the file on demand when that directory is on its search
+path, as it is for the `/usr` and `/usr/local` prefixes. Otherwise, activate it
+in the current shell or from `~/.bashrc`:
+
+```sh
+source /path/to/prefix/share/bash-completion/completions/sqrail
+```

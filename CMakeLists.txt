@@ -374,6 +374,13 @@ if(UNIX)
     DESTINATION "${CMAKE_INSTALL_MANDIR}/man1"
     COMPONENT sqrail
   )
+  # bash-completion 2 loads completions on demand from this directory.
+  install(
+    FILES completions/sqrail.bash
+    DESTINATION "${CMAKE_INSTALL_DATADIR}/bash-completion/completions"
+    RENAME sqrail
+    COMPONENT sqrail
+  )
 endif()
 install(
   FILES README.md LICENSE THIRD_PARTY_NOTICES.md CHANGELOG.md SECURITY.md
@@ -593,6 +600,20 @@ if(SQRAIL_BUILD_RELEASE_TOOL_TESTS)
     COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/package_tools_test.py"
   )
   set_tests_properties(sqrail-package-tools-unit PROPERTIES TIMEOUT 120)
+  if(UNIX)
+    add_test(
+      NAME sqrail-install-layout
+      COMMAND
+        "${CMAKE_COMMAND}" -E env
+        "SQRAIL_CMAKE=${CMAKE_COMMAND}"
+        "SQRAIL_BUILD_DIR=${CMAKE_BINARY_DIR}"
+        "SQRAIL_INSTALL_DATADIR=${CMAKE_INSTALL_DATADIR}"
+        "${Python3_EXECUTABLE}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/package_tools_test.py"
+        PackageToolsTest.test_install_layout
+    )
+    set_tests_properties(sqrail-install-layout PROPERTIES TIMEOUT 120)
+  endif()
 endif()
 
 if(SQRAIL_BUILD_INTEGRATION_TESTS)

@@ -270,6 +270,24 @@
             checks must be green for the exact commit. A signed annotated tag
             then rebuilds and attests each archive.
           </p>
+          <h2 id="shell-completion">Shell completion</h2>
+          <p>
+            On Linux and macOS, <code>cmake --install</code> places a static
+            Bash completion file at
+            <code>share/bash-completion/completions/sqrail</code> under the
+            installation prefix. It completes the three commands and their
+            documented options, and paths after <code>schema</code>,
+            <code>-t NAME=</code>, <code>-o</code>, and <code>--spill</code>. It
+            never runs sqrail, opens data files, or makes network calls.
+          </p>
+          <p>
+            bash-completion 2 loads the file on demand when that directory is on
+            its search path, as it is for the <code>/usr</code> and
+            <code>/usr/local</code> prefixes. Otherwise, activate it in the
+            current shell or from <code>~/.bashrc</code>:
+          </p>
+          <pre><code class="language-sh">source /path/to/prefix/share/bash-completion/completions/sqrail
+</code></pre>
         </div>
 
         <nav
@@ -302,6 +320,7 @@
             >Filesystem and process semantics</a
           >
           <a href="#what-tested-means">What “tested” means</a>
+          <a href="#shell-completion">Shell completion</a>
         </nav>
       </aside>
     </main>
