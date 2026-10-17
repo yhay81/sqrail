@@ -5,6 +5,17 @@ versions follow semantic versioning.
 
 ## [Unreleased]
 
+### Fixed
+
+- `schema` now rejects unknown options with `UNKNOWN_OPTION` (exit 2), as `run`
+  and `check` do, instead of reading them as input paths and failing with
+  `INPUT_NOT_FOUND` (exit 3); a schema path that begins with `-` must now
+  follow `--`
+- inputs and outputs behind a directory that cannot be accessed now fail with
+  `INPUT_NOT_FOUND` (exit 3) or `OUTPUT_DIRECTORY` (exit 5) and the operating
+  system's reason instead of `INTERNAL` (exit 70) or, for some outputs,
+  `QUERY_FAILED` (exit 4)
+
 ## [0.3.4] - 2026-08-02
 
 ### Added

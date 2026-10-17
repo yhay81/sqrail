@@ -53,10 +53,18 @@ std::string SqlPathArgument(const std::vector<fs::path> &paths) {
 fs::path ExistingInput(const std::string &raw_path) {
 	std::error_code error;
 	fs::path path = fs::absolute(fs::path(raw_path), error);
-	if (error || !fs::exists(path) || !fs::is_regular_file(path)) {
+	const auto status = error ? fs::file_status() : fs::status(path, error);
+	if (fs::status_known(status) && !fs::is_regular_file(status)) {
 		throw SqrailError(EXIT_INPUT, "INPUT_NOT_FOUND", "input file not found: " + raw_path);
 	}
-	return fs::weakly_canonical(path);
+	if (!error) {
+		path = fs::weakly_canonical(path, error);
+	}
+	if (error) {
+		throw SqrailError(EXIT_INPUT, "INPUT_NOT_FOUND",
+		                  "cannot access input file: " + raw_path + ": " + error.message());
+	}
+	return path;
 }
 
 void ValidateInputSet(const std::vector<fs::path> &paths, const std::string &source) {
