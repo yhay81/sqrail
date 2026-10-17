@@ -12,6 +12,9 @@ versions follow semantic versioning.
 - release-archive verification steps for macOS, Linux, and PowerShell that
   compare an archive with its exact `SHA256SUMS` entry and check the GitHub
   provenance and SBOM attestations
+- `docs/RECIPES.md`, a cookbook for schema inspection, CSV-to-Parquet
+  conversion, joins, partitioned Parquet filtering, and JSONL validation whose
+  commands and documented output the smoke suite executes
 
 ### Changed
 

@@ -313,7 +313,8 @@ must follow the [Code of Conduct](CODE_OF_CONDUCT.md). Report suspected
 vulnerabilities privately through the [security policy](SECURITY.md).
 
 The [documentation index](docs/README.md) maps each question to its normative
-source. Please treat benchmark numbers as hardware-specific observations unless
+source, and the [recipes](docs/RECIPES.md) cover common CSV, JSON, and Parquet
+tasks with copy-pasteable commands. Please treat benchmark numbers as hardware-specific observations unless
 the linked harness and equivalent-work checks support a broader claim.
 
 The public [community growth plan](docs/COMMUNITY_GROWTH.md) records who sqrail

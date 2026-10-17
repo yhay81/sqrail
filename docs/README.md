@@ -13,6 +13,7 @@
 | I need to…                        | Read                                                  |
 | --------------------------------- | ----------------------------------------------------- |
 | install and run a first query     | [3-minute guide](https://sqrail.yhay81.com/docs/)     |
+| copy a recipe for a common task   | [Recipes](RECIPES.md)                                 |
 | install sqrail through an agent   | [Agent setup](https://sqrail.yhay81.com/docs/agents/) |
 | integrate sqrail with an agent    | [Agent integration](AGENT_INTEGRATION.md)             |
 | depend on exact CLI behavior      | [CLI contract](CONTRACT.md)                           |
