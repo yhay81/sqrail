@@ -31,6 +31,8 @@ versions follow semantic versioning.
   calling DuckDB directly, and moves build details after the usage reference
 - tagged releases are again built, tested, attested, and published for all six
   platform archives by the tag-triggered release workflow
+- the `windows-arm64` preset to the `Visual Studio 18 2026` generator, because
+  GitHub's Windows 11 Arm64 runner image now provides Visual Studio 2026 only
 
 ### Fixed
 
@@ -54,6 +56,8 @@ versions follow semantic versioning.
 - a stdout write failure that only surfaces when sqrail flushes its final
   buffered rows, plan, or schema objects now fails with `STDOUT_WRITE`
   (exit 5) instead of going unreported
+- Windows builds with Visual Studio 2026 no longer fail with C4996 errors for
+  the C++20-deprecated `shared_ptr` atomic overloads that DuckDB's headers call
 
 ### Security
 

@@ -85,10 +85,10 @@ clang-format@18.1.8` provides it when your platform packages another release.
 Give Zizmor a `GH_TOKEN` so it runs the online audits CI performs, including the
 action reference checks a local run otherwise skips. GitHub Actions additionally
 run CodeQL and audit every workflow with Actionlint and Zizmor. The `windows-x64`
-preset follows the Windows 2025 hosted image and uses Visual Studio 2026 with
-a CMake version that provides the `Visual Studio 18 2026` generator; the Windows
-11 Arm64 runner continues to use Visual Studio 2022 through the `windows-arm64`
-preset. Both select the static MSVC runtime and the Release configuration.
+and `windows-arm64` presets follow the Windows 2025 and Windows 11 Arm64 hosted
+images, which both provide Visual Studio 2026, and need a CMake version that
+provides the `Visual Studio 18 2026` generator. Both select the static MSVC
+runtime and the Release configuration.
 
 The `core` workflow runs Catch2-based native unit tests without Python. The
 other development workflows enable every optional suite. Behavioral changes

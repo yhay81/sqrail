@@ -286,6 +286,15 @@ if(WIN32 AND SQRAIL_DUCKDB_PROVIDER STREQUAL "BUNDLED")
   target_compile_definitions(sqrail PRIVATE DUCKDB_STATIC_BUILD)
 endif()
 
+# DuckDB's shared_ptr wrapper calls the std::atomic_load/atomic_store overloads
+# for shared_ptr, which MSVC deprecates in C++20 (STL4029). Each instantiation
+# from a sqrail source would otherwise be a C4996 error under /WX.
+set(
+  SQRAIL_DUCKDB_MSVC_DEFINITIONS
+  $<$<CXX_COMPILER_ID:MSVC>:_SILENCE_CXX20_OLD_SHARED_PTR_ATOMIC_SUPPORT_DEPRECATION_WARNING>
+)
+target_compile_definitions(sqrail PRIVATE ${SQRAIL_DUCKDB_MSVC_DEFINITIONS})
+
 function(sqrail_enable_project_warnings target)
   if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
     target_compile_options(
@@ -547,6 +556,7 @@ if(SQRAIL_BUILD_TESTS)
     if(WIN32 AND SQRAIL_DUCKDB_PROVIDER STREQUAL "BUNDLED")
       target_compile_definitions(sqrail-control-test PRIVATE DUCKDB_STATIC_BUILD)
     endif()
+    target_compile_definitions(sqrail-control-test PRIVATE ${SQRAIL_DUCKDB_MSVC_DEFINITIONS})
     sqrail_enable_project_warnings(sqrail-control-test)
     catch_discover_tests(
       sqrail-control-test
