@@ -8,8 +8,8 @@
   </a>
 
   <p>
-    <strong>One bounded, read-only SQL query over local files.</strong><br>
-    A small CLI for coding agents that already know the SQL.
+    <strong>Run one read-only SQL query over local CSV, TSV, JSON, and Parquet files.</strong><br>
+    A small, predictable CLI for coding agents that already write SQL.
   </p>
 
   <p>
@@ -26,83 +26,176 @@
     ·
     <a href="docs/CONTRACT.md">Contract</a>
     ·
+    <a href="docs/RECIPES.md">Recipes</a>
+    ·
     <a href="docs/BENCHMARKS.md">Benchmarks</a>
     ·
     <a href="SECURITY.md">Security</a>
-    ·
-    <a href="CONTRIBUTING.md">Contributing</a>
   </p>
 </div>
 
 ---
 
-sqrail is not a natural-language interface, an agent framework, or a new query
-engine. The model writes SQL. sqrail embeds DuckDB and supplies the missing
-execution boundary: canonical file binding, streamed results, explicit resource
-limits, atomic output, and machine-readable diagnostics.
+## What is sqrail?
+
+sqrail is a single command that treats local data files as SQL tables. You give
+each file a table name, write one ordinary SQL query, and get the result back as
+JSON Lines on stdout or as a new CSV, JSON, or Parquet file.
+
+It is built for coding agents. Models already write good SQL, so sqrail does not
+translate natural language or add a query language of its own. Instead it gives
+that SQL a narrow, predictable place to run:
+
+- **Only the files you name can be read.** Nothing else on disk is reachable.
+- **Nothing can be changed.** One `SELECT`, `VALUES`, or `WITH` query is
+  accepted, inputs are never modified, and existing files are never
+  overwritten.
+- **Every run stays within the limits you set** for memory, threads, time,
+  rows, bytes, files, and SQL size.
+- **Every result is machine-readable.** Rows go to stdout; a failure is one
+  JSON object on stderr with a stable exit code.
+
+The query engine is [DuckDB](https://duckdb.org), embedded in the binary. sqrail
+is the boundary around it, and the whole interface fits in a
+[195-word `--help`](https://sqrail.yhay81.com/help.txt).
+
+## Quick look
+
+Bind each file to a table name with `-t NAME=PATH`, then pass the SQL. Here `-`
+reads it from stdin so it needs no shell quoting:
 
 ```sh
-sqrail run \
-  -t sales=sales.csv \
-  -t drugs=drugs.parquet \
-  -o result.parquet \
-  - <<'SQL'
+sqrail run -t sales=sales.csv -t drugs=drugs.parquet - <<'SQL'
 SELECT d.name, sum(s.amount) AS total
-FROM sales s
-JOIN drugs d USING (drug_id)
+FROM sales AS s
+JOIN drugs AS d USING (drug_id)
 GROUP BY d.name
 ORDER BY total DESC
 SQL
 ```
 
-## Why sqrail
+Each result row is one JSON object on stdout:
 
-| Need                              | sqrail's answer                                                   |
-| --------------------------------- | ----------------------------------------------------------------- |
-| A model already writes SQL        | Keep SQL as the only query language                               |
-| Tool instructions consume context | Learn the complete interface with `sqrail --help`                 |
-| File access should be intentional | Allowlist only explicitly bound inputs                            |
-| Agent work must be bounded        | Cap memory, threads, time, spill, rows, bytes, files, and SQL     |
-| Pipelines need stable I/O         | Stream JSONL; emit one JSON diagnostic; use documented exit codes |
-| Failed output must be harmless    | Write privately, commit atomically, never overwrite               |
+```text
+{"name":"Alphazol","total":25}
+{"name":"Betamab","total":20}
+```
 
-The interface has three verbs: `schema` when names and types are unknown,
-`check` to plan without execution, and `run` to execute once. See the
-[3-minute guide](https://sqrail.yhay81.com/docs/) or give an agent the canonical
-[195-word help](https://sqrail.yhay81.com/help.txt).
+Add `-o` to write a file instead. The extension selects the format, and the file
+appears only after the query succeeds:
+
+```sh
+sqrail run -t sales=sales.csv -o totals.parquet \
+  'SELECT drug_id, sum(amount) AS total FROM sales GROUP BY drug_id'
+```
+
+When a query is refused or fails, stdout stays clean, stderr carries exactly one
+JSON object, and the exit code says which stage failed:
+
+```console
+$ sqrail run -t sales=sales.csv 'DELETE FROM sales'; echo "exit $?"
+{"schema_version":1,"sqrail_version":"0.3.4","ok":false,"code":"READ_ONLY_QUERY","message":"only a SELECT, VALUES, or WITH query is allowed"}
+exit 4
+```
+
+The [recipes](docs/RECIPES.md) cover conversion, joins, partitioned Parquet, and
+JSONL validation with commands you can paste into an empty directory.
+
+## How it works
+
+```text
+-t sales=sales.csv      --+
+-t drugs=drugs.parquet  --+--> one read-only SQL query --> rows as JSONL on stdout
+-t events=events/       --+    run by DuckDB within         or one file with -o
+                               your limits
+                                    |
+                                    +--> on failure: one JSON object on stderr
+                                         and a stable exit code
+```
+
+Three commands cover the whole workflow:
+
+| Command                     | Use it to                           | Prints                                                 |
+| --------------------------- | ----------------------------------- | ------------------------------------------------------ |
+| `sqrail schema FILE...`     | learn column names and types        | one JSON object per path with its files and columns    |
+| `sqrail check [-t ...] SQL` | validate a query without running it | result columns, bound inputs, and the physical plan    |
+| `sqrail run [-t ...] SQL`   | execute the query once              | JSONL rows, or nothing when `-o` writes a file instead |
+
+A typical agent turn is short: run `schema` once if the names and types are
+unknown, otherwise trust them; `run` once; stop when the exit code is `0`.
+
+## Why not call DuckDB directly?
+
+You can. sqrail runs the same engine and does not claim to be faster than it.
+The difference is what one invocation is allowed to do. A database shell is
+designed to do anything you ask. sqrail is designed so that a command can do only
+one bounded thing, which is what you want when a model chooses the SQL and a
+program reads the result.
+
+| Question                    | sqrail's answer                                                                                                                              |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| What can the query read?    | Only paths bound with `-t`. DuckDB external access and extension loading are disabled, and the configuration is locked.                      |
+| What can it change?         | Nothing. Inputs are exposed as read-only views; writes, `COPY`, `ATTACH`, `INSTALL`, `LOAD`, `PRAGMA`, and multiple statements are rejected. |
+| How much can it use?        | Only what you allow with the [resource limits](#resource-limits). Going over a limit is an error, never a silently truncated result.         |
+| What if it fails halfway?   | With `-o`, output is written privately and committed atomically. A failed run leaves no file, and an existing file is never replaced.        |
+| What does the caller parse? | stdout carries only rows. Each failure is one versioned JSON object on stderr with a [documented exit code](#errors-and-exit-codes).         |
+| Is there any hidden state?  | No configuration file, network service, embedded model, daemon, or telemetry. The same command behaves the same way every time.              |
+| How does an agent learn it? | From `sqrail --help`, which is complete in 195 words, instead of a long tool manual in every prompt.                                         |
+
+sqrail is **not** a natural-language-to-SQL tool, an interactive shell, a
+persistent database, or an operating-system sandbox. The
+[concept](docs/CONCEPT.md) ([日本語](docs/CONCEPT.ja.md)) explains the design
+constraints and non-goals.
 
 ## Install
+
+On macOS or Linux with Homebrew:
 
 ```sh
 brew install yhay81/tap/sqrail
 ```
 
-The v0.3 release workflow produces prebuilt archives for Linux, macOS, and
-Windows on x86-64 and Arm64 for the
-[Releases](https://github.com/yhay81/sqrail/releases) page. Each v0.3 release includes
-`SHA256SUMS`, an SPDX SBOM, and GitHub build-provenance and SBOM attestations.
-Check an archive against its own `SHA256SUMS` entry before extracting it, for
-example on Linux:
+Or download a prebuilt archive for Linux, macOS, or Windows on x86-64 or Arm64
+from [Releases](https://github.com/yhay81/sqrail/releases/latest), extract it,
+and put `bin/sqrail` on `PATH`. It is one executable: no language runtime,
+package manager, daemon, or database server is required.
+
+- Linux archives need glibc 2.35 or newer and statically include the C++
+  runtime.
+- Windows archives statically include the MSVC runtime and need a
+  UTF-8-capable Windows 10/11 or Windows Server release.
+- Each release publishes `SHA256SUMS`, an SPDX SBOM, and GitHub build-provenance
+  and SBOM attestations.
+  [Verify a release archive](docs/PLATFORMS.md#verify-a-release-archive) gives
+  the commands for macOS, Linux, and PowerShell.
+
+Then confirm it runs:
 
 ```sh
-awk -v name=./sqrail-v0.3.4-linux-x86_64.tar.gz '$2 == name' SHA256SUMS | sha256sum -c -
+sqrail --version
+sqrail --help
 ```
 
-[Platform support](docs/PLATFORMS.md#verify-a-release-archive) shows the macOS
-and PowerShell equivalents and how to verify the attestations.
+On macOS and Linux, `man sqrail` shows the same reference.
+[Platform support](docs/PLATFORMS.md) lists the tested platform tiers.
 
-Extract the archive and place `bin/sqrail` on `PATH`. No language runtime,
-package manager, daemon, or database server is required. Linux archives target
-glibc 2.35 or newer and statically include the C++ runtime. Windows archives
-statically include the MSVC runtime and require a UTF-8-capable Windows 10/11 or
-Windows Server release. The tested platform tiers are documented in
-[Platform support](docs/PLATFORMS.md).
+## Use it from a coding agent
 
-### Install the Agent Skill
+sqrail needs no SDK: an agent calls it like any other shell command. The
+smallest useful instruction is:
 
-The CLI works by itself. Its optional public
-[Agent Skill](skills/sqrail/SKILL.md) lets compatible agents discover when to
-use it without adding the full tool manual to every prompt. With GitHub CLI
+```text
+Run `sqrail --help`.
+If names and types are unknown, use `sqrail schema` once.
+Otherwise trust the stated schema, run once, and stop after success.
+```
+
+The same decision rule and stop condition are built into `--help`. The
+low-cost-model experiments behind them are in the
+[agent experiment log](benchmarks/agent-eval/EXPERIMENTS.md).
+
+The optional [Agent Skill](skills/sqrail/SKILL.md) tells compatible agents when
+to reach for sqrail without adding the manual to every prompt. With GitHub CLI
 2.90 or newer:
 
 ```sh
@@ -110,21 +203,24 @@ gh skill preview yhay81/sqrail sqrail
 gh skill install yhay81/sqrail sqrail --agent codex --scope user
 ```
 
-Replace `codex` with the current host, including `claude-code`, `cursor`,
+Replace `codex` with your host, such as `claude-code`, `cursor`,
 `github-copilot`, `opencode`, `cline`, `kiro-cli`, or `windsurf`. Google's
-current consumer route is AGY/Antigravity CLI, which uses the repository's
-native plugin:
+AGY/Antigravity CLI uses the repository's native plugin instead:
 
 ```sh
 agy plugin install https://github.com/yhay81/sqrail
 ```
 
-The stable
-[AI installer](https://sqrail.yhay81.com/install-agent.md) gives an agent a
-review-first path to install both the executable and Skill, with an `npx
-skills` fallback when GitHub CLI is unavailable.
+To have an agent install both the executable and the Skill, give it the
+review-first [AI installer](https://sqrail.yhay81.com/install-agent.md). It falls
+back to `npx skills` when GitHub CLI is unavailable.
+[Agent integration](docs/AGENT_INTEGRATION.md) collects further patterns.
 
-## Contract
+## Reference
+
+`sqrail --help` is the complete short interface. The
+[CLI contract](docs/CONTRACT.md) is normative for every detail, including the
+JSON schemas and failure semantics.
 
 ```text
 sqrail schema [--memory SIZE] [--threads N] [--timeout DURATION]
@@ -138,116 +234,62 @@ sqrail run [-t NAME=PATH]... [-o FILE] [--memory SIZE] [--threads N]
            [--max-sql-bytes SIZE] [--stats] [--strict-schema] [SQL|-]
 ```
 
-- `schema` returns one JSON object per input path.
-- `check` validates SQL and returns its JSON physical plan without execution.
-- `-t NAME=PATH` binds a file, glob, or partitioned Parquet directory.
-- Multi-file inputs union evolving columns by name; `--strict-schema` requires
-  identical names, order, and types.
-- `-` reads SQL from stdin and avoids shell-quoting large queries.
-- SQL must parse as exactly one `SELECT`, `VALUES`, or `WITH` query.
-- Without `-o`, rows are streamed as JSONL to stdout.
-- With `-o`, the format follows the output extension.
-- Existing outputs are never overwritten, and failed queries do not leave a
-  partial destination file.
-- `--max-rows` fails when the final result exceeds a declared row count.
-- `--max-output-bytes`, `--max-input-files`, and `--max-sql-bytes` bound the
-  other attacker- or agent-controlled dimensions.
-- `--stats` emits machine-readable success metrics on stderr.
-- Diagnostics are a single JSON object on stderr.
-- Row order is undefined unless the SQL contains `ORDER BY`.
-- No configuration file is read.
-- No model or network service is embedded.
+### Inputs and queries
 
-The normative details, JSON schemas, failure semantics, and exit codes are in
-[CLI contract](docs/CONTRACT.md).
+- `-t NAME=PATH` binds a table name to one file, a glob, or a partitioned
+  Parquet directory, whose `key=value` directory names such as `year=2026`
+  become columns. Repeat it for each table.
+- The files in one binding are combined by column name, and a column missing
+  from some files is `null`. `--strict-schema` instead requires identical
+  names, order, and types.
+- The SQL is one `SELECT`, `VALUES`, or `WITH` query in the DuckDB dialect that
+  `sqrail --version` reports. Pass it as an argument, or as `-` to read it from
+  stdin.
+- Row order is undefined unless the query contains `ORDER BY`.
 
-An agent can learn the complete interface with:
+Every format can be read and written:
 
-```sh
-sqrail --help
+| Format     | Extensions          | Notes                                            |
+| ---------- | ------------------- | ------------------------------------------------ |
+| CSV        | `.csv`              |                                                  |
+| TSV        | `.tsv`, `.tab`      |                                                  |
+| JSON       | `.json`             | written as one JSON array                        |
+| JSON Lines | `.jsonl`, `.ndjson` | written as one object per line                   |
+| Parquet    | `.parquet`          | also read from a glob or a partitioned directory |
+
+Text formats may also end in `.gz` or `.zst`. Externally compressed Parquet and
+bzip2/xz streams are deliberately rejected.
+
+### Outputs
+
+- **Without `-o`**, each row is one JSON object on stdout and nothing else is
+  written there. Rows stream as they are produced, so a query that fails midway
+  may already have printed a valid prefix. Use `-o` when the consumer needs
+  all-or-nothing output.
+- **With `-o FILE`**, the extension selects the format and a successful run is
+  silent. The file is written under a private temporary name with owner-only
+  permissions and committed atomically after success. An existing file is
+  never replaced; the run fails with `OUTPUT_EXISTS` instead.
+- **`--stats`** makes a successful `run` add one JSON object on stderr:
+
+```json
+{
+  "schema_version": 1,
+  "sqrail_version": "0.3.4",
+  "ok": true,
+  "command": "run",
+  "rows": 2,
+  "bytes": 342,
+  "elapsed_ms": 127,
+  "input_files": 1,
+  "destination": "file"
+}
 ```
 
-On macOS and Linux, the installed command reference is also available through
-the system manual:
+### Resource limits
 
-```sh
-man sqrail
-```
-
-The 195-word v0.3 help includes a one-action decision rule and explicit stop
-condition. The low-cost-model experiments that motivated that rule are recorded
-in the [agent experiment log](benchmarks/agent-eval/EXPERIMENTS.md). Integration
-patterns are collected in [Agent integration](docs/AGENT_INTEGRATION.md).
-
-## Supported files
-
-| Input                                        | Output                                       |
-| -------------------------------------------- | -------------------------------------------- |
-| CSV, `.csv.gz`, `.csv.zst`                   | CSV, `.csv.gz`, `.csv.zst`                   |
-| TSV, `.tsv.gz`, `.tsv.zst`                   | TSV, `.tsv.gz`, `.tsv.zst`                   |
-| JSON, JSONL, NDJSON, optionally `.gz`/`.zst` | JSON, JSONL, NDJSON, optionally `.gz`/`.zst` |
-| Parquet file, glob, or partitioned directory | Parquet                                      |
-
-Externally compressed Parquet and bzip2/xz streams are deliberately rejected.
-
-## Build
-
-Requirements:
-
-- CMake 3.25+
-- Ninja
-- a C++20 compiler
-- Git and network access for the first `BUNDLED` or native-test configure, or an
-  installed DuckDB CMake package for a production-only `SYSTEM` build
-
-The native C++ unit suite does not require Python:
-
-```sh
-cmake --workflow --preset core
-```
-
-The default `BUNDLED` provider fetches DuckDB v2.0.0 at an immutable commit
-during the first configure and statically links it. Native tests similarly
-fetch Catch2 v3.16.1 at an immutable commit, but it is never linked into the
-sqrail binary. This is the provider used for official sqrail releases:
-
-```sh
-cmake --workflow --preset dev
-cmake --workflow --preset release
-```
-
-The repository development presets enable the complete Python integration,
-agent-evaluation, and release-tool suites in addition to the native tests.
-Python 3 is required for those full workflows, not for a production-only build
-or the `core` workflow. See the [testing architecture](docs/TESTING.md).
-
-Distribution packages can build entirely from the release source archive and
-link an installed DuckDB package instead. The package must export DuckDB's CMake
-configuration with the `core_functions`, `parquet`, and `json` extensions:
-
-```sh
-CMAKE_PREFIX_PATH=/path/to/duckdb cmake --workflow --preset system
-cmake --install out/build/system --prefix out/install/system --component sqrail
-```
-
-`CMAKE_PREFIX_PATH` may be set to the DuckDB package prefix when it is outside
-the platform's default search path. The system provider links DuckDB's shared
-library, reports its actual runtime version, and does not install a second copy
-of DuckDB's bundled licences.
-
-The repository also supplies `core`, `strict`, `sanitize`, `thread`, `fuzz`,
-`native`, `pgo-generate`, and `pgo-use` presets. The pinned Ubuntu 24.04/LLVM 18
-development container runs the developer workflow on creation. Then:
-
-```sh
-./out/build/release/sqrail schema data.csv
-./out/build/release/sqrail run -t data=data.csv 'SELECT count(*) AS rows FROM data'
-```
-
-The complete pre-tag criteria are in the
-[v0.3 release gate](docs/V0.3_RELEASE.md).
-
-## Resource controls
+Every limit is stated on the command line, and exceeding one fails with a
+structured diagnostic instead of degrading silently:
 
 ```sh
 sqrail run \
@@ -266,59 +308,111 @@ sqrail run \
   - < query.sql
 ```
 
-`--memory` configures DuckDB's memory limit. It is not an operating-system hard
-RSS limit. sqrail disables insertion-order preservation by default so unordered
-file transformations can use less memory. A unique, owner-only workspace is
-created beneath `--spill` for each process and removed after the database
-closes; sibling files are never exposed to SQL. `--max-spill` caps temporary
-storage, and `--timeout` sets an absolute command deadline. `--max-rows`
-detects an oversized final result after at most one extra
-row and prevents a file destination from being committed. `--stats` reports
-rows, bytes, elapsed milliseconds, resolved input-file count, and destination
-on stderr after success. Deadlines begin before input expansion and cover
-recursive discovery, schema inference, planning, execution, and
-output finalization. The remaining caps fail with structured diagnostics and
-remove private file outputs.
+| Option                            | What it bounds                                                                           |
+| --------------------------------- | ---------------------------------------------------------------------------------------- |
+| `--memory SIZE`                   | DuckDB's memory limit. It is not a hard operating-system RSS limit.                      |
+| `--threads N`                     | Worker threads.                                                                          |
+| `--timeout DURATION`              | The whole command, from input discovery and schema inference to output commit.           |
+| `--spill DIR`, `--max-spill SIZE` | Temporary disk. Without `--spill`, nothing spills to disk.                               |
+| `--max-rows N`                    | Rows in the final result. A larger result fails with `RESULT_LIMIT` and commits no file. |
+| `--max-output-bytes SIZE`         | Bytes written to stdout or the output file.                                              |
+| `--max-input-files N`             | Files matched across every glob and directory, checked before they are read.             |
+| `--max-sql-bytes SIZE`            | Size of the SQL text, checked before parsing.                                            |
+
+`--spill` creates a unique, owner-only workspace beneath `DIR` for each process
+and removes it afterwards; other files under `DIR` are never visible to SQL.
+sqrail also disables insertion-order preservation so that unordered file
+transformations can use less memory.
+
+### Errors and exit codes
+
+Every handled failure writes exactly one JSON object with `schema_version`,
+`sqrail_version`, `ok: false`, a stable `code`, and a human-readable `message`.
+The exit code identifies the failing stage:
+
+| Exit | Stage                         | Example codes                                                      |
+| ---: | ----------------------------- | ------------------------------------------------------------------ |
+|    0 | success                       |                                                                    |
+|    2 | command usage                 | `UNKNOWN_OPTION`, `MISSING_VALUE`, `SQL_LIMIT`                     |
+|    3 | input file or format          | `INPUT_NOT_FOUND`, `INPUT_LIMIT`, `SCHEMA_MISMATCH`                |
+|    4 | SQL parse, bind, or execution | `READ_ONLY_QUERY`, `QUERY_FAILED`, `QUERY_TIMEOUT`, `RESULT_LIMIT` |
+|    5 | output path or commit         | `OUTPUT_EXISTS`, `OUTPUT_LIMIT`, `STDOUT_WRITE`                    |
+|   70 | unexpected internal failure   | `INTERNAL`                                                         |
 
 ## Safety boundary
 
-sqrail rejects write statements, disables DuckDB external access and extension
-loading, locks the configuration, and allowlists only bound inputs, the private
-output temporary path, and the private workspace created beneath an explicit
-spill root. This blocks SQL from reading arbitrary local paths, including
-existing siblings under the spill root. It is still process-level defense in
-depth, not an operating-system sandbox; use an OS sandbox for hostile SQL or
-malformed data.
+The restrictions above are enforced inside the process. sqrail rejects write
+statements, disables DuckDB external access and extension loading, locks the
+configuration, and allowlists only the bound inputs, the private output
+temporary path, and the private spill workspace. SQL therefore cannot read
+arbitrary local paths, including other files under the spill root.
+
+This is defense in depth, not an operating-system sandbox. Run hostile SQL or
+malformed data inside an OS sandbox as well, and report suspected
+vulnerabilities through the [security policy](SECURITY.md).
 
 ## Performance
 
-The committed harness builds sqrail and the DuckDB CLI from the same source
-revision, checks logical output equivalence, and records time and peak RSS. See
-[Benchmark policy](docs/BENCHMARKS.md), [harness](benchmarks/README.md), and the
-[measured baseline](docs/BASELINE.md).
+The goal is DuckDB-class execution behind a smaller, deterministic interface,
+not to outrun the engine sqrail embeds. The committed harness builds sqrail and
+the DuckDB CLI from the same source revision, checks that their outputs match,
+and records time and peak RSS. See the [benchmark policy](docs/BENCHMARKS.md),
+the [harness](benchmarks/README.md), and the
+[measured baseline](docs/BASELINE.md). Treat the numbers as observations on
+specific hardware unless the harness supports a broader claim.
 
-The objective is DuckDB-class execution without a second runtime and with a
-smaller, deterministic agent-facing contract—not a claim that the embedded
-DuckDB engine is faster than itself.
+## Build from source
 
-## Community
+You need CMake 3.25+, Ninja, and a C++20 compiler. The first configure also
+needs Git and network access to fetch DuckDB v2.0.0 and Catch2 v3.16.1 at
+pinned commits; Catch2 is used only by tests and never linked into sqrail.
 
-Questions, careful bug reports, reproducible performance evidence, documentation
-improvements, and focused patches are welcome. Ask in
-[Discussions](https://github.com/yhay81/sqrail/discussions), browse the
-[`good first issue`](https://github.com/yhay81/sqrail/labels/good%20first%20issue)
-queue, or start with the [support guide](SUPPORT.md) and
-[contribution guide](CONTRIBUTING.md). Everyone participating in the project
-must follow the [Code of Conduct](CODE_OF_CONDUCT.md). Report suspected
-vulnerabilities privately through the [security policy](SECURITY.md).
+```sh
+cmake --workflow --preset core
+cmake --workflow --preset dev
+cmake --workflow --preset release
+./out/build/release/sqrail run 'SELECT 42 AS answer'
+```
 
-The [documentation index](docs/README.md) maps each question to its normative
-source, and the [recipes](docs/RECIPES.md) cover common CSV, JSON, and Parquet
-tasks with copy-pasteable commands. Please treat benchmark numbers as hardware-specific observations unless
-the linked harness and equivalent-work checks support a broader claim.
+- `core` runs the native C++ unit suite and does not need Python.
+- `dev` and `release` add the Python integration, agent-evaluation, and
+  release-tool suites, so they need Python 3. A production-only build with
+  `-DSQRAIL_BUILD_TESTS=OFF` does not.
+- `release` is the optimized configuration used for official binaries. It uses
+  the default `BUNDLED` provider, which statically links DuckDB.
 
-The public [community growth plan](docs/COMMUNITY_GROWTH.md) records who sqrail
-is for, how the project will earn attention, and which outcomes it measures.
+Distribution packages can build from the release source archive against an
+installed DuckDB instead. The package must export DuckDB's CMake configuration
+with the `core_functions`, `parquet`, and `json` extensions:
+
+```sh
+CMAKE_PREFIX_PATH=/path/to/duckdb cmake --workflow --preset system
+cmake --install out/build/system --prefix out/install/system --component sqrail
+```
+
+The `system` provider links DuckDB's shared library, reports its actual runtime
+version, and does not install a second copy of DuckDB's licences.
+
+The `strict`, `sanitize`, `thread`, `fuzz`, `native`, `pgo-generate`, and
+`pgo-use` presets cover static analysis, sanitizers, fuzzing, and profile-guided
+builds. A pinned Ubuntu 24.04/LLVM 18 development container runs the developer
+workflow on creation. See the [testing architecture](docs/TESTING.md) and the
+[contribution guide](CONTRIBUTING.md).
+
+## Documentation and community
+
+The [documentation index](docs/README.md) maps each question to the document
+that answers it, from the contract and platform support to the release gate.
+
+Questions, careful bug reports, reproducible performance evidence,
+documentation improvements, and focused patches are welcome. Ask in
+[Discussions](https://github.com/yhay81/sqrail/discussions), pick up a
+[`good first issue`](https://github.com/yhay81/sqrail/labels/good%20first%20issue),
+or start with the [support guide](SUPPORT.md) and
+[contribution guide](CONTRIBUTING.md). Everyone taking part must follow the
+[Code of Conduct](CODE_OF_CONDUCT.md). The
+[community growth plan](docs/COMMUNITY_GROWTH.md) records who sqrail is for and
+how the project measures progress.
 
 ## License
 
