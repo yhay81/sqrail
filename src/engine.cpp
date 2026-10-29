@@ -98,10 +98,11 @@ ColumnSignature ReadColumnSignature(duckdb::Connection &connection, const fs::pa
 	auto result = connection.Query("DESCRIBE SELECT * FROM " + ReaderExpression(single_path, true));
 	CheckResult(result, "SCHEMA_INFERENCE_FAILED");
 
+	const auto &rows = result->Collection();
 	ColumnSignature signature;
-	signature.reserve(result->RowCount());
-	for (duckdb::idx_t row = 0; row < result->RowCount(); ++row) {
-		signature.emplace_back(result->GetValue(0, row).ToString(), result->GetValue(1, row).ToString());
+	signature.reserve(rows.Count());
+	for (duckdb::idx_t row = 0; row < rows.Count(); ++row) {
+		signature.emplace_back(rows.GetValue(0, row).ToString(), rows.GetValue(1, row).ToString());
 	}
 	return signature;
 }
@@ -308,12 +309,6 @@ const fs::path &SpillWorkspace::Path() const {
 	return path;
 }
 
-void CheckResult(const duckdb::unique_ptr<duckdb::MaterializedQueryResult> &result, const std::string &code) {
-	if (result->HasError()) {
-		throw SqrailError(EXIT_QUERY, code, result->GetError());
-	}
-}
-
 void CheckResult(const duckdb::unique_ptr<duckdb::QueryResult> &result, const std::string &code) {
 	if (result->HasError()) {
 		throw SqrailError(EXIT_QUERY, code, result->GetError());
@@ -400,15 +395,16 @@ std::string ResultColumnsJson(duckdb::Connection &connection, const std::string 
 	auto result = connection.Query("DESCRIBE " + sql);
 	CheckResult(result, "PLAN_FAILED");
 
+	const auto &rows = result->Collection();
 	std::ostringstream output;
 	output << '[';
-	for (duckdb::idx_t row = 0; row < result->RowCount(); ++row) {
+	for (duckdb::idx_t row = 0; row < rows.Count(); ++row) {
 		if (row != 0) {
 			output << ',';
 		}
-		const auto name = result->GetValue(0, row).ToString();
-		const auto type = result->GetValue(1, row).ToString();
-		const auto nullable = result->GetValue(2, row).ToString();
+		const auto name = rows.GetValue(0, row).ToString();
+		const auto type = rows.GetValue(1, row).ToString();
+		const auto nullable = rows.GetValue(2, row).ToString();
 		output << "{\"name\":\"" << JsonEscape(name) << "\",\"type\":\"" << JsonEscape(type)
 		       << "\",\"nullable\":" << (nullable == "YES" ? "true" : "false") << '}';
 	}

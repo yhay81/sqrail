@@ -206,7 +206,7 @@ The native C++ unit suite does not require Python:
 cmake --workflow --preset core
 ```
 
-The default `BUNDLED` provider fetches DuckDB v1.5.6 at an immutable commit
+The default `BUNDLED` provider fetches DuckDB v2.0.0 at an immutable commit
 during the first configure and statically links it. Native tests similarly
 fetch Catch2 v3.16.1 at an immutable commit, but it is never linked into the
 sqrail binary. This is the provider used for official sqrail releases:
