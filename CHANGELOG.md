@@ -56,6 +56,8 @@ versions follow semantic versioning.
 - a stdout write failure that only surfaces when sqrail flushes its final
   buffered rows, plan, or schema objects now fails with `STDOUT_WRITE`
   (exit 5) instead of going unreported
+- Windows builds with Visual Studio 2026 no longer fail with C4996 errors for
+  the C++20-deprecated `shared_ptr` atomic overloads that DuckDB's headers call
 
 ### Security
 
