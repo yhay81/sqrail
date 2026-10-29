@@ -24,6 +24,9 @@ versions follow semantic versioning.
 - the pinned Catch2 test framework to v3.16.1
 - the pinned documentation toolchain to Wrangler 4.151.3, html-validate
   11.17.0, markdown-it 15.0.3, and Prettier 3.9.10
+- the README now opens with what sqrail does, a worked example with its real
+  output, the `schema`/`check`/`run` workflow, and how sqrail differs from
+  calling DuckDB directly, and moves build details after the usage reference
 
 ### Fixed
 
