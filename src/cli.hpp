@@ -3,21 +3,10 @@
 #include <chrono>
 #include <cstdint>
 #include <filesystem>
-#include <stdexcept>
 #include <string>
-#include <utility>
 #include <vector>
 
 namespace sqrail {
-
-struct SqrailError final : std::runtime_error {
-	SqrailError(int exit_code_p, std::string code_p, const std::string &message)
-	    : std::runtime_error(message), exit_code(exit_code_p), code(std::move(code_p)) {
-	}
-
-	int exit_code;
-	std::string code;
-};
 
 struct TableBinding {
 	std::string name;

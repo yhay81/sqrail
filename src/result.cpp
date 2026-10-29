@@ -1,8 +1,8 @@
 #include "result.hpp"
 
-#include "cli.hpp"
 #include "duckdb/common/file_open_flags.hpp"
 #include "duckdb/common/file_system.hpp"
+#include "error.hpp"
 #include "json.hpp"
 #include "platform.hpp"
 
@@ -17,10 +17,6 @@ namespace fs = std::filesystem;
 
 namespace sqrail {
 namespace {
-
-constexpr int EXIT_QUERY = 4;
-constexpr int EXIT_OUTPUT = 5;
-constexpr int EXIT_INTERNAL = 70;
 
 std::string CopyOptionsFor(const fs::path &path) {
 	const auto type = DetectFileType(path, EXIT_OUTPUT, "UNSUPPORTED_OUTPUT");

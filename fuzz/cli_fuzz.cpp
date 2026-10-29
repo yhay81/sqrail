@@ -2,7 +2,9 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <exception>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace {

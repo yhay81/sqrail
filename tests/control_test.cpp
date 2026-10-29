@@ -1,7 +1,7 @@
-#include "cli.hpp"
 #include "control.hpp"
 #include "duckdb.hpp"
 #include "duckdb/main/client_context.hpp"
+#include "error.hpp"
 
 #include <catch2/catch_test_macros.hpp>
 

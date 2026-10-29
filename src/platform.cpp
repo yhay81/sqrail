@@ -1,6 +1,6 @@
 #include "platform.hpp"
 
-#include "cli.hpp"
+#include "error.hpp"
 
 #include <filesystem>
 #include <string>
@@ -17,11 +17,10 @@
 namespace fs = std::filesystem;
 
 namespace sqrail {
-namespace {
-
-constexpr int EXIT_OUTPUT = 5;
 
 #if defined(_WIN32)
+namespace {
+
 std::string WindowsMessage(const DWORD code) {
 	char *raw = nullptr;
 	const auto length =
@@ -80,9 +79,9 @@ void ProtectWindowsPath(const fs::path &path, const bool directory) {
 		                  "cannot protect path " + path.string() + ": " + WindowsMessage(status));
 	}
 }
-#endif
 
 } // namespace
+#endif
 
 PrivateCreationMask::PrivateCreationMask() {
 #if !defined(_WIN32)

@@ -1,6 +1,7 @@
 #include "engine.hpp"
 
 #include "duckdb/common/file_system.hpp"
+#include "error.hpp"
 #include "json.hpp"
 #include "platform.hpp"
 
@@ -19,10 +20,6 @@ namespace fs = std::filesystem;
 
 namespace sqrail {
 namespace {
-
-constexpr int EXIT_INPUT = 3;
-constexpr int EXIT_QUERY = 4;
-constexpr int EXIT_OUTPUT = 5;
 
 std::string Lower(std::string value) {
 	std::transform(value.begin(), value.end(), value.begin(),
