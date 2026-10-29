@@ -1,5 +1,7 @@
 #include "cli.hpp"
 
+#include "error.hpp"
+
 #include <algorithm>
 #include <cctype>
 #include <charconv>
@@ -9,6 +11,7 @@
 #include <limits>
 #include <regex>
 #include <sstream>
+#include <stdexcept>
 #include <system_error>
 #include <unordered_set>
 #include <utility>
@@ -17,9 +20,6 @@ namespace fs = std::filesystem;
 
 namespace sqrail {
 namespace {
-
-constexpr int EXIT_USAGE = 2;
-constexpr int EXIT_OUTPUT = 5;
 
 std::string Lower(std::string value) {
 	std::transform(value.begin(), value.end(), value.begin(),

@@ -4,6 +4,7 @@
 #include "control.hpp"
 #include "duckdb.hpp"
 #include "engine.hpp"
+#include "error.hpp"
 #include "json.hpp"
 #include "platform.hpp"
 #include "result.hpp"
@@ -21,12 +22,6 @@
 namespace fs = std::filesystem;
 
 namespace sqrail {
-namespace {
-
-constexpr int EXIT_OUTPUT = 5;
-constexpr int EXIT_QUERY = 4;
-
-} // namespace
 
 int Execute(int argc, char **argv, const bool check_only) {
 	const auto started = std::chrono::steady_clock::now();

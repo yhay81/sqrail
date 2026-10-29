@@ -1,7 +1,7 @@
 #include "control.hpp"
 
-#include "cli.hpp"
 #include "duckdb.hpp"
+#include "error.hpp"
 
 #include <algorithm>
 #include <atomic>
@@ -23,8 +23,6 @@ namespace fs = std::filesystem;
 namespace sqrail {
 namespace {
 
-constexpr int EXIT_QUERY = 4;
-constexpr int EXIT_OUTPUT = 5;
 static_assert(std::atomic<int>::is_always_lock_free, "signal state requires a lock-free atomic integer");
 std::atomic<int> interrupted_signal {0};
 
@@ -185,15 +183,15 @@ void ExecutionControl::Stop() {
 void InstallSignalHandlers() {
 #ifdef SIGPIPE
 	if (std::signal(SIGPIPE, SIG_IGN) == SIG_ERR) {
-		throw SqrailError(70, "SIGNAL_HANDLER", "cannot ignore SIGPIPE");
+		throw SqrailError(EXIT_INTERNAL, "SIGNAL_HANDLER", "cannot ignore SIGPIPE");
 	}
 #endif
 	if (std::signal(SIGINT, HandleSignal) == SIG_ERR || std::signal(SIGTERM, HandleSignal) == SIG_ERR) {
-		throw SqrailError(70, "SIGNAL_HANDLER", "cannot install interrupt handlers");
+		throw SqrailError(EXIT_INTERNAL, "SIGNAL_HANDLER", "cannot install interrupt handlers");
 	}
 #if defined(_WIN32)
 	if (SetConsoleCtrlHandler(HandleConsoleSignal, TRUE) == 0) {
-		throw SqrailError(70, "SIGNAL_HANDLER", "cannot install the Windows console control handler");
+		throw SqrailError(EXIT_INTERNAL, "SIGNAL_HANDLER", "cannot install the Windows console control handler");
 	}
 #endif
 }
