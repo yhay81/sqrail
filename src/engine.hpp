@@ -39,8 +39,6 @@ private:
 std::vector<std::filesystem::path> ResolveInputSet(duckdb::DuckDB &database, const std::string &source,
                                                    ExecutionControl &control, std::size_t previously_resolved,
                                                    uint64_t max_input_files);
-void CheckResult(const duckdb::unique_ptr<duckdb::MaterializedQueryResult> &result,
-                 const std::string &code = "QUERY_FAILED");
 void CheckResult(const duckdb::unique_ptr<duckdb::QueryResult> &result, const std::string &code = "QUERY_FAILED");
 void ValidateStrictSchemas(duckdb::Connection &connection, const std::vector<std::filesystem::path> &paths,
                            const std::string &source);

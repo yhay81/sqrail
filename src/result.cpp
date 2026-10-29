@@ -94,7 +94,7 @@ uint64_t CopyToFile(duckdb::Connection &connection, const std::string &sql, cons
 	if (result->RowCount() != 1 || result->ColumnCount() != 1) {
 		throw SqrailError(EXIT_INTERNAL, "INTERNAL", "DuckDB COPY returned an unexpected result shape");
 	}
-	const auto rows = result->GetValue(0, 0).GetValue<int64_t>();
+	const auto rows = result->Collection().GetValue(0, 0).GetValue<int64_t>();
 	if (rows < 0) {
 		throw SqrailError(EXIT_INTERNAL, "INTERNAL", "DuckDB COPY returned a negative row count");
 	}
@@ -114,8 +114,9 @@ void PrintStats(const uint64_t rows, const uint64_t bytes, const std::size_t inp
 uint64_t StreamJson(duckdb::Connection &connection, const std::string &sql, const bool array, const uint64_t max_rows,
                     const ResultWriter &write) {
 	const std::string stream_sql = "SELECT to_json(__sqrail_row) FROM (" + sql + ") AS __sqrail_row";
-	auto result = connection.SendQuery(stream_sql);
-	CheckResult(result);
+	auto submitted = connection.Submit(stream_sql);
+	CheckResult(submitted);
+	duckdb::QueryResultStream<> result(std::move(submitted));
 
 	constexpr std::size_t buffer_capacity = std::size_t {1024} * 1024U;
 	std::string buffer;
@@ -144,12 +145,12 @@ uint64_t StreamJson(duckdb::Connection &connection, const std::string &sql, cons
 	}
 	try {
 		while (true) {
-			auto chunk = result->Fetch();
+			auto chunk = result.Fetch();
 			if (!chunk) {
 				break;
 			}
 			duckdb::UnifiedVectorFormat vector_format;
-			chunk->data[0].ToUnifiedFormat(chunk->size(), vector_format);
+			chunk->data[0].ToUnifiedFormat(vector_format);
 			const auto *values = duckdb::UnifiedVectorFormat::GetData<duckdb::string_t>(vector_format);
 			for (duckdb::idx_t row = 0; row < chunk->size(); ++row) {
 				if (max_rows != 0 && rows >= max_rows) {
@@ -179,11 +180,11 @@ uint64_t StreamJson(duckdb::Connection &connection, const std::string &sql, cons
 		}
 	} catch (...) {
 		connection.Interrupt();
-		(void)result->Fetch();
+		result.Close();
 		throw;
 	}
-	if (result->HasError()) {
-		throw SqrailError(EXIT_QUERY, "QUERY_FAILED", result->GetError());
+	if (result.HasError()) {
+		throw SqrailError(EXIT_QUERY, "QUERY_FAILED", result.GetError());
 	}
 	if (array) {
 		buffer += "]\n";

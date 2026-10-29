@@ -22,12 +22,15 @@
   "allowScripts": {
     "esbuild@0.28.2": true,
     "fsevents": false,
-    "workerd@1.20261006.1": true
+    "workerd@1.20261019.1": true
   },
   "devDependencies": {
-    "html-validate": "11.16.2",
-    "markdown-it": "15.0.2",
+    "html-validate": "11.17.0",
+    "markdown-it": "15.0.3",
     "prettier": "3.9.10",
-    "wrangler": "4.149.0"
+    "wrangler": "4.151.3"
+  },
+  "overrides": {
+    "undici": "7.30.1"
   }
 }
