@@ -162,13 +162,26 @@ if(SQRAIL_DUCKDB_PROVIDER STREQUAL "BUNDLED")
   # Official sqrail releases deliberately pin one engine revision so their SQL
   # behavior is reproducible. Distribution packages can instead select SYSTEM
   # and track their packaged DuckDB dependency.
-  set(DUCKDB_VERSION "v2.0.0" CACHE STRING "Pinned DuckDB release")
+  set(SQRAIL_PINNED_DUCKDB_VERSION "v2.0.0")
+  set(SQRAIL_PINNED_DUCKDB_REVISION "d54cbbe3df17e8e5ce68312f483b4155836112aa")
+  # An existing build directory caches the pin it was configured with. Move a
+  # cached earlier pin to the current one, but keep a revision chosen with -D.
   set(
-    DUCKDB_REVISION
-    "d54cbbe3df17e8e5ce68312f483b4155836112aa"
-    CACHE STRING
-    "Pinned DuckDB git revision"
+    SQRAIL_EARLIER_DUCKDB_REVISIONS
+    "${SQRAIL_DUCKDB_PIN_RECORDED}"
+    "d8cdaa33fda8df955cc76ef58a280f68f4cd43fa" # v1.5.5
+    "069cc9f9b5be802405797faecc284961b07c70ef" # v1.5.6
   )
+  if(DEFINED CACHE{DUCKDB_REVISION} AND DUCKDB_REVISION IN_LIST SQRAIL_EARLIER_DUCKDB_REVISIONS)
+    unset(DUCKDB_VERSION CACHE)
+    unset(DUCKDB_REVISION CACHE)
+  endif()
+  set(DUCKDB_VERSION "${SQRAIL_PINNED_DUCKDB_VERSION}" CACHE STRING "Pinned DuckDB release")
+  set(DUCKDB_REVISION "${SQRAIL_PINNED_DUCKDB_REVISION}" CACHE STRING "Pinned DuckDB git revision")
+  set(SQRAIL_DUCKDB_PIN_RECORDED "${SQRAIL_PINNED_DUCKDB_REVISION}" CACHE INTERNAL "")
+  # The shallow clone has no tags, so DuckDB would otherwise report a
+  # development version derived from its release_version.txt.
+  set(DUCKDB_EXPLICIT_VERSION "${DUCKDB_VERSION}")
   set(BUILD_UNITTESTS OFF CACHE BOOL "" FORCE)
   set(BUILD_SHELL "${SQRAIL_BUILD_DUCKDB_SHELL}" CACHE BOOL "" FORCE)
   set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
@@ -191,6 +204,13 @@ if(SQRAIL_DUCKDB_PROVIDER STREQUAL "BUNDLED")
     GIT_PROGRESS TRUE
   )
   FetchContent_MakeAvailable(duckdb)
+  if(NOT COMMAND duckdb_link_extensions)
+    message(
+      FATAL_ERROR
+      "DuckDB revision ${DUCKDB_REVISION} predates the static extension loader of DuckDB v2.0; "
+      "select a v2.0 or later revision with -DDUCKDB_REVISION"
+    )
+  endif()
 
   set(SQRAIL_DUCKDB_INCLUDE_DIRS "${duckdb_SOURCE_DIR}/src/include")
   # DuckDB generates a C loader that registers the statically linked
