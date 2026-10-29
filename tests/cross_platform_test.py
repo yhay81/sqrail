@@ -49,6 +49,71 @@ class CrossPlatformTest(unittest.TestCase):
     def tearDown(self) -> None:
         self.temporary.cleanup()
 
+    def test_closed_stdout_reports_failure_before_success_stats(self) -> None:
+        for arguments in (
+            ("run", "--stats", "SELECT 1 AS value"),
+            ("check", "SELECT 1 AS value"),
+            ("schema", str(self.csv)),
+        ):
+            with self.subTest(arguments=arguments):
+                read_fd, write_fd = os.pipe()
+                os.close(read_fd)
+                try:
+                    result = subprocess.run(
+                        [str(SQRAIL), *arguments], stdout=write_fd, stderr=subprocess.PIPE, check=False
+                    )
+                finally:
+                    os.close(write_fd)
+                self.assertEqual(result.returncode, 5, result.stderr)
+                self.assertEqual(diagnostic(result)["code"], "STDOUT_WRITE")
+
+    def test_input_limit_counts_canonical_files(self) -> None:
+        dataset = self.root / "dataset"
+        dataset.mkdir()
+        real = dataset / "a.parquet"
+        created = invoke("run", "-o", str(real), "SELECT 42 AS value")
+        self.assertEqual(created.returncode, 0, created.stderr)
+        try:
+            (dataset / "alias.parquet").symlink_to(real)
+        except (OSError, NotImplementedError) as error:
+            self.skipTest(f"symbolic links unavailable: {error}")
+
+        for source in (str(dataset), str(dataset / "*.parquet")):
+            with self.subTest(source=source):
+                schema = invoke("schema", "--max-input-files", "1", source)
+                self.assertEqual(schema.returncode, 0, schema.stderr)
+                self.assertEqual(json.loads(schema.stdout)["files"], 1)
+                result = invoke("run", "--max-input-files", "1", "-t", f"data={source}",
+                                "SELECT * FROM data")
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual([json.loads(line) for line in result.stdout.splitlines()], [{"value": 42}])
+
+        other = dataset / "other.parquet"
+        created = invoke("run", "-o", str(other), "SELECT 43 AS value")
+        self.assertEqual(created.returncode, 0, created.stderr)
+        for source in (str(dataset), str(dataset / "*.parquet")):
+            with self.subTest(source=source):
+                limited = invoke("schema", "--max-input-files", "1", source)
+                self.assertEqual(limited.returncode, 3)
+                self.assertEqual(diagnostic(limited)["code"], "INPUT_LIMIT")
+
+        cumulative = invoke("run", "--max-input-files", "1", "-t", f"a={real}",
+                            "-t", f"b={dataset / 'alias.parquet'}", "SELECT * FROM a")
+        self.assertEqual(cumulative.returncode, 3)
+        self.assertEqual(diagnostic(cumulative)["code"], "INPUT_LIMIT")
+
+        for name, source in (("first", real), ("second", other)):
+            nested = dataset / name
+            nested.mkdir()
+            (nested / "part.parquet").write_bytes(source.read_bytes())
+        nested_glob = str(dataset / "*" / "*.parquet")
+        limited = invoke("schema", "--max-input-files", "1", nested_glob)
+        self.assertEqual(limited.returncode, 3)
+        self.assertEqual(diagnostic(limited)["code"], "INPUT_LIMIT")
+        allowed = invoke("schema", "--max-input-files", "2", nested_glob)
+        self.assertEqual(allowed.returncode, 0, allowed.stderr)
+        self.assertEqual(json.loads(allowed.stdout)["files"], 2)
+
     def test_contract_formats_limits_and_atomic_output(self) -> None:
         schema = invoke("schema", str(self.csv))
         self.assertEqual(schema.returncode, 0, schema.stderr)

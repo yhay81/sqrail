@@ -135,8 +135,10 @@ already been emitted, stdout may contain a valid partial JSONL prefix. Use
   buffered write. File destinations are never committed on
   `OUTPUT_LIMIT`; stdout may already contain a valid prefix.
 - `--max-input-files N` accepts an integer from 1 through 1000000000 and stops
-  recursive directory or glob expansion as soon as the cumulative count
-  exceeds the cap.
+  processing when the cumulative count exceeds the cap. Files are canonicalized
+  and deduplicated within each source, then counted across sources or bindings.
+  Glob expansion is lazy, but DuckDB may enumerate a whole directory before
+  returning its matches, so the cap does not bound that intermediate work.
 - `--max-sql-bytes SIZE` uses the same exact byte-size syntax as
   `--max-output-bytes` and bounds either the positional SQL string or
   incremental stdin reads before parsing.

@@ -1,6 +1,7 @@
 #include "engine.hpp"
 
 #include "duckdb/common/file_system.hpp"
+#include "duckdb/common/multi_file/multi_file_list.hpp"
 #include "error.hpp"
 #include "json.hpp"
 #include "platform.hpp"
@@ -10,6 +11,7 @@
 #include <chrono>
 #include <filesystem>
 #include <random>
+#include <set>
 #include <sstream>
 #include <string>
 #include <system_error>
@@ -200,6 +202,14 @@ std::vector<fs::path> ResolveInputSet(duckdb::DuckDB &database, const std::strin
 	}
 
 	std::vector<fs::path> paths;
+	std::set<fs::path> unique_paths;
+	const auto add_path = [&](const std::string &path) {
+		auto canonical = ExistingInput(path);
+		if (unique_paths.insert(canonical).second) {
+			paths.push_back(std::move(canonical));
+			CheckInputFileLimit(previously_resolved + paths.size(), max_input_files);
+		}
+	};
 	if (!duckdb::FileSystem::HasGlob(absolute.string())) {
 		if (fs::is_directory(absolute, error)) {
 			const auto options = fs::directory_options::none;
@@ -210,8 +220,7 @@ std::vector<fs::path> ResolveInputSet(duckdb::DuckDB &database, const std::strin
 				std::error_code entry_error;
 				if (iterator->is_regular_file(entry_error) &&
 				    EndsWith(Lower(iterator->path().filename().string()), ".parquet")) {
-					paths.push_back(ExistingInput(iterator->path().string()));
-					CheckInputFileLimit(previously_resolved + paths.size(), max_input_files);
+					add_path(iterator->path().string());
 				}
 				iterator.increment(error);
 			}
@@ -220,18 +229,15 @@ std::vector<fs::path> ResolveInputSet(duckdb::DuckDB &database, const std::strin
 				                  "cannot enumerate Parquet dataset: " + source + ": " + error.message());
 			}
 		} else {
-			paths.push_back(ExistingInput(source));
-			CheckInputFileLimit(previously_resolved + paths.size(), max_input_files);
+			add_path(source);
 		}
 	} else {
 		try {
 			control.Checkpoint("input resolution exceeded --timeout");
-			auto matches = database.instance->GetFileSystem().GlobFiles(absolute.string());
-			paths.reserve(matches.size());
-			for (const auto &match : matches) {
+			auto matches = database.instance->GetFileSystem().GlobFileList(absolute.string());
+			for (const auto &match : matches->Files()) {
 				control.Checkpoint("input resolution exceeded --timeout");
-				paths.push_back(ExistingInput(match.path));
-				CheckInputFileLimit(previously_resolved + paths.size(), max_input_files);
+				add_path(match.path);
 			}
 		} catch (const SqrailError &) {
 			throw;
@@ -242,7 +248,6 @@ std::vector<fs::path> ResolveInputSet(duckdb::DuckDB &database, const std::strin
 	}
 
 	std::sort(paths.begin(), paths.end());
-	paths.erase(std::unique(paths.begin(), paths.end()), paths.end());
 	CheckInputFileLimit(previously_resolved + paths.size(), max_input_files);
 	ValidateInputSet(paths, source);
 	control.Checkpoint("input resolution exceeded --timeout");

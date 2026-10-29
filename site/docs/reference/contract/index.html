@@ -374,8 +374,11 @@ sqrail --version
             </li>
             <li>
               <code>--max-input-files N</code> accepts an integer from 1 through
-              1000000000 and stops recursive directory or glob expansion as soon
-              as the cumulative count exceeds the cap.
+              1000000000 and stops processing when the cumulative count exceeds
+              the cap. Files are canonicalized and deduplicated within each
+              source, then counted across sources or bindings. Glob expansion is
+              lazy, but DuckDB may enumerate a whole directory before returning
+              its matches, so the cap does not bound that intermediate work.
             </li>
             <li>
               <code>--max-sql-bytes SIZE</code> uses the same exact byte-size
