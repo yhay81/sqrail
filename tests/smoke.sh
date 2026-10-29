@@ -199,6 +199,24 @@ test "$(find "$test_dir" -name 'limited.parquet.sqrail-tmp-*' | wc -l | tr -d ' 
 expect_error 5 OUTPUT_LIMIT "$test_dir/stdout-byte-limit.json" \
   "$sqrail_bin" run --max-output-bytes 10B \
   'SELECT 123456789 AS value'
+
+# The byte cap is inclusive, including the JSONL newline. Empty results must
+# still produce valid JSON arrays for file output and no bytes on stdout.
+"$sqrail_bin" run --max-output-bytes 8B 'SELECT 1 AS x' >"$test_dir/exact-limit.jsonl"
+test "$(wc -c < "$test_dir/exact-limit.jsonl" | tr -d ' ')" = "8"
+expect_error 5 OUTPUT_LIMIT "$test_dir/below-exact-limit.json" \
+  "$sqrail_bin" run --max-output-bytes 7B 'SELECT 1 AS x'
+"$sqrail_bin" run 'SELECT 1 AS x WHERE false' >"$test_dir/empty.jsonl"
+test ! -s "$test_dir/empty.jsonl"
+"$sqrail_bin" run -o "$test_dir/empty.json" 'SELECT 1 AS x WHERE false'
+python3 - "$test_dir/empty.json" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as handle:
+    assert json.load(handle) == []
+PY
+
 expect_error 5 OUTPUT_LIMIT "$test_dir/file-byte-limit.json" \
   "$sqrail_bin" run --max-output-bytes 1KiB -o "$test_dir/byte-limited.parquet" \
   'SELECT i, md5(i::VARCHAR) AS payload FROM range(10000) AS rows(i)'

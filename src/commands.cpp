@@ -23,6 +23,17 @@ namespace fs = std::filesystem;
 
 namespace sqrail {
 
+namespace {
+
+void FlushStdout(const char *message) {
+	std::cout.flush();
+	if (!std::cout) {
+		throw SqrailError(EXIT_OUTPUT, "STDOUT_WRITE", message);
+	}
+}
+
+} // namespace
+
 int Execute(int argc, char **argv, const bool check_only) {
 	const auto started = std::chrono::steady_clock::now();
 	RunOptions options = ParseRun(argc, argv, check_only);
@@ -77,6 +88,7 @@ int Execute(int argc, char **argv, const bool check_only) {
 			if (!std::cout) {
 				throw SqrailError(EXIT_OUTPUT, "STDOUT_WRITE", "cannot write query plan to stdout");
 			}
+			FlushStdout("cannot write query plan to stdout");
 			control.Checkpoint("query planning exceeded --timeout");
 			control.Stop();
 			return 0;
@@ -129,6 +141,7 @@ int Execute(int argc, char **argv, const bool check_only) {
 			bytes += size;
 		};
 		rows = StreamJson(connection, execution_sql, false, options.max_rows, write);
+		FlushStdout("cannot write query result to stdout");
 		control.Checkpoint("query exceeded --timeout");
 		if (options.stats) {
 			PrintStats(rows, bytes, input_files, false, started);
@@ -217,6 +230,7 @@ int Schema(int argc, char **argv) {
 				throw SqrailError(EXIT_OUTPUT, "STDOUT_WRITE", "cannot write schema result to stdout");
 			}
 		}
+		FlushStdout("cannot write schema result to stdout");
 		control.Checkpoint("schema inference exceeded --timeout");
 		control.Stop();
 	} catch (...) {

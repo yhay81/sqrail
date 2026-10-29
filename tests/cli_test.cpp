@@ -6,6 +6,7 @@
 #include <functional>
 #include <limits>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -179,5 +180,55 @@ TEST_CASE("bounded numeric options round-trip", "[cli][property]") {
 		CAPTURE(value);
 		CHECK(parsed.max_input_files == value);
 		CHECK(parsed.max_output_bytes == value);
+	}
+}
+
+TEST_CASE("numeric resource limits enforce their documented boundaries", "[cli]") {
+	const auto accepted = Parse({"sqrail", "run", "--threads", "1024", "--max-rows", "9223372036854775806",
+	                             "--max-input-files", "1000000000", "--timeout", "10080m", "SELECT 1"},
+	                            [](const int argc, char **argv) { return sqrail::ParseRun(argc, argv, false); });
+	CHECK(accepted.threads == 1024);
+	CHECK(accepted.max_rows == 9223372036854775806ULL);
+	CHECK(accepted.max_input_files == 1000000000U);
+	CHECK(accepted.timeout == std::chrono::hours(24 * 7));
+
+	const std::vector<std::tuple<std::string, std::string, std::string>> rejected {
+	    {"--threads", "0", "INVALID_THREADS"},
+	    {"--threads", "1025", "INVALID_THREADS"},
+	    {"--threads", "-1", "INVALID_THREADS"},
+	    {"--max-rows", "9223372036854775807", "INVALID_MAX_ROWS"},
+	    {"--max-rows", "18446744073709551616", "INVALID_MAX_ROWS"},
+	    {"--max-input-files", "1000000001", "INVALID_MAX_INPUT_FILES"},
+	    {"--timeout", "0.999ms", "INVALID_TIMEOUT"},
+	    {"--timeout", "10080.001m", "INVALID_TIMEOUT"},
+	};
+	for (const auto &[option, value, code] : rejected) {
+		CAPTURE(option, value);
+		CheckError(code, [&]() {
+			Parse({"sqrail", "run", option, value, "SELECT 1"},
+			      [](const int argc, char **argv) { return sqrail::ParseRun(argc, argv, false); });
+		});
+	}
+}
+
+TEST_CASE("exact byte limits truncate fractions and reject invalid or overflowing values", "[cli]") {
+	const std::vector<std::pair<std::string, uint64_t>> accepted {
+	    {"1.999999B", 1},
+	    {"0.001KB", 1},
+	    {"1.234567KiB", 1264},
+	    {"16777215.999999TiB", 18446744073708452104ULL},
+	};
+	for (const auto &[value, expected] : accepted) {
+		CAPTURE(value);
+		const auto parsed = Parse({"sqrail", "run", "--max-output-bytes", value, "SELECT 1"},
+		                          [](const int argc, char **argv) { return sqrail::ParseRun(argc, argv, false); });
+		CHECK(parsed.max_output_bytes == expected);
+	}
+	for (const auto &value : {"0B", "0.999999B", "1K", "1.0000001MiB", "16777216TiB"}) {
+		CAPTURE(value);
+		CheckError("INVALID_MAX_OUTPUT", [&]() {
+			Parse({"sqrail", "run", "--max-output-bytes", value, "SELECT 1"},
+			      [](const int argc, char **argv) { return sqrail::ParseRun(argc, argv, false); });
+		});
 	}
 }

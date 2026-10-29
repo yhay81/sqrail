@@ -38,6 +38,25 @@ TEST_CASE("JSON escaping emits portable Unicode and replacements", "[json]") {
 	CHECK(sqrail::JsonEscape("\xC0\xAF") == R"(\ufffd\ufffd)");
 }
 
+TEST_CASE("JSON escaping enforces Unicode scalar boundaries", "[json]") {
+	const std::vector<std::pair<std::string, std::string>> cases {
+	    {"\xC2\x80", R"(\u0080)"},
+	    {"\xE0\xA0\x80", R"(\u0800)"},
+	    {"\xED\x9F\xBF", R"(\ud7ff)"},
+	    {"\xEE\x80\x80", R"(\ue000)"},
+	    {"\xF0\x90\x80\x80", R"(\ud800\udc00)"},
+	    {"\xF4\x8F\xBF\xBF", R"(\udbff\udfff)"},
+	    {"\xE0\x9F\xBF", R"(\ufffd\ufffd\ufffd)"},
+	    {"\xED\xA0\x80", R"(\ufffd\ufffd\ufffd)"},
+	    {"\xF0\x8F\xBF\xBF", R"(\ufffd\ufffd\ufffd\ufffd)"},
+	    {"\xF4\x90\x80\x80", R"(\ufffd\ufffd\ufffd\ufffd)"},
+	};
+	for (const auto &[input, expected] : cases) {
+		CAPTURE(expected);
+		CHECK(sqrail::JsonEscape(input) == expected);
+	}
+}
+
 TEST_CASE("JSON escaping covers every ASCII control byte", "[json]") {
 	const std::vector<std::string> expected {
 	    R"(\u0000)", R"(\u0001)", R"(\u0002)", R"(\u0003)", R"(\u0004)", R"(\u0005)", R"(\u0006)", R"(\u0007)",
