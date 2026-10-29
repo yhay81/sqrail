@@ -94,7 +94,7 @@ JSON object, and the exit code says which stage failed:
 
 ```console
 $ sqrail run -t sales=sales.csv 'DELETE FROM sales'; echo "exit $?"
-{"schema_version":1,"sqrail_version":"0.3.4","ok":false,"code":"READ_ONLY_QUERY","message":"only a SELECT, VALUES, or WITH query is allowed"}
+{"schema_version":1,"sqrail_version":"0.4.0","ok":false,"code":"READ_ONLY_QUERY","message":"only a SELECT, VALUES, or WITH query is allowed"}
 exit 4
 ```
 
@@ -275,7 +275,7 @@ bzip2/xz streams are deliberately rejected.
 ```json
 {
   "schema_version": 1,
-  "sqrail_version": "0.3.4",
+  "sqrail_version": "0.4.0",
   "ok": true,
   "command": "run",
   "rows": 2,

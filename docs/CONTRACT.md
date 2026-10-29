@@ -87,7 +87,7 @@ stderr after the result is complete:
 ```json
 {
   "schema_version": 1,
-  "sqrail_version": "0.3.4",
+  "sqrail_version": "0.4.0",
   "ok": true,
   "command": "run",
   "rows": 3,
@@ -160,7 +160,7 @@ executing the query:
 ```json
 {
   "schema_version": 1,
-  "sqrail_version": "0.3.4",
+  "sqrail_version": "0.4.0",
   "ok": true,
   "columns": [{ "name": "total", "type": "HUGEINT", "nullable": true }],
   "inputs": [{ "table": "sales", "files": 1 }],
@@ -178,7 +178,7 @@ that execution would use.
 ```json
 {
   "schema_version": 1,
-  "sqrail_version": "0.3.4",
+  "sqrail_version": "0.4.0",
   "file": "/absolute/data.csv",
   "files": 1,
   "columns": [{ "name": "id", "type": "BIGINT", "nullable": true }]
@@ -193,7 +193,7 @@ bytes in operating-system arguments are replaced with U+FFFD:
 ```json
 {
   "schema_version": 1,
-  "sqrail_version": "0.3.4",
+  "sqrail_version": "0.4.0",
   "ok": false,
   "code": "INPUT_NOT_FOUND",
   "message": "input file not found: missing.csv"

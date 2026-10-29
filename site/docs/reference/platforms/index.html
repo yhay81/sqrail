@@ -236,15 +236,15 @@
             with a nonzero exit status; do not extract the archive then.
           </p>
           <p>macOS, with the built-in <code>shasum</code>:</p>
-          <pre><code class="language-sh">archive=sqrail-v0.3.4-macos-arm64.tar.gz
+          <pre><code class="language-sh">archive=sqrail-v0.4.0-macos-arm64.tar.gz
 awk -v name=&quot;./$archive&quot; '$2 == name' SHA256SUMS | shasum -a 256 -c -
 </code></pre>
           <p>Linux, with GNU coreutils <code>sha256sum</code>:</p>
-          <pre><code class="language-sh">archive=sqrail-v0.3.4-linux-x86_64.tar.gz
+          <pre><code class="language-sh">archive=sqrail-v0.4.0-linux-x86_64.tar.gz
 awk -v name=&quot;./$archive&quot; '$2 == name' SHA256SUMS | sha256sum -c -
 </code></pre>
           <p>Windows PowerShell:</p>
-          <pre><code class="language-powershell">$archive = &quot;sqrail-v0.3.4-windows-x86_64.zip&quot;
+          <pre><code class="language-powershell">$archive = &quot;sqrail-v0.4.0-windows-x86_64.zip&quot;
 $entry = Get-Content SHA256SUMS | Where-Object { $_.EndsWith(&quot;  ./$archive&quot;) }
 $actual = (Get-FileHash $archive -Algorithm SHA256).Hash
 if ($entry -and $entry.Split(&quot; &quot;)[0] -eq $actual) { &quot;OK $archive&quot; } else { throw &quot;SHA-256 mismatch: $archive&quot; }
@@ -268,8 +268,8 @@ if ($entry -and $entry.Split(&quot; &quot;)[0] -eq $actual) { &quot;OK $archive&
             <code>SHA256SUMS</code> has its own provenance attestation. With
             GitHub CLI:
           </p>
-          <pre><code class="language-sh">gh attestation verify sqrail-v0.3.4-linux-x86_64.tar.gz --repo yhay81/sqrail
-gh attestation verify sqrail-v0.3.4-linux-x86_64.tar.gz --repo yhay81/sqrail \
+          <pre><code class="language-sh">gh attestation verify sqrail-v0.4.0-linux-x86_64.tar.gz --repo yhay81/sqrail
+gh attestation verify sqrail-v0.4.0-linux-x86_64.tar.gz --repo yhay81/sqrail \
   --predicate-type https://spdx.dev/Document/v2.3
 </code></pre>
           <h2 id="filesystem-and-process-semantics">

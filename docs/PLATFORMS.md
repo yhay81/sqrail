@@ -34,21 +34,21 @@ no entry, fails with a nonzero exit status; do not extract the archive then.
 macOS, with the built-in `shasum`:
 
 ```sh
-archive=sqrail-v0.3.4-macos-arm64.tar.gz
+archive=sqrail-v0.4.0-macos-arm64.tar.gz
 awk -v name="./$archive" '$2 == name' SHA256SUMS | shasum -a 256 -c -
 ```
 
 Linux, with GNU coreutils `sha256sum`:
 
 ```sh
-archive=sqrail-v0.3.4-linux-x86_64.tar.gz
+archive=sqrail-v0.4.0-linux-x86_64.tar.gz
 awk -v name="./$archive" '$2 == name' SHA256SUMS | sha256sum -c -
 ```
 
 Windows PowerShell:
 
 ```powershell
-$archive = "sqrail-v0.3.4-windows-x86_64.zip"
+$archive = "sqrail-v0.4.0-windows-x86_64.zip"
 $entry = Get-Content SHA256SUMS | Where-Object { $_.EndsWith("  ./$archive") }
 $actual = (Get-FileHash $archive -Algorithm SHA256).Hash
 if ($entry -and $entry.Split(" ")[0] -eq $actual) { "OK $archive" } else { throw "SHA-256 mismatch: $archive" }
@@ -66,8 +66,8 @@ published as `sqrail-<version>-<target>.spdx.json`, and `SHA256SUMS` has its
 own provenance attestation. With GitHub CLI:
 
 ```sh
-gh attestation verify sqrail-v0.3.4-linux-x86_64.tar.gz --repo yhay81/sqrail
-gh attestation verify sqrail-v0.3.4-linux-x86_64.tar.gz --repo yhay81/sqrail \
+gh attestation verify sqrail-v0.4.0-linux-x86_64.tar.gz --repo yhay81/sqrail
+gh attestation verify sqrail-v0.4.0-linux-x86_64.tar.gz --repo yhay81/sqrail \
   --predicate-type https://spdx.dev/Document/v2.3
 ```
 
