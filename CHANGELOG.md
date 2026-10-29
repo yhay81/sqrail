@@ -31,6 +31,8 @@ versions follow semantic versioning.
   calling DuckDB directly, and moves build details after the usage reference
 - tagged releases are again built, tested, attested, and published for all six
   platform archives by the tag-triggered release workflow
+- the `windows-arm64` preset to the `Visual Studio 18 2026` generator, because
+  GitHub's Windows 11 Arm64 runner image now provides Visual Studio 2026 only
 
 ### Fixed
 

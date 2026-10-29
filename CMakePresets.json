@@ -143,7 +143,7 @@
       "name": "windows-arm64",
       "displayName": "Windows ARM64 portable release",
       "inherits": "release",
-      "generator": "Visual Studio 17 2022",
+      "generator": "Visual Studio 18 2026",
       "binaryDir": "${sourceDir}/out/build/windows-arm64",
       "architecture": "ARM64"
     },
