@@ -507,4 +507,4 @@ printf '%s\n' "$help_text" | grep -q -- '--max-sql-bytes'
 printf '%s\n' "$help_text" | grep -q 'check emits columns'
 printf '%s\n' "$help_text" | grep -q 'Examples:'
 test "$(printf '%s\n' "$help_text" | wc -w | tr -d ' ')" -le 195
-"$sqrail_bin" --version | grep -Eq '^sqrail 0\.3\.4 \(DuckDB v[0-9]+\.[0-9]+\.[0-9]+([.-][^)]*)?\)$'
+"$sqrail_bin" --version | grep -Eq '^sqrail 0\.4\.0 \(DuckDB v[0-9]+\.[0-9]+\.[0-9]+([.-][^)]*)?\)$'
