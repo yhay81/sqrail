@@ -1,6 +1,6 @@
 {
   "name": "sqrail-site",
-  "version": "0.3.4",
+  "version": "0.4.0",
   "private": true,
   "description": "Validation and Cloudflare deployment tooling for the sqrail documentation site",
   "scripts": {

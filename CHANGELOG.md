@@ -5,6 +5,8 @@ versions follow semantic versioning.
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-29
+
 ### Added
 
 - a static Bash completion file for the documented commands and options,
@@ -27,6 +29,8 @@ versions follow semantic versioning.
 - the README now opens with what sqrail does, a worked example with its real
   output, the `schema`/`check`/`run` workflow, and how sqrail differs from
   calling DuckDB directly, and moves build details after the usage reference
+- tagged releases are again built, tested, attested, and published for all six
+  platform archives by the tag-triggered release workflow
 
 ### Fixed
 
@@ -44,6 +48,12 @@ versions follow semantic versioning.
   between DuckDB statements, such as while sqrail validates a large query;
   DuckDB clears a pending interrupt whenever a statement starts, so sqrail now
   repeats the request until execution stops
+- `--max-input-files` now counts a file once when several matches, such as
+  symbolic links, resolve to the same canonical path, instead of failing with
+  `INPUT_LIMIT` before the deduplicated count reaches the cap
+- a stdout write failure that only surfaces when sqrail flushes its final
+  buffered rows, plan, or schema objects now fails with `STDOUT_WRITE`
+  (exit 5) instead of going unreported
 
 ### Security
 
@@ -242,7 +252,8 @@ versions follow semantic versioning.
 - Linux and macOS release archives for x86-64 and Arm64
 - SHA-256 checksums and build-provenance attestations
 
-[Unreleased]: https://github.com/yhay81/sqrail/compare/v0.3.4...HEAD
+[Unreleased]: https://github.com/yhay81/sqrail/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/yhay81/sqrail/compare/v0.3.4...v0.4.0
 [0.3.4]: https://github.com/yhay81/sqrail/compare/v0.3.3...v0.3.4
 [0.3.3]: https://github.com/yhay81/sqrail/compare/v0.3.2...v0.3.3
 [0.3.2]: https://github.com/yhay81/sqrail/compare/v0.3.1...v0.3.2
