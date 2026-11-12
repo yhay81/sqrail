@@ -35,21 +35,27 @@ TEST_CASE("strict JSON replaces non-finite numeric tokens", "[json]") {
 	CHECK(sqrail::HasNonFiniteJsonToken(R"({"value":-Infinity})"));
 }
 
-TEST_CASE("JSON escaping emits portable Unicode and replacements", "[json]") {
+TEST_CASE("JSON escaping preserves valid UTF-8 and escapes line separators and replacements", "[json]") {
 	CHECK(sqrail::JsonEscape("a\n\"b\\") == R"(a\n\"b\\)");
-	CHECK(sqrail::JsonEscape("\xE6\x97\xA5\xF0\x9F\x98\x80") == R"(\u65e5\ud83d\ude00)");
+	CHECK(sqrail::JsonEscape("\xE6\x97\xA5\xF0\x9F\x98\x80") == "\xE6\x97\xA5\xF0\x9F\x98\x80");
+	CHECK(sqrail::JsonEscape("\xE8\x96\xAC\xE5\x93\x81\xE5\x90\x8D") == "\xE8\x96\xAC\xE5\x93\x81\xE5\x90\x8D");
+	CHECK(sqrail::JsonEscape("\xE2\x80\xA8\xE2\x80\xA9") == R"(\u2028\u2029)");
 	CHECK(sqrail::JsonEscape(std::string(1, static_cast<char>(0xFF))) == R"(\ufffd)");
 	CHECK(sqrail::JsonEscape("\xC0\xAF") == R"(\ufffd\ufffd)");
+	CHECK(sqrail::IsValidUtf8("ascii \xE6\x97\xA5\xF0\x9F\x98\x80"));
+	CHECK(!sqrail::IsValidUtf8("\xC0\xAF"));
+	CHECK(!sqrail::IsValidUtf8("\xED\xA0\x80"));
+	CHECK(!sqrail::IsValidUtf8("\xF0\x9F\x98"));
 }
 
 TEST_CASE("JSON escaping enforces Unicode scalar boundaries", "[json]") {
 	const std::vector<std::pair<std::string, std::string>> cases {
-	    {"\xC2\x80", R"(\u0080)"},
-	    {"\xE0\xA0\x80", R"(\u0800)"},
-	    {"\xED\x9F\xBF", R"(\ud7ff)"},
-	    {"\xEE\x80\x80", R"(\ue000)"},
-	    {"\xF0\x90\x80\x80", R"(\ud800\udc00)"},
-	    {"\xF4\x8F\xBF\xBF", R"(\udbff\udfff)"},
+	    {"\xC2\x80", "\xC2\x80"},
+	    {"\xE0\xA0\x80", "\xE0\xA0\x80"},
+	    {"\xED\x9F\xBF", "\xED\x9F\xBF"},
+	    {"\xEE\x80\x80", "\xEE\x80\x80"},
+	    {"\xF0\x90\x80\x80", "\xF0\x90\x80\x80"},
+	    {"\xF4\x8F\xBF\xBF", "\xF4\x8F\xBF\xBF"},
 	    {"\xE0\x9F\xBF", R"(\ufffd\ufffd\ufffd)"},
 	    {"\xED\xA0\x80", R"(\ufffd\ufffd\ufffd)"},
 	    {"\xF0\x8F\xBF\xBF", R"(\ufffd\ufffd\ufffd\ufffd)"},
@@ -57,7 +63,9 @@ TEST_CASE("JSON escaping enforces Unicode scalar boundaries", "[json]") {
 	};
 	for (const auto &[input, expected] : cases) {
 		CAPTURE(expected);
-		CHECK(sqrail::JsonEscape(input) == expected);
+		const auto actual = sqrail::JsonEscape(input);
+		CHECK(actual == expected);
+		CHECK(sqrail::IsValidUtf8(actual));
 	}
 }
 
@@ -94,14 +102,15 @@ TEST_CASE("JSON escaping replaces each malformed UTF-8 byte with U+FFFD", "[json
 	    {"\xF1", R"(\ufffd)"},
 	    {"a\xC2z", R"(a\ufffdz)"},
 	    {"\xE2\x82Z", R"(\ufffd\ufffdZ)"},
-	    {"\xF0\x9F\x98\xC3\xA9", R"(\ufffd\ufffd\ufffd\u00e9)"},
+	    {"\xF0\x9F\x98\xC3\xA9", std::string(R"(\ufffd\ufffd\ufffd)") + "\xC3\xA9"},
 	};
 
 	for (std::size_t index = 0; index < cases.size(); ++index) {
 		const auto actual = sqrail::JsonEscape(cases[index].first);
 		CAPTURE(index, cases[index].second);
 		CHECK(actual == cases[index].second);
+		CHECK(sqrail::IsValidUtf8(actual));
 		CHECK(std::all_of(actual.begin(), actual.end(),
-		                  [](const char character) { return character >= 0x20 && character < 0x7F; }));
+		                  [](const char character) { return static_cast<unsigned char>(character) >= 0x20U; }));
 	}
 }

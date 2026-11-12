@@ -24,7 +24,8 @@ void PrintStats(uint64_t rows, uint64_t bytes, std::size_t input_files, bool fil
 uint64_t StreamJson(duckdb::Connection &connection, const std::string &sql, bool array, uint64_t max_rows,
                     const ResultWriter &write);
 uint64_t WriteJsonFile(duckdb::DuckDB &database, duckdb::Connection &connection, const std::string &sql,
-                       const std::filesystem::path &temporary, const FileType &type, uint64_t max_rows);
+                       const std::filesystem::path &temporary, const FileType &type, uint64_t max_rows,
+                       uint64_t max_output_bytes = 0);
 
 } // namespace sqrail
 

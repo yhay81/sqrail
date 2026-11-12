@@ -36,16 +36,16 @@ _sqrail() {
 
   case $command in
     schema)
-      options="--memory --threads --timeout --max-input-files --strict-schema"
+      options="--memory --threads --timeout --max-input-files --strict-schema --all-varchar"
       ;;
     check)
       options="-t --memory --threads --timeout --max-rows --max-input-files"
-      options+=" --max-sql-bytes --strict-schema"
+      options+=" --max-sql-bytes --strict-schema --all-varchar"
       ;;
     run)
       options="-t -o --memory --threads --spill --max-spill --timeout --max-rows"
       options+=" --max-output-bytes --max-input-files --max-sql-bytes --stats"
-      options+=" --strict-schema"
+      options+=" --strict-schema --all-varchar"
       ;;
     *)
       return 0

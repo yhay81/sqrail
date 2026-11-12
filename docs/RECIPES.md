@@ -147,3 +147,24 @@ SQL
 
 When several JSONL files must share one exact schema, add `--strict-schema`;
 by default files are combined by column name.
+
+## Keep dirty CSV identifiers as text
+
+- **Inputs:** a CSV whose identifier column mixes leading-zero codes and
+  alphanumeric strings.
+- **Output:** JSONL rows on stdout with leading zeros preserved.
+- **Limit that matters:** `--all-varchar` keeps every CSV/TSV column as
+  `VARCHAR` so type sniffing cannot strip leading zeros or fail on a mid-file
+  format shift, while leaving bound Parquet or JSON tables at their native
+  types.
+
+```sh
+printf 'lot_code,units\n00123,10\nA-900,25\n' > lots.csv
+sqrail run --all-varchar -t lots=lots.csv \
+  'SELECT lot_code, CAST(units AS BIGINT) AS units FROM lots ORDER BY lot_code'
+```
+
+```text
+{"lot_code":"00123","units":10}
+{"lot_code":"A-900","units":25}
+```

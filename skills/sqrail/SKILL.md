@@ -29,6 +29,8 @@ flags that may change.
    cost is uncertain. Otherwise run once with `sqrail run`.
 6. Add memory, thread, timeout, row, file, SQL-size, spill, or output limits
    when the task supplies a budget or untrusted input warrants a tighter bound.
+   Add `--all-varchar` when CSV or TSV inputs may carry leading-zero codes or
+   mixed-type columns.
 7. Read JSONL from stdout for agent consumption. Use `-o FILE` when the user
    wants a durable CSV, TSV, JSON, or Parquet result. Never assume an existing
    output may be overwritten.

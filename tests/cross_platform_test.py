@@ -362,6 +362,65 @@ class CrossPlatformTest(unittest.TestCase):
                 self.assertEqual(empty.returncode, 2)
                 self.assertEqual(diagnostic(empty)["code"], "EMPTY_SQL")
 
+    def test_utf8_identifiers_hive_strict_all_varchar_and_hints(self) -> None:
+        utf8_csv = self.root / "utf8_cols.csv"
+        utf8_csv.write_text("薬品名,売上\nアルファ,100\n", encoding="utf-8")
+        schema = invoke("schema", str(utf8_csv))
+        self.assertEqual(schema.returncode, 0, schema.stderr)
+        self.assertIn('"name":"薬品名"', schema.stdout.decode("utf-8"))
+        check = invoke("check", "-t", f"sales={utf8_csv}", "SELECT 薬品名, 売上 FROM sales")
+        self.assertEqual(check.returncode, 0, check.stderr)
+        self.assertIn('"name":"薬品名"', check.stdout.decode("utf-8"))
+        run_res = invoke("run", "-t", f"sales={utf8_csv}", "SELECT 薬品名, 売上 FROM sales")
+        self.assertEqual(run_res.returncode, 0, run_res.stderr)
+        self.assertEqual(run_res.stdout.decode("utf-8").strip(), '{"薬品名":"アルファ","売上":100}')
+
+        hive = self.root / "hive_mixed"
+        (hive / "tag=100").mkdir(parents=True)
+        (hive / "tag=abc").mkdir(parents=True)
+        self.assertEqual(invoke("run", "-o", str(hive / "tag=100" / "a.parquet"), "SELECT 1 AS id").returncode, 0)
+        self.assertEqual(invoke("run", "-o", str(hive / "tag=abc" / "b.parquet"), "SELECT 2 AS id").returncode, 0)
+        hive_run = invoke("run", "--strict-schema", "-t", f"data={hive}", "SELECT id, tag FROM data ORDER BY id")
+        self.assertEqual(hive_run.returncode, 0, hive_run.stderr)
+        self.assertEqual(
+            [json.loads(line) for line in hive_run.stdout.splitlines()],
+            [{"id": 1, "tag": "100"}, {"id": 2, "tag": "abc"}],
+        )
+
+        uneven = self.root / "hive_uneven"
+        (uneven / "year=2025" / "month=1").mkdir(parents=True)
+        (uneven / "year=2026").mkdir(parents=True)
+        self.assertEqual(
+            invoke("run", "-o", str(uneven / "year=2025" / "month=1" / "a.parquet"), "SELECT 1 AS id").returncode, 0
+        )
+        self.assertEqual(invoke("run", "-o", str(uneven / "year=2026" / "b.parquet"), "SELECT 2 AS id").returncode, 0)
+        uneven_run = invoke("run", "--strict-schema", "-t", f"data={uneven}", "SELECT * FROM data")
+        self.assertEqual(uneven_run.returncode, 3)
+        self.assertEqual(diagnostic(uneven_run)["code"], "SCHEMA_MISMATCH")
+
+        dirty = self.root / "dirty.csv"
+        dirty.write_text("code,qty\n00123,10\nA-900,20\n", encoding="utf-8")
+        varchar_run = invoke("run", "--all-varchar", "-t", f"lots={dirty}", "SELECT code, qty FROM lots ORDER BY code")
+        self.assertEqual(varchar_run.returncode, 0, varchar_run.stderr)
+        self.assertEqual(
+            [json.loads(line) for line in varchar_run.stdout.splitlines()],
+            [{"code": "00123", "qty": "10"}, {"code": "A-900", "qty": "20"}],
+        )
+
+        jsonl_cap = self.root / "capped.jsonl"
+        over_cap = invoke("run", "--timeout", "1h", "--max-output-bytes", "7B", "-o", str(jsonl_cap), "SELECT 1 AS x")
+        self.assertEqual(over_cap.returncode, 5)
+        self.assertEqual(diagnostic(over_cap)["code"], "OUTPUT_LIMIT")
+        self.assertFalse(jsonl_cap.exists())
+        self.assertEqual(list(self.root.glob("capped.jsonl.sqrail-tmp-*")), [])
+
+        agent_help = invoke("--agent-help")
+        self.assertEqual(agent_help.returncode, 2)
+        self.assertIn("(use 'sqrail --help')", str(diagnostic(agent_help)["message"]))
+        sub_help = invoke("run", "--help")
+        self.assertEqual(sub_help.returncode, 2)
+        self.assertIn("(use 'sqrail --help')", str(diagnostic(sub_help)["message"]))
+
 
 if __name__ == "__main__":
     unittest.main()

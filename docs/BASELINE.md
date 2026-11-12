@@ -1,13 +1,99 @@
 # Performance baselines
 
-This document preserves development-host measurements from v0.1.0 through
-v0.2.1. They are historical, hardware-specific evidence rather than current
-release guarantees. Re-run the committed harness before making a comparison
-against a newer sqrail, DuckDB, compiler, or machine.
+This document records development-host measurements across sqrail releases,
+including the current DuckDB v2.0.0 baseline and preserved v0.1.0 through v0.2.1
+cohorts. They are hardware-specific evidence rather than cross-machine release
+guarantees. Re-run the committed harness before making a comparison against a
+newer sqrail, DuckDB, compiler, or machine.
 
-This report separates a comparative frontend benchmark from a development
-sanity check. It is not a query-engine superiority claim: both compared
-executables contain the same DuckDB source revision.
+This report separates a comparative frontend benchmark from resource and write
+sanity checks. It is not a query-engine superiority claim: both compared
+executables contain the exact same DuckDB source revision.
+
+## v0.4 (DuckDB v2.0.0) baseline
+
+Measured on 2026-11-12 from the portable Release/IPO build tree (with event-driven
+execution control and synchronous uncompressed JSON byte-limit enforcement):
+
+| Component | Value                                               |
+| --------- | --------------------------------------------------- |
+| Host      | Apple M2 Pro, 12 CPU cores, 32 GiB RAM              |
+| OS        | macOS 27.2, arm64                                   |
+| Compiler  | Apple Clang 21.0.0                                  |
+| CMake     | 4.4.5                                               |
+| DuckDB    | v2.0.0 (`d54cbbe3df17e8e5ce68312f483b4155836112aa`) |
+| sqrail    | 0.4.1+ (untagged working tree on `e7e4ebae2cf1`)    |
+
+### Executable and warm-cache startup
+
+| Metric                                              |                           Result |
+| --------------------------------------------------- | -------------------------------: |
+| Unstripped release executable                       |                 58,466,872 bytes |
+| Stripped release executable (`strip -x`)            |                 50,045,272 bytes |
+| Stripped gzip `-9` size                             |                 17,973,665 bytes |
+| Dynamic dependencies                                | system libc++ and libSystem only |
+| `sqrail --version` maximum RSS                      |                  2,703,360 bytes |
+| `sqrail --version` mean (50 warm-cache runs)        |                   2.58 ± 0.11 ms |
+| `duckdb --version` mean (50 warm-cache runs)        |                  20.79 ± 0.66 ms |
+| `sqrail run 'SELECT 1'` mean (50 warm-cache runs)   |                  18.40 ± 2.69 ms |
+| `duckdb -no-init -no-stdin -c 'SELECT 1'` (50 runs) |                  20.64 ± 0.67 ms |
+
+The startup runner (`benchmarks/run-startup.sh`) performs five warmups before
+recording 50 Hyperfine runs (`cache.state=warm`), so these timings reflect warm
+page-cache process startup rather than cold-cache disk reads. `sqrail --version`
+returns before initializing DuckDB's static extension registry.
+
+### Twelve-case comparative suite versus pinned DuckDB v2.0.0 CLI
+
+Both frontends were built from DuckDB commit
+`d54cbbe3df17e8e5ce68312f483b4155836112aa`. The deterministic 1,000,000-row
+dataset (`benchmarks/generate.sh`) contains 1,000,000 fact rows, 100,000
+dimension rows, a 49,669,166-byte Parquet fact file, a 65,666,371-byte CSV fact
+file, and an 897,598-byte Parquet dimension file.
+
+Each timed value is the mean of five warm-cache runs after one warmup
+(`cache.state=warm`), with a 512 MB DuckDB memory limit, an isolated 8 GiB spill
+cap, and two threads. Peak RSS comes from one separate profiled run. Every
+result pair produced identical row counts and logical checksums.
+
+| Workload                     | DuckDB CLI mean | sqrail mean | DuckDB CLI RSS | sqrail RSS |
+| ---------------------------- | --------------: | ----------: | -------------: | ---------: |
+| `scan_parquet_selective`     |        42.05 ms |    34.45 ms |       53.4 MiB |   55.7 MiB |
+| `scan_csv_selective`         |       149.08 ms |   140.82 ms |      102.0 MiB |   97.9 MiB |
+| `scan_parquet_nonselective`  |       166.52 ms |   156.10 ms |      237.5 MiB |  224.8 MiB |
+| `aggregate_low_cardinality`  |        42.62 ms |    35.76 ms |       56.0 MiB |   48.3 MiB |
+| `aggregate_high_cardinality` |        56.35 ms |    41.35 ms |       62.3 MiB |   60.7 MiB |
+| `join_small_large`           |        44.07 ms |    35.47 ms |       62.5 MiB |   55.3 MiB |
+| `join_large_large`           |        51.96 ms |    48.59 ms |       82.2 MiB |   73.8 MiB |
+| `sort_parquet`               |       234.20 ms |   210.68 ms |      247.4 MiB |  253.1 MiB |
+| `distinct_parquet`           |        93.49 ms |    85.13 ms |       95.8 MiB |   87.6 MiB |
+| `window_parquet`             |        93.62 ms |    89.92 ms |       91.6 MiB |   89.3 MiB |
+| `csv_to_parquet`             |       246.58 ms |   237.92 ms |      172.5 MiB |  167.3 MiB |
+| `parquet_to_jsonl`           |       351.92 ms |   218.16 ms |      103.8 MiB |  102.5 MiB |
+
+Small advantages on short queries reflect lower CLI initialization overhead
+rather than faster SQL execution. In `parquet_to_jsonl` (123,666,439-byte
+output), run-to-run variance is dominated by host filesystem writeback flushing
+(DuckDB CLI min 188.51 ms / max 603.56 ms; sqrail min 166.44 ms / max
+289.04 ms), and the two paths are not semantics-equivalent when inputs contain
+non-finite floats because sqrail normalizes `NaN`/`Infinity` to `null`.
+
+### Ten-million-row out-of-core sort (`run-out-of-core.sh`)
+
+Single `first-run-uncontrolled` run sorting 10,000,000 Parquet rows with a
+128 MiB DuckDB memory limit, two threads, and a 2 GiB spill cap:
+
+| Metric              |         Observed value |
+| ------------------- | ---------------------: |
+| Input Parquet       |      496,600,530 bytes |
+| Harness wall time   |                1.857 s |
+| Maximum process RSS |      256,671,744 bytes |
+| Sampled peak spill  |      270,336,000 bytes |
+| Output Parquet      |      121,725,094 bytes |
+| Verified rows       |             10,000,000 |
+| Logical checksum    | `14650138637360173841` |
+
+## Historical v0.1.0 baseline (DuckDB v1.5.5)
 
 Measured on 2026-07-26:
 

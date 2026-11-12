@@ -5,6 +5,38 @@ versions follow semantic versioning.
 
 ## [Unreleased]
 
+### Added
+
+- `--all-varchar` on `schema`, `check`, and `run` to keep CSV and TSV columns as
+  `VARCHAR` (preserving leading-zero identifiers and surviving mid-file type
+  shifts) without altering Parquet or JSON types
+- `h` and `d` duration suffixes on `--timeout` (up to `7d` / `168h`), and `K`,
+  `M`, `G`, and `T` decimal byte-size shorthands on `--max-output-bytes` and
+  `--max-sql-bytes` for unit symmetry with `--memory` and `--max-spill`
+- `(use 'sqrail --help')` guidance in usage diagnostics when `-h` or `--help` is
+  passed after a subcommand or when the removed `--agent-help` flag is invoked
+- DuckDB v2.0.0 startup, 12-case comparative, and 10M-row out-of-core baseline
+  measurements in `docs/BASELINE.md`
+
+### Changed
+
+- `schema`, `check`, and diagnostic JSON output now emit valid non-ASCII UTF-8
+  code points directly instead of escaping them as `\uXXXX`, matching `run`
+  while continuing to escape ASCII controls and `U+2028`/`U+2029` and replace
+  invalid UTF-8 bytes with `\ufffd`
+- `ExecutionControl` now waits on event notification (`pipe` + `poll` on POSIX,
+  manual-reset events on Windows) instead of waking every 5 ms when neither a
+  deadline nor file-size polling is active, and enforces `--max-output-bytes`
+  synchronously for uncompressed `.json`, `.jsonl`, and `.ndjson` file outputs
+
+### Fixed
+
+- `--strict-schema` no longer reports a false-positive `SCHEMA_MISMATCH` on
+  Hive-partitioned datasets whose partition directories mix numeric and string
+  values (such as `tag=100` and `tag=abc`), while still rejecting uneven Hive
+  partition keys and physical-column collisions and checking `--timeout` across
+  multi-file schema validation
+
 ## [0.4.1] - 2026-11-12
 
 ### Added

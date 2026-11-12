@@ -97,12 +97,10 @@ std::string JsonEscape(const std::string_view input) {
 				++index;
 				continue;
 			}
-			if (codepoint <= 0xFFFFU) {
+			if (codepoint == 0x2028U || codepoint == 0x2029U) {
 				AppendUnicodeEscape(output, codepoint);
 			} else {
-				const auto supplementary = codepoint - 0x10000U;
-				AppendUnicodeEscape(output, 0xD800U + (supplementary >> 10U));
-				AppendUnicodeEscape(output, 0xDC00U + (supplementary & 0x3FFU));
+				output.append(input.substr(index, length));
 			}
 			index += length;
 			continue;
@@ -140,6 +138,23 @@ std::string JsonEscape(const std::string_view input) {
 		++index;
 	}
 	return output;
+}
+
+bool IsValidUtf8(const std::string_view input) {
+	for (std::size_t index = 0; index < input.size();) {
+		const auto byte = static_cast<unsigned char>(input[index]);
+		if (byte < 0x80U) {
+			++index;
+			continue;
+		}
+		std::uint32_t codepoint = 0;
+		std::size_t length = 0;
+		if (!DecodeUtf8(input, index, codepoint, length)) {
+			return false;
+		}
+		index += length;
+	}
+	return true;
 }
 
 bool HasNonFiniteJsonToken(const std::string_view input) {

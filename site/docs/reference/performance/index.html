@@ -157,18 +157,303 @@
         </p>
         <div class="docs-markdown">
           <p>
-            This document preserves development-host measurements from v0.1.0
-            through v0.2.1. They are historical, hardware-specific evidence
-            rather than current release guarantees. Re-run the committed harness
-            before making a comparison against a newer sqrail, DuckDB, compiler,
-            or machine.
+            This document records development-host measurements across sqrail
+            releases, including the current DuckDB v2.0.0 baseline and preserved
+            v0.1.0 through v0.2.1 cohorts. They are hardware-specific evidence
+            rather than cross-machine release guarantees. Re-run the committed
+            harness before making a comparison against a newer sqrail, DuckDB,
+            compiler, or machine.
           </p>
           <p>
-            This report separates a comparative frontend benchmark from a
-            development sanity check. It is not a query-engine superiority
-            claim: both compared executables contain the same DuckDB source
+            This report separates a comparative frontend benchmark from resource
+            and write sanity checks. It is not a query-engine superiority claim:
+            both compared executables contain the exact same DuckDB source
             revision.
           </p>
+          <h2 id="v0-4-duckdb-v2-0-0-baseline">
+            v0.4 (DuckDB v2.0.0) baseline
+          </h2>
+          <p>
+            Measured on 2026-11-12 from the portable Release/IPO build tree
+            (with event-driven execution control and synchronous uncompressed
+            JSON byte-limit enforcement):
+          </p>
+          <table>
+            <thead>
+              <tr>
+                <th>Component</th>
+                <th>Value</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Host</td>
+                <td>Apple M2 Pro, 12 CPU cores, 32 GiB RAM</td>
+              </tr>
+              <tr>
+                <td>OS</td>
+                <td>macOS 27.2, arm64</td>
+              </tr>
+              <tr>
+                <td>Compiler</td>
+                <td>Apple Clang 21.0.0</td>
+              </tr>
+              <tr>
+                <td>CMake</td>
+                <td>4.4.5</td>
+              </tr>
+              <tr>
+                <td>DuckDB</td>
+                <td>
+                  v2.0.0 (<code>d54cbbe3df17e8e5ce68312f483b4155836112aa</code>)
+                </td>
+              </tr>
+              <tr>
+                <td>sqrail</td>
+                <td>
+                  0.4.1+ (untagged working tree on <code>e7e4ebae2cf1</code>)
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <h3 id="executable-and-warm-cache-startup">
+            Executable and warm-cache startup
+          </h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Metric</th>
+                <th class="align-right">Result</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Unstripped release executable</td>
+                <td class="align-right">58,466,872 bytes</td>
+              </tr>
+              <tr>
+                <td>Stripped release executable (<code>strip -x</code>)</td>
+                <td class="align-right">50,045,272 bytes</td>
+              </tr>
+              <tr>
+                <td>Stripped gzip <code>-9</code> size</td>
+                <td class="align-right">17,973,665 bytes</td>
+              </tr>
+              <tr>
+                <td>Dynamic dependencies</td>
+                <td class="align-right">system libc++ and libSystem only</td>
+              </tr>
+              <tr>
+                <td><code>sqrail --version</code> maximum RSS</td>
+                <td class="align-right">2,703,360 bytes</td>
+              </tr>
+              <tr>
+                <td><code>sqrail --version</code> mean (50 warm-cache runs)</td>
+                <td class="align-right">2.58 ± 0.11 ms</td>
+              </tr>
+              <tr>
+                <td><code>duckdb --version</code> mean (50 warm-cache runs)</td>
+                <td class="align-right">20.79 ± 0.66 ms</td>
+              </tr>
+              <tr>
+                <td>
+                  <code>sqrail run 'SELECT 1'</code> mean (50 warm-cache runs)
+                </td>
+                <td class="align-right">18.40 ± 2.69 ms</td>
+              </tr>
+              <tr>
+                <td>
+                  <code>duckdb -no-init -no-stdin -c 'SELECT 1'</code> (50 runs)
+                </td>
+                <td class="align-right">20.64 ± 0.67 ms</td>
+              </tr>
+            </tbody>
+          </table>
+          <p>
+            The startup runner (<code>benchmarks/run-startup.sh</code>) performs
+            five warmups before recording 50 Hyperfine runs
+            (<code>cache.state=warm</code>), so these timings reflect warm
+            page-cache process startup rather than cold-cache disk reads.
+            <code>sqrail --version</code> returns before initializing DuckDB’s
+            static extension registry.
+          </p>
+          <h3
+            id="twelve-case-comparative-suite-versus-pinned-duckdb-v2-0-0-cli"
+          >
+            Twelve-case comparative suite versus pinned DuckDB v2.0.0 CLI
+          </h3>
+          <p>
+            Both frontends were built from DuckDB commit
+            <code>d54cbbe3df17e8e5ce68312f483b4155836112aa</code>. The
+            deterministic 1,000,000-row dataset
+            (<code>benchmarks/generate.sh</code>) contains 1,000,000 fact rows,
+            100,000 dimension rows, a 49,669,166-byte Parquet fact file, a
+            65,666,371-byte CSV fact file, and an 897,598-byte Parquet dimension
+            file.
+          </p>
+          <p>
+            Each timed value is the mean of five warm-cache runs after one
+            warmup (<code>cache.state=warm</code>), with a 512 MB DuckDB memory
+            limit, an isolated 8 GiB spill cap, and two threads. Peak RSS comes
+            from one separate profiled run. Every result pair produced identical
+            row counts and logical checksums.
+          </p>
+          <table>
+            <thead>
+              <tr>
+                <th>Workload</th>
+                <th class="align-right">DuckDB CLI mean</th>
+                <th class="align-right">sqrail mean</th>
+                <th class="align-right">DuckDB CLI RSS</th>
+                <th class="align-right">sqrail RSS</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>scan_parquet_selective</code></td>
+                <td class="align-right">42.05 ms</td>
+                <td class="align-right">34.45 ms</td>
+                <td class="align-right">53.4 MiB</td>
+                <td class="align-right">55.7 MiB</td>
+              </tr>
+              <tr>
+                <td><code>scan_csv_selective</code></td>
+                <td class="align-right">149.08 ms</td>
+                <td class="align-right">140.82 ms</td>
+                <td class="align-right">102.0 MiB</td>
+                <td class="align-right">97.9 MiB</td>
+              </tr>
+              <tr>
+                <td><code>scan_parquet_nonselective</code></td>
+                <td class="align-right">166.52 ms</td>
+                <td class="align-right">156.10 ms</td>
+                <td class="align-right">237.5 MiB</td>
+                <td class="align-right">224.8 MiB</td>
+              </tr>
+              <tr>
+                <td><code>aggregate_low_cardinality</code></td>
+                <td class="align-right">42.62 ms</td>
+                <td class="align-right">35.76 ms</td>
+                <td class="align-right">56.0 MiB</td>
+                <td class="align-right">48.3 MiB</td>
+              </tr>
+              <tr>
+                <td><code>aggregate_high_cardinality</code></td>
+                <td class="align-right">56.35 ms</td>
+                <td class="align-right">41.35 ms</td>
+                <td class="align-right">62.3 MiB</td>
+                <td class="align-right">60.7 MiB</td>
+              </tr>
+              <tr>
+                <td><code>join_small_large</code></td>
+                <td class="align-right">44.07 ms</td>
+                <td class="align-right">35.47 ms</td>
+                <td class="align-right">62.5 MiB</td>
+                <td class="align-right">55.3 MiB</td>
+              </tr>
+              <tr>
+                <td><code>join_large_large</code></td>
+                <td class="align-right">51.96 ms</td>
+                <td class="align-right">48.59 ms</td>
+                <td class="align-right">82.2 MiB</td>
+                <td class="align-right">73.8 MiB</td>
+              </tr>
+              <tr>
+                <td><code>sort_parquet</code></td>
+                <td class="align-right">234.20 ms</td>
+                <td class="align-right">210.68 ms</td>
+                <td class="align-right">247.4 MiB</td>
+                <td class="align-right">253.1 MiB</td>
+              </tr>
+              <tr>
+                <td><code>distinct_parquet</code></td>
+                <td class="align-right">93.49 ms</td>
+                <td class="align-right">85.13 ms</td>
+                <td class="align-right">95.8 MiB</td>
+                <td class="align-right">87.6 MiB</td>
+              </tr>
+              <tr>
+                <td><code>window_parquet</code></td>
+                <td class="align-right">93.62 ms</td>
+                <td class="align-right">89.92 ms</td>
+                <td class="align-right">91.6 MiB</td>
+                <td class="align-right">89.3 MiB</td>
+              </tr>
+              <tr>
+                <td><code>csv_to_parquet</code></td>
+                <td class="align-right">246.58 ms</td>
+                <td class="align-right">237.92 ms</td>
+                <td class="align-right">172.5 MiB</td>
+                <td class="align-right">167.3 MiB</td>
+              </tr>
+              <tr>
+                <td><code>parquet_to_jsonl</code></td>
+                <td class="align-right">351.92 ms</td>
+                <td class="align-right">218.16 ms</td>
+                <td class="align-right">103.8 MiB</td>
+                <td class="align-right">102.5 MiB</td>
+              </tr>
+            </tbody>
+          </table>
+          <p>
+            Small advantages on short queries reflect lower CLI initialization
+            overhead rather than faster SQL execution. In
+            <code>parquet_to_jsonl</code> (123,666,439-byte output), run-to-run
+            variance is dominated by host filesystem writeback flushing (DuckDB
+            CLI min 188.51 ms / max 603.56 ms; sqrail min 166.44 ms / max 289.04
+            ms), and the two paths are not semantics-equivalent when inputs
+            contain non-finite floats because sqrail normalizes
+            <code>NaN</code>/<code>Infinity</code> to <code>null</code>.
+          </p>
+          <h3 id="ten-million-row-out-of-core-sort-run-out-of-core-sh">
+            Ten-million-row out-of-core sort (<code>run-out-of-core.sh</code>)
+          </h3>
+          <p>
+            Single <code>first-run-uncontrolled</code> run sorting 10,000,000
+            Parquet rows with a 128 MiB DuckDB memory limit, two threads, and a
+            2 GiB spill cap:
+          </p>
+          <table>
+            <thead>
+              <tr>
+                <th>Metric</th>
+                <th class="align-right">Observed value</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Input Parquet</td>
+                <td class="align-right">496,600,530 bytes</td>
+              </tr>
+              <tr>
+                <td>Harness wall time</td>
+                <td class="align-right">1.857 s</td>
+              </tr>
+              <tr>
+                <td>Maximum process RSS</td>
+                <td class="align-right">256,671,744 bytes</td>
+              </tr>
+              <tr>
+                <td>Sampled peak spill</td>
+                <td class="align-right">270,336,000 bytes</td>
+              </tr>
+              <tr>
+                <td>Output Parquet</td>
+                <td class="align-right">121,725,094 bytes</td>
+              </tr>
+              <tr>
+                <td>Verified rows</td>
+                <td class="align-right">10,000,000</td>
+              </tr>
+              <tr>
+                <td>Logical checksum</td>
+                <td class="align-right"><code>14650138637360173841</code></td>
+              </tr>
+            </tbody>
+          </table>
+          <h2 id="historical-v0-1-0-baseline-duckdb-v1-5-5">
+            Historical v0.1.0 baseline (DuckDB v1.5.5)
+          </h2>
           <p>Measured on 2026-07-26:</p>
           <table>
             <thead>
@@ -533,7 +818,13 @@
       <aside class="docs-page-sidebar" aria-label="On this page">
         <p>On this page</p>
         <nav class="docs-section-nav" aria-label="Page sections">
-          <a href="#executable" aria-current="location">Executable</a>
+          <a href="#v0-4-duckdb-v2-0-0-baseline" aria-current="location"
+            >v0.4 (DuckDB v2.0.0) baseline</a
+          >
+          <a href="#historical-v0-1-0-baseline-duckdb-v1-5-5"
+            >Historical v0.1.0 baseline (DuckDB v1.5.5)</a
+          >
+          <a href="#executable">Executable</a>
           <a href="#sqrail-versus-the-pinned-duckdb-cli"
             >sqrail versus the pinned DuckDB CLI</a
           >

@@ -5,15 +5,15 @@ sqrail \- run bounded read-only SQL over local files
 .SH SYNOPSIS
 .B sqrail
 .B schema
-[\fB--memory\fR \fISIZE\fR] [\fB--threads\fR \fIN\fR] [\fB--timeout\fR \fIDURATION\fR] [\fB--max-input-files\fR \fIN\fR] [\fB--strict-schema\fR] \fIFILE\fR...
+[\fB--memory\fR \fISIZE\fR] [\fB--threads\fR \fIN\fR] [\fB--timeout\fR \fIDURATION\fR] [\fB--max-input-files\fR \fIN\fR] [\fB--strict-schema\fR] [\fB--all-varchar\fR] \fIFILE\fR...
 .br
 .B sqrail
 .B check
-[\fB-t\fR \fINAME=PATH\fR]... [\fB--memory\fR \fISIZE\fR] [\fB--threads\fR \fIN\fR] [\fB--timeout\fR \fIDURATION\fR] [\fB--max-rows\fR \fIN\fR] [\fB--max-input-files\fR \fIN\fR] [\fB--max-sql-bytes\fR \fISIZE\fR] [\fB--strict-schema\fR] [\fISQL\fR|\fB-\fR]
+[\fB-t\fR \fINAME=PATH\fR]... [\fB--memory\fR \fISIZE\fR] [\fB--threads\fR \fIN\fR] [\fB--timeout\fR \fIDURATION\fR] [\fB--max-rows\fR \fIN\fR] [\fB--max-input-files\fR \fIN\fR] [\fB--max-sql-bytes\fR \fISIZE\fR] [\fB--strict-schema\fR] [\fB--all-varchar\fR] [\fISQL\fR|\fB-\fR]
 .br
 .B sqrail
 .B run
-[\fB-t\fR \fINAME=PATH\fR]... [\fB-o\fR \fIFILE\fR] [\fB--memory\fR \fISIZE\fR] [\fB--threads\fR \fIN\fR] [\fB--spill\fR \fIDIR\fR [\fB--max-spill\fR \fISIZE\fR]] [\fB--timeout\fR \fIDURATION\fR] [\fB--max-rows\fR \fIN\fR] [\fB--max-output-bytes\fR \fISIZE\fR] [\fB--max-input-files\fR \fIN\fR] [\fB--max-sql-bytes\fR \fISIZE\fR] [\fB--stats\fR] [\fB--strict-schema\fR] [\fISQL\fR|\fB-\fR]
+[\fB-t\fR \fINAME=PATH\fR]... [\fB-o\fR \fIFILE\fR] [\fB--memory\fR \fISIZE\fR] [\fB--threads\fR \fIN\fR] [\fB--spill\fR \fIDIR\fR [\fB--max-spill\fR \fISIZE\fR]] [\fB--timeout\fR \fIDURATION\fR] [\fB--max-rows\fR \fIN\fR] [\fB--max-output-bytes\fR \fISIZE\fR] [\fB--max-input-files\fR \fIN\fR] [\fB--max-sql-bytes\fR \fISIZE\fR] [\fB--stats\fR] [\fB--strict-schema\fR] [\fB--all-varchar\fR] [\fISQL\fR|\fB-\fR]
 .SH DESCRIPTION
 sqrail executes one read-only SQL query over explicitly bound local CSV, TSV,
 JSON, or Parquet inputs. It provides three commands: schema discovers names and

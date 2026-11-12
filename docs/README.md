@@ -19,7 +19,7 @@
 | depend on exact CLI behavior      | [CLI contract](CONTRACT.md)                           |
 | understand supported systems      | [Platform support](PLATFORMS.md)                      |
 | evaluate performance claims       | [Benchmark policy](BENCHMARKS.md)                     |
-| reproduce historical measurements | [Performance baselines](BASELINE.md)                  |
+| inspect or reproduce baselines    | [Performance baselines](BASELINE.md)                  |
 | review the v0.3 release criteria  | [v0.3 release gate](V0.3_RELEASE.md)                  |
 | validate or deploy the website    | [Documentation deployment](DEPLOYMENT.md)             |
 | understand or run the test suites | [Testing architecture](TESTING.md)                    |

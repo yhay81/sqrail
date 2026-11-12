@@ -35,7 +35,9 @@ int main(int argc, char **argv) {
 			return sqrail::Execute(argc, argv, true);
 		}
 
-		throw sqrail::SqrailError(sqrail::EXIT_USAGE, "UNKNOWN_COMMAND", "unknown command: " + std::string(command));
+		const std::string hint = command == "--agent-help" ? " (use 'sqrail --help')" : "";
+		throw sqrail::SqrailError(sqrail::EXIT_USAGE, "UNKNOWN_COMMAND",
+		                          "unknown command: " + std::string(command) + hint);
 	} catch (const sqrail::SqrailError &error) {
 		sqrail::PrintError(error.code, error.what());
 		return error.exit_code;
