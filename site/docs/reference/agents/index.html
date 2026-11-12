@@ -3,16 +3,19 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="text-scale" content="scale" />
     <meta
       name="description"
       content="Minimal context, install discovery, invocation rules, limits, stop conditions, and error handling for coding agents."
     />
     <meta name="theme-color" content="#090a09" />
+    <meta name="color-scheme" content="dark" />
     <meta property="og:title" content="Agent integration — sqrail" />
     <meta
       property="og:description"
       content="Minimal context, install discovery, invocation rules, limits, stop conditions, and error handling for coding agents."
     />
+    <meta property="og:site_name" content="sqrail" />
     <meta property="og:type" content="article" />
     <meta
       property="og:url"
@@ -22,6 +25,9 @@
       property="og:image"
       content="https://sqrail.yhay81.com/social-card.png"
     />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="sqrail — SQL in. Files out." />
     <meta name="twitter:card" content="summary_large_image" />
     <link
       rel="canonical"
@@ -50,11 +56,38 @@
           <span class="nav-tagline">Agent-safe SQL on files</span>
         </div>
         <nav class="nav-links" aria-label="Primary">
-          <a href="/docs/">Get started</a>
-          <a href="/docs/agents/">Agent setup</a>
-          <a href="/docs/reference/contract/" aria-current="location"
-            >Reference</a
+          <button
+            class="nav-menu-button"
+            type="button"
+            popovertarget="site-menu"
+            popovertargetaction="toggle"
+            aria-controls="site-menu"
           >
+            <svg
+              class="nav-menu-icon"
+              viewBox="0 0 16 16"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <path
+                d="M2 3.25h12v1.5H2v-1.5Zm0 4h12v1.5H2v-1.5Zm0 4h12v1.5H2v-1.5Z"
+              />
+            </svg>
+            <span>Menu</span>
+          </button>
+          <ul id="site-menu" class="nav-menu" popover="auto">
+            <li>
+              <a href="/docs/">Get started</a>
+            </li>
+            <li>
+              <a href="/docs/agents/">Agent setup</a>
+            </li>
+            <li>
+              <a href="/docs/reference/contract/" aria-current="location"
+                >Reference</a
+              >
+            </li>
+          </ul>
         </nav>
         <div class="nav-actions">
           <a
@@ -101,7 +134,21 @@
     <main class="docs-shell docs-shell-reference" id="main">
       <aside class="docs-sidebar" aria-label="Documentation navigation">
         <p class="docs-sidebar-title">sqrail docs</p>
-        <nav class="docs-global-nav" aria-label="Documentation pages">
+        <button
+          class="docs-sidebar-toggle"
+          type="button"
+          aria-expanded="true"
+          aria-controls="docs-global-nav"
+          data-docs-sidebar-toggle
+        >
+          <span>Docs · Agent integration</span>
+          <span class="docs-sidebar-chevron" aria-hidden="true">▾</span>
+        </button>
+        <nav
+          class="docs-global-nav"
+          id="docs-global-nav"
+          aria-label="Documentation pages"
+        >
           <div class="docs-nav-group">
             <p>Start</p>
             <div>
@@ -142,7 +189,7 @@
 
       <article class="docs-content docs-reference-content">
         <div class="docs-page-meta">
-          <p class="eyebrow"><span>Reference</span> sqrail docs</p>
+          <p class="eyebrow"><span>Use</span> sqrail docs</p>
           <a
             class="docs-markdown-link"
             href="https://raw.githubusercontent.com/yhay81/sqrail/main/docs/AGENT_INTEGRATION.md"
@@ -172,10 +219,44 @@
               >Agent experiments</a
             >
           </p>
-          <h2 id="minimal-context">Minimal context</h2>
+          <h2 id="minimal-context" tabindex="-1">Minimal context</h2>
           <p>Prefer the executable’s stable help over a prose tool tutorial:</p>
-          <pre><code class="language-sh">sqrail --help
+          <div class="code-block">
+            <span class="copy-control">
+              <button
+                class="copy-button"
+                type="button"
+                command="--copy"
+                commandfor="doc-code-1"
+                aria-label="Copy Minimal context sh code"
+              >
+                <svg
+                  class="copy-icon copy-icon-clipboard"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M5.5 1.5h7a1 1 0 0 1 1 1v8h-1.5v-7.5h-6.5V1.5Zm-3 3h7a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1Zm.5 1.5v7h6V6H3Z"
+                  />
+                </svg>
+                <svg
+                  class="copy-icon copy-icon-check"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"
+                  />
+                </svg>
+                Copy
+              </button>
+              <span class="copy-status" role="status"></span>
+            </span>
+            <pre><code id="doc-code-1" class="language-sh">sqrail --help
 </code></pre>
+          </div>
           <p>
             The same release interface is available to HTTP-based agents at
             <a href="https://sqrail.yhay81.com/help.txt"
@@ -185,7 +266,7 @@
               >https://sqrail.yhay81.com/llms.txt</a
             >.
           </p>
-          <h2 id="install-discovery">Install discovery</h2>
+          <h2 id="install-discovery" tabindex="-1">Install discovery</h2>
           <p>
             The canonical public Agent Skill is
             <a
@@ -194,9 +275,43 @@
             >. GitHub CLI 2.90 or newer can preview it before placing it in the
             current host’s native user directory:
           </p>
-          <pre><code class="language-sh">gh skill preview yhay81/sqrail sqrail
+          <div class="code-block">
+            <span class="copy-control">
+              <button
+                class="copy-button"
+                type="button"
+                command="--copy"
+                commandfor="doc-code-2"
+                aria-label="Copy Install discovery sh code"
+              >
+                <svg
+                  class="copy-icon copy-icon-clipboard"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M5.5 1.5h7a1 1 0 0 1 1 1v8h-1.5v-7.5h-6.5V1.5Zm-3 3h7a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1Zm.5 1.5v7h6V6H3Z"
+                  />
+                </svg>
+                <svg
+                  class="copy-icon copy-icon-check"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"
+                  />
+                </svg>
+                Copy
+              </button>
+              <span class="copy-status" role="status"></span>
+            </span>
+            <pre><code id="doc-code-2" class="language-sh">gh skill preview yhay81/sqrail sqrail
 gh skill install yhay81/sqrail sqrail --agent codex --scope user
 </code></pre>
+          </div>
           <p>
             Replace <code>codex</code> with the active host. Verified targets
             include Claude Code, Cursor, GitHub Copilot, OpenCode, Cline, Kiro
@@ -208,8 +323,42 @@ gh skill install yhay81/sqrail sqrail --agent codex --scope user
             <code>.agents/skills</code> project location used by current generic
             installers. Install the repository as a native plugin instead:
           </p>
-          <pre><code class="language-sh">agy plugin install https://github.com/yhay81/sqrail
+          <div class="code-block">
+            <span class="copy-control">
+              <button
+                class="copy-button"
+                type="button"
+                command="--copy"
+                commandfor="doc-code-3"
+                aria-label="Copy Install discovery sh code 2"
+              >
+                <svg
+                  class="copy-icon copy-icon-clipboard"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M5.5 1.5h7a1 1 0 0 1 1 1v8h-1.5v-7.5h-6.5V1.5Zm-3 3h7a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1Zm.5 1.5v7h6V6H3Z"
+                  />
+                </svg>
+                <svg
+                  class="copy-icon copy-icon-check"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"
+                  />
+                </svg>
+                Copy
+              </button>
+              <span class="copy-status" role="status"></span>
+            </span>
+            <pre><code id="doc-code-3" class="language-sh">agy plugin install https://github.com/yhay81/sqrail
 </code></pre>
+          </div>
           <p>
             Agents that start without sqrail can be given the stable
             <a href="/docs/agents/"
@@ -220,7 +369,7 @@ gh skill install yhay81/sqrail sqrail --agent codex --scope user
             <code>npx skills</code> is a fallback only when Node.js is already
             present.
           </p>
-          <h2 id="decision-rule">Decision rule</h2>
+          <h2 id="decision-rule" tabindex="-1">Decision rule</h2>
           <ol>
             <li>
               If the user has not supplied names and types, run
@@ -241,12 +390,45 @@ gh skill install yhay81/sqrail sqrail --agent codex --scope user
             Do not rediscover a stated schema, retry a successful query, or
             treat unordered results as ordered.
           </p>
-          <h2 id="invocation-pattern">Invocation pattern</h2>
+          <h2 id="invocation-pattern" tabindex="-1">Invocation pattern</h2>
           <p>
             Pass long or generated SQL on stdin so the shell does not have to
             interpret it:
           </p>
-          <pre><code class="language-sh">sqrail run \
+          <div class="code-block">
+            <span class="copy-control">
+              <button
+                class="copy-button"
+                type="button"
+                command="--copy"
+                commandfor="doc-code-4"
+                aria-label="Copy Invocation pattern sh code"
+              >
+                <svg
+                  class="copy-icon copy-icon-clipboard"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M5.5 1.5h7a1 1 0 0 1 1 1v8h-1.5v-7.5h-6.5V1.5Zm-3 3h7a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1Zm.5 1.5v7h6V6H3Z"
+                  />
+                </svg>
+                <svg
+                  class="copy-icon copy-icon-check"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"
+                  />
+                </svg>
+                Copy
+              </button>
+              <span class="copy-status" role="status"></span>
+            </span>
+            <pre><code id="doc-code-4" class="language-sh">sqrail run \
   -t events=events.parquet \
   --memory 512MB \
   --threads 2 \
@@ -257,118 +439,135 @@ gh skill install yhay81/sqrail sqrail --agent codex --scope user
   --stats \
   - &lt; query.sql
 </code></pre>
+          </div>
           <p>
             Without <code>-o</code>, successful rows are JSONL on stdout.
             Diagnostics and <code>--stats</code> output are JSON on stderr. Keep
             the streams separate.
           </p>
-          <h2 id="choose-limits-from-the-task">Choose limits from the task</h2>
-          <table>
-            <thead>
-              <tr>
-                <th>Dimension</th>
-                <th>Option</th>
-                <th>Typical reason</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>DuckDB memory</td>
-                <td><code>--memory</code></td>
-                <td>Bound the engine’s buffer and operator memory</td>
-              </tr>
-              <tr>
-                <td>parallelism</td>
-                <td><code>--threads</code></td>
-                <td>Avoid saturating a shared agent host</td>
-              </tr>
-              <tr>
-                <td>wall time</td>
-                <td><code>--timeout</code></td>
-                <td>Bound discovery, planning, execution, and finalization</td>
-              </tr>
-              <tr>
-                <td>spill</td>
-                <td><code>--spill</code>, <code>--max-spill</code></td>
-                <td>Permit larger-than-memory work within a disk budget</td>
-              </tr>
-              <tr>
-                <td>result rows</td>
-                <td><code>--max-rows</code></td>
-                <td>Reject accidentally broad results</td>
-              </tr>
-              <tr>
-                <td>output bytes</td>
-                <td><code>--max-output-bytes</code></td>
-                <td>Protect storage and downstream context</td>
-              </tr>
-              <tr>
-                <td>input count</td>
-                <td><code>--max-input-files</code></td>
-                <td>Bound glob and directory expansion</td>
-              </tr>
-              <tr>
-                <td>SQL size</td>
-                <td><code>--max-sql-bytes</code></td>
-                <td>Bound generated input size</td>
-              </tr>
-            </tbody>
-          </table>
+          <h2 id="choose-limits-from-the-task" tabindex="-1">
+            Choose limits from the task
+          </h2>
+          <section
+            class="table-wrapper"
+            tabindex="0"
+            aria-label="Choose limits from the task table"
+          >
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Dimension</th>
+                  <th scope="col">Option</th>
+                  <th scope="col">Typical reason</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>DuckDB memory</td>
+                  <td><code>--memory</code></td>
+                  <td>Bound the engine’s buffer and operator memory</td>
+                </tr>
+                <tr>
+                  <td>parallelism</td>
+                  <td><code>--threads</code></td>
+                  <td>Avoid saturating a shared agent host</td>
+                </tr>
+                <tr>
+                  <td>wall time</td>
+                  <td><code>--timeout</code></td>
+                  <td>
+                    Bound discovery, planning, execution, and finalization
+                  </td>
+                </tr>
+                <tr>
+                  <td>spill</td>
+                  <td><code>--spill</code>, <code>--max-spill</code></td>
+                  <td>Permit larger-than-memory work within a disk budget</td>
+                </tr>
+                <tr>
+                  <td>result rows</td>
+                  <td><code>--max-rows</code></td>
+                  <td>Reject accidentally broad results</td>
+                </tr>
+                <tr>
+                  <td>output bytes</td>
+                  <td><code>--max-output-bytes</code></td>
+                  <td>Protect storage and downstream context</td>
+                </tr>
+                <tr>
+                  <td>input count</td>
+                  <td><code>--max-input-files</code></td>
+                  <td>Bound glob and directory expansion</td>
+                </tr>
+                <tr>
+                  <td>SQL size</td>
+                  <td><code>--max-sql-bytes</code></td>
+                  <td>Bound generated input size</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
           <p>
             <code>--memory</code> is a DuckDB limit, not a process RSS sandbox.
             Use operating-system isolation when SQL or input files are hostile.
           </p>
-          <h2 id="error-handling">Error handling</h2>
+          <h2 id="error-handling" tabindex="-1">Error handling</h2>
           <p>
             sqrail writes exactly one diagnostic JSON object to stderr and
             selects an exit code by failure class:
           </p>
-          <table>
-            <thead>
-              <tr>
-                <th class="align-right">Exit</th>
-                <th>Class</th>
-                <th>Agent response</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td class="align-right">0</td>
-                <td>success</td>
-                <td>consume output and stop</td>
-              </tr>
-              <tr>
-                <td class="align-right">2</td>
-                <td>usage</td>
-                <td>correct invocation or declared limit syntax</td>
-              </tr>
-              <tr>
-                <td class="align-right">3</td>
-                <td>input</td>
-                <td>correct an explicit binding or input path</td>
-              </tr>
-              <tr>
-                <td class="align-right">4</td>
-                <td>SQL</td>
-                <td>correct the query without broadening file access</td>
-              </tr>
-              <tr>
-                <td class="align-right">5</td>
-                <td>output</td>
-                <td>choose a valid, absent destination or output limit</td>
-              </tr>
-              <tr>
-                <td class="align-right">70</td>
-                <td>internal</td>
-                <td>preserve the diagnostic and report a tool failure</td>
-              </tr>
-            </tbody>
-          </table>
+          <section
+            class="table-wrapper"
+            tabindex="0"
+            aria-label="Error handling table"
+          >
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col" class="align-right">Exit</th>
+                  <th scope="col">Class</th>
+                  <th scope="col">Agent response</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="align-right">0</td>
+                  <td>success</td>
+                  <td>consume output and stop</td>
+                </tr>
+                <tr>
+                  <td class="align-right">2</td>
+                  <td>usage</td>
+                  <td>correct invocation or declared limit syntax</td>
+                </tr>
+                <tr>
+                  <td class="align-right">3</td>
+                  <td>input</td>
+                  <td>correct an explicit binding or input path</td>
+                </tr>
+                <tr>
+                  <td class="align-right">4</td>
+                  <td>SQL</td>
+                  <td>correct the query without broadening file access</td>
+                </tr>
+                <tr>
+                  <td class="align-right">5</td>
+                  <td>output</td>
+                  <td>choose a valid, absent destination or output limit</td>
+                </tr>
+                <tr>
+                  <td class="align-right">70</td>
+                  <td>internal</td>
+                  <td>preserve the diagnostic and report a tool failure</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
           <p>
             The full schemas and failure semantics are normative in the
             <a href="/docs/reference/contract/">CLI contract</a>.
           </p>
-          <h2 id="evaluation">Evaluation</h2>
+          <h2 id="evaluation" tabindex="-1">Evaluation</h2>
           <p>
             The agent-facing surface is tested with blinded, low-cost-model
             tasks rather than optimized only for a single frontier model. Read

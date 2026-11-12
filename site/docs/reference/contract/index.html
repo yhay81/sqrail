@@ -3,16 +3,19 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="text-scale" content="scale" />
     <meta
       name="description"
       content="Normative commands, query behavior, streams, resource controls, schemas, and diagnostics."
     />
     <meta name="theme-color" content="#090a09" />
+    <meta name="color-scheme" content="dark" />
     <meta property="og:title" content="CLI contract — sqrail" />
     <meta
       property="og:description"
       content="Normative commands, query behavior, streams, resource controls, schemas, and diagnostics."
     />
+    <meta property="og:site_name" content="sqrail" />
     <meta property="og:type" content="article" />
     <meta
       property="og:url"
@@ -22,6 +25,9 @@
       property="og:image"
       content="https://sqrail.yhay81.com/social-card.png"
     />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="sqrail — SQL in. Files out." />
     <meta name="twitter:card" content="summary_large_image" />
     <link
       rel="canonical"
@@ -50,9 +56,38 @@
           <span class="nav-tagline">Agent-safe SQL on files</span>
         </div>
         <nav class="nav-links" aria-label="Primary">
-          <a href="/docs/">Get started</a>
-          <a href="/docs/agents/">Agent setup</a>
-          <a href="/docs/reference/contract/" aria-current="page">Reference</a>
+          <button
+            class="nav-menu-button"
+            type="button"
+            popovertarget="site-menu"
+            popovertargetaction="toggle"
+            aria-controls="site-menu"
+          >
+            <svg
+              class="nav-menu-icon"
+              viewBox="0 0 16 16"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <path
+                d="M2 3.25h12v1.5H2v-1.5Zm0 4h12v1.5H2v-1.5Zm0 4h12v1.5H2v-1.5Z"
+              />
+            </svg>
+            <span>Menu</span>
+          </button>
+          <ul id="site-menu" class="nav-menu" popover="auto">
+            <li>
+              <a href="/docs/">Get started</a>
+            </li>
+            <li>
+              <a href="/docs/agents/">Agent setup</a>
+            </li>
+            <li>
+              <a href="/docs/reference/contract/" aria-current="page"
+                >Reference</a
+              >
+            </li>
+          </ul>
         </nav>
         <div class="nav-actions">
           <a
@@ -99,7 +134,21 @@
     <main class="docs-shell docs-shell-reference" id="main">
       <aside class="docs-sidebar" aria-label="Documentation navigation">
         <p class="docs-sidebar-title">sqrail docs</p>
-        <nav class="docs-global-nav" aria-label="Documentation pages">
+        <button
+          class="docs-sidebar-toggle"
+          type="button"
+          aria-expanded="true"
+          aria-controls="docs-global-nav"
+          data-docs-sidebar-toggle
+        >
+          <span>Docs · CLI contract</span>
+          <span class="docs-sidebar-chevron" aria-hidden="true">▾</span>
+        </button>
+        <nav
+          class="docs-global-nav"
+          id="docs-global-nav"
+          aria-label="Documentation pages"
+        >
           <div class="docs-nav-group">
             <p>Start</p>
             <div>
@@ -139,7 +188,7 @@
 
       <article class="docs-content docs-reference-content">
         <div class="docs-page-meta">
-          <p class="eyebrow"><span>Reference</span> sqrail docs</p>
+          <p class="eyebrow"><span>Use</span> sqrail docs</p>
           <a
             class="docs-markdown-link"
             href="https://raw.githubusercontent.com/yhay81/sqrail/main/docs/CONTRACT.md"
@@ -157,8 +206,41 @@
           <p>
             This document defines the sqrail v0.4 command and process contract.
           </p>
-          <h2 id="commands">Commands</h2>
-          <pre><code class="language-text">sqrail schema [--memory SIZE] [--threads N] [--timeout DURATION]
+          <h2 id="commands" tabindex="-1">Commands</h2>
+          <div class="code-block">
+            <span class="copy-control">
+              <button
+                class="copy-button"
+                type="button"
+                command="--copy"
+                commandfor="doc-code-1"
+                aria-label="Copy Commands text code"
+              >
+                <svg
+                  class="copy-icon copy-icon-clipboard"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M5.5 1.5h7a1 1 0 0 1 1 1v8h-1.5v-7.5h-6.5V1.5Zm-3 3h7a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1Zm.5 1.5v7h6V6H3Z"
+                  />
+                </svg>
+                <svg
+                  class="copy-icon copy-icon-check"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"
+                  />
+                </svg>
+                Copy
+              </button>
+              <span class="copy-status" role="status"></span>
+            </span>
+            <pre><code id="doc-code-1" class="language-text">sqrail schema [--memory SIZE] [--threads N] [--timeout DURATION]
               [--max-input-files N] [--strict-schema] [--all-varchar] FILE...
 sqrail check [-t NAME=PATH]... [--memory SIZE] [--threads N]
              [--timeout DURATION] [--max-rows N] [--max-input-files N]
@@ -171,6 +253,7 @@ sqrail run [-t NAME=PATH]... [-o FILE] [--memory SIZE] [--threads N]
 sqrail --help
 sqrail --version
 </code></pre>
+          </div>
           <p>
             Options may appear before or after the SQL positional argument.
             Every option, including boolean flags, may appear at most once,
@@ -208,7 +291,7 @@ sqrail --version
             available to <code>run</code>, <code>check</code>, and
             <code>schema</code>.
           </p>
-          <h2 id="query-contract">Query contract</h2>
+          <h2 id="query-contract" tabindex="-1">Query contract</h2>
           <ul>
             <li>
               SQL is the dialect of the DuckDB version reported by
@@ -238,49 +321,55 @@ sqrail --version
             the configuration is locked. Unbound file-reading functions
             therefore cannot open arbitrary local paths.
           </p>
-          <h2 id="formats">Formats</h2>
-          <table>
-            <thead>
-              <tr>
-                <th>Extension</th>
-                <th class="align-right">Input</th>
-                <th class="align-right">Output</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><code>.csv</code></td>
-                <td class="align-right">yes</td>
-                <td class="align-right">yes</td>
-              </tr>
-              <tr>
-                <td><code>.tsv</code>, <code>.tab</code></td>
-                <td class="align-right">yes</td>
-                <td class="align-right">yes</td>
-              </tr>
-              <tr>
-                <td><code>.json</code></td>
-                <td class="align-right">yes</td>
-                <td class="align-right">yes, one JSON array</td>
-              </tr>
-              <tr>
-                <td><code>.jsonl</code>, <code>.ndjson</code></td>
-                <td class="align-right">yes</td>
-                <td class="align-right">yes, one object per line</td>
-              </tr>
-              <tr>
-                <td><code>.parquet</code></td>
-                <td class="align-right">yes</td>
-                <td class="align-right">yes</td>
-              </tr>
-            </tbody>
-          </table>
+          <h2 id="formats" tabindex="-1">Formats</h2>
+          <section
+            class="table-wrapper"
+            tabindex="0"
+            aria-label="Formats table"
+          >
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Extension</th>
+                  <th scope="col" class="align-right">Input</th>
+                  <th scope="col" class="align-right">Output</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>.csv</code></td>
+                  <td class="align-right">yes</td>
+                  <td class="align-right">yes</td>
+                </tr>
+                <tr>
+                  <td><code>.tsv</code>, <code>.tab</code></td>
+                  <td class="align-right">yes</td>
+                  <td class="align-right">yes</td>
+                </tr>
+                <tr>
+                  <td><code>.json</code></td>
+                  <td class="align-right">yes</td>
+                  <td class="align-right">yes, one JSON array</td>
+                </tr>
+                <tr>
+                  <td><code>.jsonl</code>, <code>.ndjson</code></td>
+                  <td class="align-right">yes</td>
+                  <td class="align-right">yes, one object per line</td>
+                </tr>
+                <tr>
+                  <td><code>.parquet</code></td>
+                  <td class="align-right">yes</td>
+                  <td class="align-right">yes</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
           <p>
             Text formats may additionally end in <code>.gz</code> or
             <code>.zst</code>. External compression of Parquet and
             <code>.bz2</code>/<code>.xz</code> streams are rejected.
           </p>
-          <h2 id="standard-streams">Standard streams</h2>
+          <h2 id="standard-streams" tabindex="-1">Standard streams</h2>
           <p>
             Without <code>-o</code>, each result row is encoded as one typed
             JSON object followed by a newline on stdout. JSON is RFC
@@ -305,7 +394,40 @@ sqrail --version
             exactly one compact JSON object to stderr after the result is
             complete:
           </p>
-          <pre><code class="language-json">{
+          <div class="code-block">
+            <span class="copy-control">
+              <button
+                class="copy-button"
+                type="button"
+                command="--copy"
+                commandfor="doc-code-2"
+                aria-label="Copy Standard streams json code"
+              >
+                <svg
+                  class="copy-icon copy-icon-clipboard"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M5.5 1.5h7a1 1 0 0 1 1 1v8h-1.5v-7.5h-6.5V1.5Zm-3 3h7a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1Zm.5 1.5v7h6V6H3Z"
+                  />
+                </svg>
+                <svg
+                  class="copy-icon copy-icon-check"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"
+                  />
+                </svg>
+                Copy
+              </button>
+              <span class="copy-status" role="status"></span>
+            </span>
+            <pre><code id="doc-code-2" class="language-json">{
   &quot;schema_version&quot;: 1,
   &quot;sqrail_version&quot;: &quot;0.4.2&quot;,
   &quot;ok&quot;: true,
@@ -317,6 +439,7 @@ sqrail --version
   &quot;destination&quot;: &quot;stdout&quot;
 }
 </code></pre>
+          </div>
           <p>
             <code>rows</code> and <code>bytes</code> describe the emitted
             result, <code>input_files</code> counts resolved files across all
@@ -330,7 +453,7 @@ sqrail --version
             JSONL prefix. Use <code>-o</code> when the consumer requires
             all-or-nothing output.
           </p>
-          <h2 id="resource-controls">Resource controls</h2>
+          <h2 id="resource-controls" tabindex="-1">Resource controls</h2>
           <ul>
             <li>
               <code>--memory SIZE</code> accepts a positive decimal number
@@ -419,13 +542,46 @@ sqrail --version
             <code>preserve_insertion_order=false</code>. Without
             <code>--spill</code>, external temporary storage is disabled.
           </p>
-          <h2 id="check-output">Check output</h2>
+          <h2 id="check-output" tabindex="-1">Check output</h2>
           <p>
             <code>check</code> binds inputs, validates the read-only statement,
             and emits result-column metadata, resolved input counts, and a
             strict JSON physical plan without executing the query:
           </p>
-          <pre><code class="language-json">{
+          <div class="code-block">
+            <span class="copy-control">
+              <button
+                class="copy-button"
+                type="button"
+                command="--copy"
+                commandfor="doc-code-3"
+                aria-label="Copy Check output json code"
+              >
+                <svg
+                  class="copy-icon copy-icon-clipboard"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M5.5 1.5h7a1 1 0 0 1 1 1v8h-1.5v-7.5h-6.5V1.5Zm-3 3h7a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1Zm.5 1.5v7h6V6H3Z"
+                  />
+                </svg>
+                <svg
+                  class="copy-icon copy-icon-check"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"
+                  />
+                </svg>
+                Copy
+              </button>
+              <span class="copy-status" role="status"></span>
+            </span>
+            <pre><code id="doc-code-3" class="language-json">{
   &quot;schema_version&quot;: 1,
   &quot;sqrail_version&quot;: &quot;0.4.2&quot;,
   &quot;ok&quot;: true,
@@ -434,13 +590,47 @@ sqrail --version
   &quot;plan&quot;: [{ &quot;name&quot;: &quot;UNGROUPED_AGGREGATE&quot;, &quot;children&quot;: [], &quot;extra_info&quot;: {} }]
 }
 </code></pre>
+          </div>
           <p>
             With <code>--max-rows</code>, the reported columns and plan describe
             the bounded wrapper that execution would use.
           </p>
-          <h2 id="schema-output">Schema output</h2>
+          <h2 id="schema-output" tabindex="-1">Schema output</h2>
           <p><code>schema</code> writes one JSON object per input path:</p>
-          <pre><code class="language-json">{
+          <div class="code-block">
+            <span class="copy-control">
+              <button
+                class="copy-button"
+                type="button"
+                command="--copy"
+                commandfor="doc-code-4"
+                aria-label="Copy Schema output json code"
+              >
+                <svg
+                  class="copy-icon copy-icon-clipboard"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M5.5 1.5h7a1 1 0 0 1 1 1v8h-1.5v-7.5h-6.5V1.5Zm-3 3h7a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1Zm.5 1.5v7h6V6H3Z"
+                  />
+                </svg>
+                <svg
+                  class="copy-icon copy-icon-check"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"
+                  />
+                </svg>
+                Copy
+              </button>
+              <span class="copy-status" role="status"></span>
+            </span>
+            <pre><code id="doc-code-4" class="language-json">{
   &quot;schema_version&quot;: 1,
   &quot;sqrail_version&quot;: &quot;0.4.2&quot;,
   &quot;file&quot;: &quot;/absolute/data.csv&quot;,
@@ -448,7 +638,8 @@ sqrail --version
   &quot;columns&quot;: [{ &quot;name&quot;: &quot;id&quot;, &quot;type&quot;: &quot;BIGINT&quot;, &quot;nullable&quot;: true }]
 }
 </code></pre>
-          <h2 id="diagnostics">Diagnostics</h2>
+          </div>
+          <h2 id="diagnostics" tabindex="-1">Diagnostics</h2>
           <p>
             Every handled failure writes exactly one UTF-8 JSON object to
             stderr. Valid UTF-8 text in <code>schema</code>, <code>check</code>,
@@ -460,7 +651,40 @@ sqrail --version
             returns exit 2 with <code>(use 'sqrail --help')</code> in
             <code>message</code>:
           </p>
-          <pre><code class="language-json">{
+          <div class="code-block">
+            <span class="copy-control">
+              <button
+                class="copy-button"
+                type="button"
+                command="--copy"
+                commandfor="doc-code-5"
+                aria-label="Copy Diagnostics json code"
+              >
+                <svg
+                  class="copy-icon copy-icon-clipboard"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M5.5 1.5h7a1 1 0 0 1 1 1v8h-1.5v-7.5h-6.5V1.5Zm-3 3h7a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1Zm.5 1.5v7h6V6H3Z"
+                  />
+                </svg>
+                <svg
+                  class="copy-icon copy-icon-check"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"
+                  />
+                </svg>
+                Copy
+              </button>
+              <span class="copy-status" role="status"></span>
+            </span>
+            <pre><code id="doc-code-5" class="language-json">{
   &quot;schema_version&quot;: 1,
   &quot;sqrail_version&quot;: &quot;0.4.2&quot;,
   &quot;ok&quot;: false,
@@ -468,6 +692,7 @@ sqrail --version
   &quot;message&quot;: &quot;input file not found: missing.csv&quot;
 }
 </code></pre>
+          </div>
           <p>
             <code>SIGINT</code> and <code>SIGTERM</code> interrupt active
             planning, schema inference, or execution and return exit 4 with
@@ -486,40 +711,46 @@ sqrail --version
             <code>schema_version</code>.
           </p>
           <p>Exit codes are stable:</p>
-          <table>
-            <thead>
-              <tr>
-                <th class="align-right">Exit</th>
-                <th>Class</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td class="align-right">0</td>
-                <td>success</td>
-              </tr>
-              <tr>
-                <td class="align-right">2</td>
-                <td>command usage</td>
-              </tr>
-              <tr>
-                <td class="align-right">3</td>
-                <td>input file or format</td>
-              </tr>
-              <tr>
-                <td class="align-right">4</td>
-                <td>SQL parse, bind, or execution</td>
-              </tr>
-              <tr>
-                <td class="align-right">5</td>
-                <td>output path, write, or commit</td>
-              </tr>
-              <tr>
-                <td class="align-right">70</td>
-                <td>unexpected internal failure</td>
-              </tr>
-            </tbody>
-          </table>
+          <section
+            class="table-wrapper"
+            tabindex="0"
+            aria-label="Diagnostics table"
+          >
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col" class="align-right">Exit</th>
+                  <th scope="col">Class</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="align-right">0</td>
+                  <td>success</td>
+                </tr>
+                <tr>
+                  <td class="align-right">2</td>
+                  <td>command usage</td>
+                </tr>
+                <tr>
+                  <td class="align-right">3</td>
+                  <td>input file or format</td>
+                </tr>
+                <tr>
+                  <td class="align-right">4</td>
+                  <td>SQL parse, bind, or execution</td>
+                </tr>
+                <tr>
+                  <td class="align-right">5</td>
+                  <td>output path, write, or commit</td>
+                </tr>
+                <tr>
+                  <td class="align-right">70</td>
+                  <td>unexpected internal failure</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
         </div>
 
         <nav

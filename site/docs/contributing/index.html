@@ -3,16 +3,19 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="text-scale" content="scale" />
     <meta
       name="description"
       content="A focused path from a first issue through tests, performance evidence, and a reviewable pull request."
     />
     <meta name="theme-color" content="#090a09" />
+    <meta name="color-scheme" content="dark" />
     <meta property="og:title" content="Contributing — sqrail" />
     <meta
       property="og:description"
       content="A focused path from a first issue through tests, performance evidence, and a reviewable pull request."
     />
+    <meta property="og:site_name" content="sqrail" />
     <meta property="og:type" content="article" />
     <meta
       property="og:url"
@@ -22,6 +25,9 @@
       property="og:image"
       content="https://sqrail.yhay81.com/social-card.png"
     />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="sqrail — SQL in. Files out." />
     <meta name="twitter:card" content="summary_large_image" />
     <link rel="canonical" href="https://sqrail.yhay81.com/docs/contributing/" />
     <link
@@ -47,11 +53,36 @@
           <span class="nav-tagline">Agent-safe SQL on files</span>
         </div>
         <nav class="nav-links" aria-label="Primary">
-          <a href="/docs/">Get started</a>
-          <a href="/docs/agents/">Agent setup</a>
-          <a href="/docs/reference/contract/" aria-current="location"
-            >Reference</a
+          <button
+            class="nav-menu-button"
+            type="button"
+            popovertarget="site-menu"
+            popovertargetaction="toggle"
+            aria-controls="site-menu"
           >
+            <svg
+              class="nav-menu-icon"
+              viewBox="0 0 16 16"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <path
+                d="M2 3.25h12v1.5H2v-1.5Zm0 4h12v1.5H2v-1.5Zm0 4h12v1.5H2v-1.5Z"
+              />
+            </svg>
+            <span>Menu</span>
+          </button>
+          <ul id="site-menu" class="nav-menu" popover="auto">
+            <li>
+              <a href="/docs/">Get started</a>
+            </li>
+            <li>
+              <a href="/docs/agents/">Agent setup</a>
+            </li>
+            <li>
+              <a href="/docs/reference/contract/">Reference</a>
+            </li>
+          </ul>
         </nav>
         <div class="nav-actions">
           <a
@@ -98,7 +129,21 @@
     <main class="docs-shell docs-shell-reference" id="main">
       <aside class="docs-sidebar" aria-label="Documentation navigation">
         <p class="docs-sidebar-title">sqrail docs</p>
-        <nav class="docs-global-nav" aria-label="Documentation pages">
+        <button
+          class="docs-sidebar-toggle"
+          type="button"
+          aria-expanded="true"
+          aria-controls="docs-global-nav"
+          data-docs-sidebar-toggle
+        >
+          <span>Docs · Contributing</span>
+          <span class="docs-sidebar-chevron" aria-hidden="true">▾</span>
+        </button>
+        <nav
+          class="docs-global-nav"
+          id="docs-global-nav"
+          aria-label="Documentation pages"
+        >
           <div class="docs-nav-group">
             <p>Start</p>
             <div>
@@ -167,7 +212,9 @@
             <a href="/docs/contributing/support/">support guide</a> to choose
             the right reporting path.
           </p>
-          <h2 id="your-first-contribution">Your first contribution</h2>
+          <h2 id="your-first-contribution" tabindex="-1">
+            Your first contribution
+          </h2>
           <ol>
             <li>
               Search open issues and pull requests to avoid duplicate work.
@@ -194,7 +241,7 @@
             have bounded scope suitable for a first contribution. If an issue is
             unclear, asking a focused question is useful work too.
           </p>
-          <h3 id="claiming-an-issue">Claiming an issue</h3>
+          <h3 id="claiming-an-issue" tabindex="-1">Claiming an issue</h3>
           <p>
             Comment <code>/take</code> on an unassigned issue if you want to
             work on it. A maintainer will normally assign it for seven days; ask
@@ -203,7 +250,9 @@
             coordination, not permission: small pull requests are also welcome
             without prior assignment.
           </p>
-          <h2 id="before-proposing-a-feature">Before proposing a feature</h2>
+          <h2 id="before-proposing-a-feature" tabindex="-1">
+            Before proposing a feature
+          </h2>
           <p>
             The project deliberately has one engine, one SQL dialect, no
             natural-language layer, no daemon, and no configuration file. A
@@ -211,8 +260,41 @@
             existing command option cannot solve the task and how an agent can
             learn the addition without making <code>--help</code> ambiguous.
           </p>
-          <h2 id="build-and-test">Build and test</h2>
-          <pre><code class="language-sh">cmake --workflow --preset core
+          <h2 id="build-and-test" tabindex="-1">Build and test</h2>
+          <div class="code-block">
+            <span class="copy-control">
+              <button
+                class="copy-button"
+                type="button"
+                command="--copy"
+                commandfor="doc-code-1"
+                aria-label="Copy Build and test sh code"
+              >
+                <svg
+                  class="copy-icon copy-icon-clipboard"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M5.5 1.5h7a1 1 0 0 1 1 1v8h-1.5v-7.5h-6.5V1.5Zm-3 3h7a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1Zm.5 1.5v7h6V6H3Z"
+                  />
+                </svg>
+                <svg
+                  class="copy-icon copy-icon-check"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"
+                  />
+                </svg>
+                Copy
+              </button>
+              <span class="copy-status" role="status"></span>
+            </span>
+            <pre><code id="doc-code-1" class="language-sh">cmake --workflow --preset core
 cmake --workflow --preset dev
 cmake --workflow --preset strict
 cmake --workflow --preset sanitize
@@ -228,25 +310,94 @@ shellcheck tests/*.sh benchmarks/*.sh completions/sqrail.bash
 actionlint
 GH_TOKEN=$(gh auth token) zizmor --pedantic .
 </code></pre>
+          </div>
           <p>
             The committed <code>docs/man/sqrail.1</code> is generated from the
             built executable and <code>docs/man/sqrail.h2m</code>. After
             changing the CLI help or version, install <code>help2man</code> and
             refresh it with:
           </p>
-          <pre><code class="language-sh">cmake --preset release
+          <div class="code-block">
+            <span class="copy-control">
+              <button
+                class="copy-button"
+                type="button"
+                command="--copy"
+                commandfor="doc-code-2"
+                aria-label="Copy Build and test sh code 2"
+              >
+                <svg
+                  class="copy-icon copy-icon-clipboard"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M5.5 1.5h7a1 1 0 0 1 1 1v8h-1.5v-7.5h-6.5V1.5Zm-3 3h7a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1Zm.5 1.5v7h6V6H3Z"
+                  />
+                </svg>
+                <svg
+                  class="copy-icon copy-icon-check"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"
+                  />
+                </svg>
+                Copy
+              </button>
+              <span class="copy-status" role="status"></span>
+            </span>
+            <pre><code id="doc-code-2" class="language-sh">cmake --preset release
 cmake --build out/build/release --target sqrail-manpage
 cmake -E copy out/build/release/sqrail.1 docs/man/sqrail.1
 </code></pre>
+          </div>
           <p>
             Human-readable reference pages under <code>site/docs/</code> are
             generated from the repository Markdown. Do not edit generated pages
             directly; refresh and verify them with:
           </p>
-          <pre><code class="language-sh">npm ci
+          <div class="code-block">
+            <span class="copy-control">
+              <button
+                class="copy-button"
+                type="button"
+                command="--copy"
+                commandfor="doc-code-3"
+                aria-label="Copy Build and test sh code 3"
+              >
+                <svg
+                  class="copy-icon copy-icon-clipboard"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M5.5 1.5h7a1 1 0 0 1 1 1v8h-1.5v-7.5h-6.5V1.5Zm-3 3h7a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1Zm.5 1.5v7h6V6H3Z"
+                  />
+                </svg>
+                <svg
+                  class="copy-icon copy-icon-check"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"
+                  />
+                </svg>
+                Copy
+              </button>
+              <span class="copy-status" role="status"></span>
+            </span>
+            <pre><code id="doc-code-3" class="language-sh">npm ci
 npm run docs:build
 npm run site:check
 </code></pre>
+          </div>
           <p>
             Format C++ with the repository <code>.clang-format</code> (<code
               >uvx clang-format@18.1.8</code
@@ -278,7 +429,7 @@ npm run site:check
             documented in the
             <a href="/docs/contributing/testing/">testing architecture</a>.
           </p>
-          <h2 id="performance-changes">Performance changes</h2>
+          <h2 id="performance-changes" tabindex="-1">Performance changes</h2>
           <p>
             Performance claims must follow the
             <a href="/docs/reference/benchmarks/">benchmark policy</a>. Include
@@ -286,7 +437,7 @@ npm run site:check
             hyperfine JSON, peak RSS, row counts, and logical checksums. A
             faster result with different output is a correctness failure.
           </p>
-          <h2 id="pull-requests">Pull requests</h2>
+          <h2 id="pull-requests" tabindex="-1">Pull requests</h2>
           <ul>
             <li>Keep unrelated changes separate.</li>
             <li>Add a regression test for behavioral fixes.</li>

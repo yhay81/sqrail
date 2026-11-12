@@ -3,16 +3,19 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="text-scale" content="scale" />
     <meta
       name="description"
       content="The rules and workload matrix used to keep every published performance claim reproducible."
     />
     <meta name="theme-color" content="#090a09" />
+    <meta name="color-scheme" content="dark" />
     <meta property="og:title" content="Benchmark policy — sqrail" />
     <meta
       property="og:description"
       content="The rules and workload matrix used to keep every published performance claim reproducible."
     />
+    <meta property="og:site_name" content="sqrail" />
     <meta property="og:type" content="article" />
     <meta
       property="og:url"
@@ -22,6 +25,9 @@
       property="og:image"
       content="https://sqrail.yhay81.com/social-card.png"
     />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="sqrail — SQL in. Files out." />
     <meta name="twitter:card" content="summary_large_image" />
     <link
       rel="canonical"
@@ -50,11 +56,38 @@
           <span class="nav-tagline">Agent-safe SQL on files</span>
         </div>
         <nav class="nav-links" aria-label="Primary">
-          <a href="/docs/">Get started</a>
-          <a href="/docs/agents/">Agent setup</a>
-          <a href="/docs/reference/contract/" aria-current="location"
-            >Reference</a
+          <button
+            class="nav-menu-button"
+            type="button"
+            popovertarget="site-menu"
+            popovertargetaction="toggle"
+            aria-controls="site-menu"
           >
+            <svg
+              class="nav-menu-icon"
+              viewBox="0 0 16 16"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <path
+                d="M2 3.25h12v1.5H2v-1.5Zm0 4h12v1.5H2v-1.5Zm0 4h12v1.5H2v-1.5Z"
+              />
+            </svg>
+            <span>Menu</span>
+          </button>
+          <ul id="site-menu" class="nav-menu" popover="auto">
+            <li>
+              <a href="/docs/">Get started</a>
+            </li>
+            <li>
+              <a href="/docs/agents/">Agent setup</a>
+            </li>
+            <li>
+              <a href="/docs/reference/contract/" aria-current="location"
+                >Reference</a
+              >
+            </li>
+          </ul>
         </nav>
         <div class="nav-actions">
           <a
@@ -101,7 +134,21 @@
     <main class="docs-shell docs-shell-reference" id="main">
       <aside class="docs-sidebar" aria-label="Documentation navigation">
         <p class="docs-sidebar-title">sqrail docs</p>
-        <nav class="docs-global-nav" aria-label="Documentation pages">
+        <button
+          class="docs-sidebar-toggle"
+          type="button"
+          aria-expanded="true"
+          aria-controls="docs-global-nav"
+          data-docs-sidebar-toggle
+        >
+          <span>Docs · Benchmark policy</span>
+          <span class="docs-sidebar-chevron" aria-hidden="true">▾</span>
+        </button>
+        <nav
+          class="docs-global-nav"
+          id="docs-global-nav"
+          aria-label="Documentation pages"
+        >
           <div class="docs-nav-group">
             <p>Start</p>
             <div>
@@ -120,8 +167,7 @@
           <div class="docs-nav-group">
             <p>Operate</p>
             <div>
-              <a href="/docs/reference/performance/" aria-current="location"
-                >Performance</a
+              <a href="/docs/reference/performance/">Performance</a
               ><a href="/docs/reference/benchmarks/" aria-current="page"
                 >Benchmark policy</a
               ><a href="/docs/reference/platforms/">Platforms</a
@@ -142,7 +188,7 @@
 
       <article class="docs-content docs-reference-content">
         <div class="docs-page-meta">
-          <p class="eyebrow"><span>Evidence</span> sqrail docs</p>
+          <p class="eyebrow"><span>Operate</span> sqrail docs</p>
           <a
             class="docs-markdown-link"
             href="https://raw.githubusercontent.com/yhay81/sqrail/main/docs/BENCHMARKS.md"
@@ -192,7 +238,7 @@
             engine’s implicit temporary-directory policy cannot skew a
             low-memory comparison.
           </p>
-          <h2 id="metrics">Metrics</h2>
+          <h2 id="metrics" tabindex="-1">Metrics</h2>
           <ul>
             <li>wall-clock time</li>
             <li>CPU time</li>
@@ -213,44 +259,52 @@
             First-run timing without that evidence is never reported as
             cold-cache performance.
           </p>
-          <h2 id="initial-workload-matrix">Initial workload matrix</h2>
-          <table>
-            <thead>
-              <tr>
-                <th>Class</th>
-                <th>Required cases</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>Scan</td>
-                <td>
-                  CSV and Parquet; selective narrow and non-selective wide
-                  projection
-                </td>
-              </tr>
-              <tr>
-                <td>Filter</td>
-                <td>selective and non-selective</td>
-              </tr>
-              <tr>
-                <td>Aggregate</td>
-                <td>low and high cardinality</td>
-              </tr>
-              <tr>
-                <td>Join</td>
-                <td>small-large and large-large</td>
-              </tr>
-              <tr>
-                <td>Blocking</td>
-                <td>sort, distinct, and window</td>
-              </tr>
-              <tr>
-                <td>Conversion</td>
-                <td>CSV to Parquet and Parquet to JSONL</td>
-              </tr>
-            </tbody>
-          </table>
+          <h2 id="initial-workload-matrix" tabindex="-1">
+            Initial workload matrix
+          </h2>
+          <section
+            class="table-wrapper"
+            tabindex="0"
+            aria-label="Initial workload matrix table"
+          >
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Class</th>
+                  <th scope="col">Required cases</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Scan</td>
+                  <td>
+                    CSV and Parquet; selective narrow and non-selective wide
+                    projection
+                  </td>
+                </tr>
+                <tr>
+                  <td>Filter</td>
+                  <td>selective and non-selective</td>
+                </tr>
+                <tr>
+                  <td>Aggregate</td>
+                  <td>low and high cardinality</td>
+                </tr>
+                <tr>
+                  <td>Join</td>
+                  <td>small-large and large-large</td>
+                </tr>
+                <tr>
+                  <td>Blocking</td>
+                  <td>sort, distinct, and window</td>
+                </tr>
+                <tr>
+                  <td>Conversion</td>
+                  <td>CSV to Parquet and Parquet to JSONL</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
           <p>
             Each workload is run at 512 MB, 1 GB, and 4 GB where the operating
             system and dataset size make the budget meaningful.

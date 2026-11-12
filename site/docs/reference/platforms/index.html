@@ -3,16 +3,19 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="text-scale" content="scale" />
     <meta
       name="description"
       content="Release targets, support tiers, filesystem semantics, and the exact meaning of tested support."
     />
     <meta name="theme-color" content="#090a09" />
+    <meta name="color-scheme" content="dark" />
     <meta property="og:title" content="Platform support — sqrail" />
     <meta
       property="og:description"
       content="Release targets, support tiers, filesystem semantics, and the exact meaning of tested support."
     />
+    <meta property="og:site_name" content="sqrail" />
     <meta property="og:type" content="article" />
     <meta
       property="og:url"
@@ -22,6 +25,9 @@
       property="og:image"
       content="https://sqrail.yhay81.com/social-card.png"
     />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="sqrail — SQL in. Files out." />
     <meta name="twitter:card" content="summary_large_image" />
     <link
       rel="canonical"
@@ -50,11 +56,38 @@
           <span class="nav-tagline">Agent-safe SQL on files</span>
         </div>
         <nav class="nav-links" aria-label="Primary">
-          <a href="/docs/">Get started</a>
-          <a href="/docs/agents/">Agent setup</a>
-          <a href="/docs/reference/contract/" aria-current="location"
-            >Reference</a
+          <button
+            class="nav-menu-button"
+            type="button"
+            popovertarget="site-menu"
+            popovertargetaction="toggle"
+            aria-controls="site-menu"
           >
+            <svg
+              class="nav-menu-icon"
+              viewBox="0 0 16 16"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <path
+                d="M2 3.25h12v1.5H2v-1.5Zm0 4h12v1.5H2v-1.5Zm0 4h12v1.5H2v-1.5Z"
+              />
+            </svg>
+            <span>Menu</span>
+          </button>
+          <ul id="site-menu" class="nav-menu" popover="auto">
+            <li>
+              <a href="/docs/">Get started</a>
+            </li>
+            <li>
+              <a href="/docs/agents/">Agent setup</a>
+            </li>
+            <li>
+              <a href="/docs/reference/contract/" aria-current="location"
+                >Reference</a
+              >
+            </li>
+          </ul>
         </nav>
         <div class="nav-actions">
           <a
@@ -101,7 +134,21 @@
     <main class="docs-shell docs-shell-reference" id="main">
       <aside class="docs-sidebar" aria-label="Documentation navigation">
         <p class="docs-sidebar-title">sqrail docs</p>
-        <nav class="docs-global-nav" aria-label="Documentation pages">
+        <button
+          class="docs-sidebar-toggle"
+          type="button"
+          aria-expanded="true"
+          aria-controls="docs-global-nav"
+          data-docs-sidebar-toggle
+        >
+          <span>Docs · Platform support</span>
+          <span class="docs-sidebar-chevron" aria-hidden="true">▾</span>
+        </button>
+        <nav
+          class="docs-global-nav"
+          id="docs-global-nav"
+          aria-label="Documentation pages"
+        >
           <div class="docs-nav-group">
             <p>Start</p>
             <div>
@@ -141,7 +188,7 @@
 
       <article class="docs-content docs-reference-content">
         <div class="docs-page-meta">
-          <p class="eyebrow"><span>Reference</span> sqrail docs</p>
+          <p class="eyebrow"><span>Operate</span> sqrail docs</p>
           <a
             class="docs-markdown-link"
             href="https://raw.githubusercontent.com/yhay81/sqrail/main/docs/PLATFORMS.md"
@@ -163,61 +210,63 @@
             cleanup, no-overwrite race, install layout, and release packaging
             all pass on that target.
           </p>
-          <h2 id="tiers">Tiers</h2>
-          <table>
-            <thead>
-              <tr>
-                <th>Tier</th>
-                <th>Target</th>
-                <th>CI runner</th>
-                <th>Release archive</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>1</td>
-                <td>Linux x86-64</td>
-                <td>Ubuntu 22.04 x64</td>
-                <td><code>.tar.gz</code></td>
-              </tr>
-              <tr>
-                <td>1</td>
-                <td>Linux Arm64</td>
-                <td>Ubuntu 22.04 Arm64</td>
-                <td><code>.tar.gz</code></td>
-              </tr>
-              <tr>
-                <td>1</td>
-                <td>macOS x86-64</td>
-                <td>macOS 15 Intel</td>
-                <td><code>.tar.gz</code></td>
-              </tr>
-              <tr>
-                <td>1</td>
-                <td>macOS Arm64</td>
-                <td>macOS 15 Arm64</td>
-                <td><code>.tar.gz</code></td>
-              </tr>
-              <tr>
-                <td>1</td>
-                <td>Windows x86-64</td>
-                <td>Windows 2025 x64</td>
-                <td><code>.zip</code></td>
-              </tr>
-              <tr>
-                <td>1 preview</td>
-                <td>Windows Arm64</td>
-                <td>Windows 11 Arm64 public-preview runner</td>
-                <td><code>.zip</code></td>
-              </tr>
-              <tr>
-                <td>2</td>
-                <td>Linux/macOS with a packaged DuckDB shared library</td>
-                <td>Ubuntu 24.04 and macOS 15</td>
-                <td>distribution-owned</td>
-              </tr>
-            </tbody>
-          </table>
+          <h2 id="tiers" tabindex="-1">Tiers</h2>
+          <section class="table-wrapper" tabindex="0" aria-label="Tiers table">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Tier</th>
+                  <th scope="col">Target</th>
+                  <th scope="col">CI runner</th>
+                  <th scope="col">Release archive</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>1</td>
+                  <td>Linux x86-64</td>
+                  <td>Ubuntu 22.04 x64</td>
+                  <td><code>.tar.gz</code></td>
+                </tr>
+                <tr>
+                  <td>1</td>
+                  <td>Linux Arm64</td>
+                  <td>Ubuntu 22.04 Arm64</td>
+                  <td><code>.tar.gz</code></td>
+                </tr>
+                <tr>
+                  <td>1</td>
+                  <td>macOS x86-64</td>
+                  <td>macOS 15 Intel</td>
+                  <td><code>.tar.gz</code></td>
+                </tr>
+                <tr>
+                  <td>1</td>
+                  <td>macOS Arm64</td>
+                  <td>macOS 15 Arm64</td>
+                  <td><code>.tar.gz</code></td>
+                </tr>
+                <tr>
+                  <td>1</td>
+                  <td>Windows x86-64</td>
+                  <td>Windows 2025 x64</td>
+                  <td><code>.zip</code></td>
+                </tr>
+                <tr>
+                  <td>1 preview</td>
+                  <td>Windows Arm64</td>
+                  <td>Windows 11 Arm64 public-preview runner</td>
+                  <td><code>.zip</code></td>
+                </tr>
+                <tr>
+                  <td>2</td>
+                  <td>Linux/macOS with a packaged DuckDB shared library</td>
+                  <td>Ubuntu 24.04 and macOS 15</td>
+                  <td>distribution-owned</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
           <p>
             Windows Arm64 remains preview until GitHub’s hosted runner is
             generally available and repeated release builds establish equivalent
@@ -226,7 +275,9 @@
             CI lane. No FreeBSD, musl, 32-bit, or big-endian release artifact is
             currently claimed.
           </p>
-          <h2 id="verify-a-release-archive">Verify a release archive</h2>
+          <h2 id="verify-a-release-archive" tabindex="-1">
+            Verify a release archive
+          </h2>
           <p>
             Every release publishes <code>SHA256SUMS</code>, which lists the
             SHA-256 digest of each archive and SBOM as
@@ -237,19 +288,121 @@
             with a nonzero exit status; do not extract the archive then.
           </p>
           <p>macOS, with the built-in <code>shasum</code>:</p>
-          <pre><code class="language-sh">archive=sqrail-v0.4.2-macos-arm64.tar.gz
+          <div class="code-block">
+            <span class="copy-control">
+              <button
+                class="copy-button"
+                type="button"
+                command="--copy"
+                commandfor="doc-code-1"
+                aria-label="Copy Verify a release archive sh code"
+              >
+                <svg
+                  class="copy-icon copy-icon-clipboard"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M5.5 1.5h7a1 1 0 0 1 1 1v8h-1.5v-7.5h-6.5V1.5Zm-3 3h7a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1Zm.5 1.5v7h6V6H3Z"
+                  />
+                </svg>
+                <svg
+                  class="copy-icon copy-icon-check"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"
+                  />
+                </svg>
+                Copy
+              </button>
+              <span class="copy-status" role="status"></span>
+            </span>
+            <pre><code id="doc-code-1" class="language-sh">archive=sqrail-v0.4.2-macos-arm64.tar.gz
 awk -v name=&quot;./$archive&quot; '$2 == name' SHA256SUMS | shasum -a 256 -c -
 </code></pre>
+          </div>
           <p>Linux, with GNU coreutils <code>sha256sum</code>:</p>
-          <pre><code class="language-sh">archive=sqrail-v0.4.2-linux-x86_64.tar.gz
+          <div class="code-block">
+            <span class="copy-control">
+              <button
+                class="copy-button"
+                type="button"
+                command="--copy"
+                commandfor="doc-code-2"
+                aria-label="Copy Verify a release archive sh code 2"
+              >
+                <svg
+                  class="copy-icon copy-icon-clipboard"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M5.5 1.5h7a1 1 0 0 1 1 1v8h-1.5v-7.5h-6.5V1.5Zm-3 3h7a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1Zm.5 1.5v7h6V6H3Z"
+                  />
+                </svg>
+                <svg
+                  class="copy-icon copy-icon-check"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"
+                  />
+                </svg>
+                Copy
+              </button>
+              <span class="copy-status" role="status"></span>
+            </span>
+            <pre><code id="doc-code-2" class="language-sh">archive=sqrail-v0.4.2-linux-x86_64.tar.gz
 awk -v name=&quot;./$archive&quot; '$2 == name' SHA256SUMS | sha256sum -c -
 </code></pre>
+          </div>
           <p>Windows PowerShell:</p>
-          <pre><code class="language-powershell">$archive = &quot;sqrail-v0.4.2-windows-x86_64.zip&quot;
+          <div class="code-block">
+            <span class="copy-control">
+              <button
+                class="copy-button"
+                type="button"
+                command="--copy"
+                commandfor="doc-code-3"
+                aria-label="Copy Verify a release archive powershell code"
+              >
+                <svg
+                  class="copy-icon copy-icon-clipboard"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M5.5 1.5h7a1 1 0 0 1 1 1v8h-1.5v-7.5h-6.5V1.5Zm-3 3h7a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1Zm.5 1.5v7h6V6H3Z"
+                  />
+                </svg>
+                <svg
+                  class="copy-icon copy-icon-check"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"
+                  />
+                </svg>
+                Copy
+              </button>
+              <span class="copy-status" role="status"></span>
+            </span>
+            <pre><code id="doc-code-3" class="language-powershell">$archive = &quot;sqrail-v0.4.2-windows-x86_64.zip&quot;
 $entry = Get-Content SHA256SUMS | Where-Object { $_.EndsWith(&quot;  ./$archive&quot;) }
 $actual = (Get-FileHash $archive -Algorithm SHA256).Hash
 if ($entry -and $entry.Split(&quot; &quot;)[0] -eq $actual) { &quot;OK $archive&quot; } else { throw &quot;SHA-256 mismatch: $archive&quot; }
 </code></pre>
+          </div>
           <p>
             Each command selects only the entry whose name is exactly
             <code>./</code> followed by the archive name. Replace the version
@@ -269,11 +422,45 @@ if ($entry -and $entry.Split(&quot; &quot;)[0] -eq $actual) { &quot;OK $archive&
             <code>SHA256SUMS</code> has its own provenance attestation. With
             GitHub CLI:
           </p>
-          <pre><code class="language-sh">gh attestation verify sqrail-v0.4.2-linux-x86_64.tar.gz --repo yhay81/sqrail
+          <div class="code-block">
+            <span class="copy-control">
+              <button
+                class="copy-button"
+                type="button"
+                command="--copy"
+                commandfor="doc-code-4"
+                aria-label="Copy Verify a release archive sh code 3"
+              >
+                <svg
+                  class="copy-icon copy-icon-clipboard"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M5.5 1.5h7a1 1 0 0 1 1 1v8h-1.5v-7.5h-6.5V1.5Zm-3 3h7a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1Zm.5 1.5v7h6V6H3Z"
+                  />
+                </svg>
+                <svg
+                  class="copy-icon copy-icon-check"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"
+                  />
+                </svg>
+                Copy
+              </button>
+              <span class="copy-status" role="status"></span>
+            </span>
+            <pre><code id="doc-code-4" class="language-sh">gh attestation verify sqrail-v0.4.2-linux-x86_64.tar.gz --repo yhay81/sqrail
 gh attestation verify sqrail-v0.4.2-linux-x86_64.tar.gz --repo yhay81/sqrail \
   --predicate-type https://spdx.dev/Document/v2.3
 </code></pre>
-          <h2 id="filesystem-and-process-semantics">
+          </div>
+          <h2 id="filesystem-and-process-semantics" tabindex="-1">
             Filesystem and process semantics
           </h2>
           <ul>
@@ -309,7 +496,7 @@ gh attestation verify sqrail-v0.4.2-linux-x86_64.tar.gz --repo yhay81/sqrail \
             remote storage should stage to local disk and copy the completed
             artifact separately.
           </p>
-          <h2 id="what-tested-means">What “tested” means</h2>
+          <h2 id="what-tested-means" tabindex="-1">What “tested” means</h2>
           <p>
             The repository defines the matrix, but a local checkout alone cannot
             prove every target. Before a release tag, all six bundled lanes, the
@@ -318,7 +505,7 @@ gh attestation verify sqrail-v0.4.2-linux-x86_64.tar.gz --repo yhay81/sqrail \
             checks must be green for the exact commit. A signed annotated tag
             then rebuilds and attests each archive.
           </p>
-          <h2 id="shell-completion">Shell completion</h2>
+          <h2 id="shell-completion" tabindex="-1">Shell completion</h2>
           <p>
             On Linux and macOS, <code>cmake --install</code> places a static
             Bash completion file at
@@ -334,8 +521,42 @@ gh attestation verify sqrail-v0.4.2-linux-x86_64.tar.gz --repo yhay81/sqrail \
             <code>/usr/local</code> prefixes. Otherwise, activate it in the
             current shell or from <code>~/.bashrc</code>:
           </p>
-          <pre><code class="language-sh">source /path/to/prefix/share/bash-completion/completions/sqrail
+          <div class="code-block">
+            <span class="copy-control">
+              <button
+                class="copy-button"
+                type="button"
+                command="--copy"
+                commandfor="doc-code-5"
+                aria-label="Copy Shell completion sh code"
+              >
+                <svg
+                  class="copy-icon copy-icon-clipboard"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M5.5 1.5h7a1 1 0 0 1 1 1v8h-1.5v-7.5h-6.5V1.5Zm-3 3h7a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1Zm.5 1.5v7h6V6H3Z"
+                  />
+                </svg>
+                <svg
+                  class="copy-icon copy-icon-check"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"
+                  />
+                </svg>
+                Copy
+              </button>
+              <span class="copy-status" role="status"></span>
+            </span>
+            <pre><code id="doc-code-5" class="language-sh">source /path/to/prefix/share/bash-completion/completions/sqrail
 </code></pre>
+          </div>
         </div>
 
         <nav

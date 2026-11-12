@@ -3,22 +3,28 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="text-scale" content="scale" />
     <meta
       name="description"
       content="Install sqrail and its optional Agent Skill with a review-first path for the agent you already use."
     />
     <meta name="theme-color" content="#090a09" />
+    <meta name="color-scheme" content="dark" />
     <meta property="og:title" content="Agent setup — sqrail" />
     <meta
       property="og:description"
       content="Install sqrail and its optional Agent Skill with a review-first path for the agent you already use."
     />
+    <meta property="og:site_name" content="sqrail" />
     <meta property="og:type" content="article" />
     <meta property="og:url" content="https://sqrail.yhay81.com/docs/agents/" />
     <meta
       property="og:image"
       content="https://sqrail.yhay81.com/social-card.png"
     />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="sqrail — SQL in. Files out." />
     <meta name="twitter:card" content="summary_large_image" />
     <link rel="canonical" href="https://sqrail.yhay81.com/docs/agents/" />
     <link
@@ -44,9 +50,36 @@
           <span class="nav-tagline">Agent-safe SQL on files</span>
         </div>
         <nav class="nav-links" aria-label="Primary">
-          <a href="/docs/">Get started</a>
-          <a href="/docs/agents/" aria-current="page">Agent setup</a>
-          <a href="/docs/reference/contract/">Reference</a>
+          <button
+            class="nav-menu-button"
+            type="button"
+            popovertarget="site-menu"
+            popovertargetaction="toggle"
+            aria-controls="site-menu"
+          >
+            <svg
+              class="nav-menu-icon"
+              viewBox="0 0 16 16"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <path
+                d="M2 3.25h12v1.5H2v-1.5Zm0 4h12v1.5H2v-1.5Zm0 4h12v1.5H2v-1.5Z"
+              />
+            </svg>
+            <span>Menu</span>
+          </button>
+          <ul id="site-menu" class="nav-menu" popover="auto">
+            <li>
+              <a href="/docs/">Get started</a>
+            </li>
+            <li>
+              <a href="/docs/agents/" aria-current="page">Agent setup</a>
+            </li>
+            <li>
+              <a href="/docs/reference/contract/">Reference</a>
+            </li>
+          </ul>
         </nav>
         <div class="nav-actions">
           <a
@@ -93,7 +126,21 @@
     <main class="docs-shell docs-shell-reference" id="main">
       <aside class="docs-sidebar" aria-label="Documentation navigation">
         <p class="docs-sidebar-title">sqrail docs</p>
-        <nav class="docs-global-nav" aria-label="Documentation pages">
+        <button
+          class="docs-sidebar-toggle"
+          type="button"
+          aria-expanded="true"
+          aria-controls="docs-global-nav"
+          data-docs-sidebar-toggle
+        >
+          <span>Docs · Agent setup</span>
+          <span class="docs-sidebar-chevron" aria-hidden="true">▾</span>
+        </button>
+        <nav
+          class="docs-global-nav"
+          id="docs-global-nav"
+          aria-label="Documentation pages"
+        >
           <div class="docs-nav-group">
             <p>Start</p>
             <div>
@@ -132,7 +179,7 @@
 
       <article class="docs-content docs-reference-content">
         <div class="docs-page-meta">
-          <p class="eyebrow"><span>Guide</span> sqrail docs</p>
+          <p class="eyebrow"><span>Start</span> sqrail docs</p>
           <a
             class="docs-markdown-link"
             href="https://sqrail.yhay81.com/install-agent.md"
@@ -152,7 +199,9 @@
             Skill for the agent that is currently running. Review each command
             before executing it. Do not pipe downloaded code into a shell.
           </p>
-          <h2 id="1-install-the-executable">1. Install the executable</h2>
+          <h2 id="1-install-the-executable" tabindex="-1">
+            1. Install the executable
+          </h2>
           <p>Prefer an existing package manager:</p>
           <ul>
             <li>
@@ -181,27 +230,131 @@
             permission.
           </p>
           <p>Verify:</p>
-          <pre><code class="language-sh">sqrail --version
+          <div class="code-block">
+            <span class="copy-control">
+              <button
+                class="copy-button"
+                type="button"
+                command="--copy"
+                commandfor="doc-code-1"
+                aria-label="Copy 1. Install the executable sh code"
+              >
+                <svg
+                  class="copy-icon copy-icon-clipboard"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M5.5 1.5h7a1 1 0 0 1 1 1v8h-1.5v-7.5h-6.5V1.5Zm-3 3h7a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1Zm.5 1.5v7h6V6H3Z"
+                  />
+                </svg>
+                <svg
+                  class="copy-icon copy-icon-check"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"
+                  />
+                </svg>
+                Copy
+              </button>
+              <span class="copy-status" role="status"></span>
+            </span>
+            <pre><code id="doc-code-1" class="language-sh">sqrail --version
 sqrail run 'SELECT 42 AS answer'
 </code></pre>
+          </div>
           <p>
             The second command must print
             <code>{&quot;answer&quot;:42}</code> and exit successfully.
           </p>
-          <h2 id="2-install-the-agent-skill">2. Install the Agent Skill</h2>
+          <h2 id="2-install-the-agent-skill" tabindex="-1">
+            2. Install the Agent Skill
+          </h2>
           <p>
             For AGY or Antigravity CLI, use its native plugin manager. This
             route is verified with AGY 1.1.8:
           </p>
-          <pre><code class="language-sh">agy plugin install https://github.com/yhay81/sqrail
+          <div class="code-block">
+            <span class="copy-control">
+              <button
+                class="copy-button"
+                type="button"
+                command="--copy"
+                commandfor="doc-code-2"
+                aria-label="Copy 2. Install the Agent Skill sh code"
+              >
+                <svg
+                  class="copy-icon copy-icon-clipboard"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M5.5 1.5h7a1 1 0 0 1 1 1v8h-1.5v-7.5h-6.5V1.5Zm-3 3h7a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1Zm.5 1.5v7h6V6H3Z"
+                  />
+                </svg>
+                <svg
+                  class="copy-icon copy-icon-check"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"
+                  />
+                </svg>
+                Copy
+              </button>
+              <span class="copy-status" role="status"></span>
+            </span>
+            <pre><code id="doc-code-2" class="language-sh">agy plugin install https://github.com/yhay81/sqrail
 </code></pre>
+          </div>
           <p>
             For other hosts, GitHub CLI 2.90 or newer is preferred because it
             records provenance and can update the Skill later:
           </p>
-          <pre><code class="language-sh">gh skill preview yhay81/sqrail sqrail
+          <div class="code-block">
+            <span class="copy-control">
+              <button
+                class="copy-button"
+                type="button"
+                command="--copy"
+                commandfor="doc-code-3"
+                aria-label="Copy 2. Install the Agent Skill sh code 2"
+              >
+                <svg
+                  class="copy-icon copy-icon-clipboard"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M5.5 1.5h7a1 1 0 0 1 1 1v8h-1.5v-7.5h-6.5V1.5Zm-3 3h7a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1Zm.5 1.5v7h6V6H3Z"
+                  />
+                </svg>
+                <svg
+                  class="copy-icon copy-icon-check"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"
+                  />
+                </svg>
+                Copy
+              </button>
+              <span class="copy-status" role="status"></span>
+            </span>
+            <pre><code id="doc-code-3" class="language-sh">gh skill preview yhay81/sqrail sqrail
 gh skill install yhay81/sqrail sqrail --agent AGENT --scope user
 </code></pre>
+          </div>
           <p>
             Replace <code>AGENT</code> with the current host. Common values are
             <code>codex</code>, <code>claude-code</code>, <code>cursor</code>,
@@ -214,8 +367,42 @@ gh skill install yhay81/sqrail sqrail --agent AGENT --scope user
             If <code>gh skill</code> is unavailable but Node.js is already
             installed, use:
           </p>
-          <pre><code class="language-sh">npx skills add yhay81/sqrail --skill sqrail --agent AGENT --global --yes
+          <div class="code-block">
+            <span class="copy-control">
+              <button
+                class="copy-button"
+                type="button"
+                command="--copy"
+                commandfor="doc-code-4"
+                aria-label="Copy 2. Install the Agent Skill sh code 3"
+              >
+                <svg
+                  class="copy-icon copy-icon-clipboard"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M5.5 1.5h7a1 1 0 0 1 1 1v8h-1.5v-7.5h-6.5V1.5Zm-3 3h7a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1Zm.5 1.5v7h6V6H3Z"
+                  />
+                </svg>
+                <svg
+                  class="copy-icon copy-icon-check"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"
+                  />
+                </svg>
+                Copy
+              </button>
+              <span class="copy-status" role="status"></span>
+            </span>
+            <pre><code id="doc-code-4" class="language-sh">npx skills add yhay81/sqrail --skill sqrail --agent AGENT --global --yes
 </code></pre>
+          </div>
           <p>
             Do not install Node.js solely for this fallback. The canonical,
             reviewable Skill source is
@@ -224,7 +411,7 @@ gh skill install yhay81/sqrail sqrail --agent AGENT --scope user
             >. Follow any host-specific post-install notice printed by the
             installer.
           </p>
-          <h2 id="3-confirm-discovery">3. Confirm discovery</h2>
+          <h2 id="3-confirm-discovery" tabindex="-1">3. Confirm discovery</h2>
           <p>
             Confirm that the host lists a Skill named <code>sqrail</code>.
             Restart the agent if it only discovers Skills at startup. Then use a
