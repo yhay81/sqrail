@@ -6,14 +6,15 @@ This document defines the sqrail v0.4 command and process contract.
 
 ```text
 sqrail schema [--memory SIZE] [--threads N] [--timeout DURATION]
-              [--max-input-files N] [--strict-schema] FILE...
+              [--max-input-files N] [--strict-schema] [--all-varchar] FILE...
 sqrail check [-t NAME=PATH]... [--memory SIZE] [--threads N]
              [--timeout DURATION] [--max-rows N] [--max-input-files N]
-             [--max-sql-bytes SIZE] [--strict-schema] [SQL|-]
+             [--max-sql-bytes SIZE] [--strict-schema] [--all-varchar] [SQL|-]
 sqrail run [-t NAME=PATH]... [-o FILE] [--memory SIZE] [--threads N]
            [--spill DIR [--max-spill SIZE]] [--timeout DURATION]
            [--max-rows N] [--max-output-bytes SIZE] [--max-input-files N]
-           [--max-sql-bytes SIZE] [--stats] [--strict-schema] [SQL|-]
+           [--max-sql-bytes SIZE] [--stats] [--strict-schema]
+           [--all-varchar] [SQL|-]
 sqrail --help
 sqrail --version
 ```
@@ -34,8 +35,13 @@ The first `=` separates a table name from its path.
 A multi-file binding is read by column name. Columns introduced or removed
 between files are included in the combined schema and missing values become
 `null`. `--strict-schema` instead requires every matched file to have identical
-column names, order, and inferred types; otherwise the command fails with
-`SCHEMA_MISMATCH`. This option is available to `run`, `check`, and `schema`.
+physical column names, order, and inferred types plus identical Hive partition
+keys across the dataset (while allowing partition directory values such as
+`tag=100` and `tag=abc` to resolve across the dataset); otherwise the command
+fails with `SCHEMA_MISMATCH`. `--all-varchar` disables CSV and TSV type
+inference so every CSV/TSV column is read as `VARCHAR` while leaving Parquet
+and JSON bindings at their native types. Both options are available to `run`,
+`check`, and `schema`.
 
 ## Query contract
 
@@ -121,21 +127,23 @@ already been emitted, stdout may contain a valid partial JSONL prefix. Use
 - `--max-spill SIZE` requires `--spill`, accepts the same resource-size syntax
   as `--memory`, and caps DuckDB temporary storage.
 - `--timeout DURATION` accepts a positive duration from `1ms` through 7 days
-  using `ms`, `s`, or `m`. Its absolute deadline begins when command handling
-  starts and covers input discovery, schema inference, planning, execution,
-  and output finalization.
+  using `ms`, `s`, `m`, `h`, or `d`. Its absolute deadline begins when command
+  handling starts and covers input discovery, schema inference, planning,
+  execution, and output finalization.
 - `--max-rows N` accepts an integer from 1 through 9223372036854775806. sqrail
   requests at most `N + 1` final rows and returns `RESULT_LIMIT` if the extra row
   exists. A file destination is not committed after this failure. Streaming
   stdout may already contain a valid prefix of at most `N` rows.
-- `--max-output-bytes SIZE` accepts the explicit `B`, `KB`, `MB`, `GB`, `TB`,
-  `KiB`, `MiB`, `GiB`, and `TiB` byte-size units and interrupts file output
-  after it grows beyond the cap. The `K`/`M`/`G`/`T` resource shorthands are
-  deliberately excluded from exact byte caps. Its decimal part may have at
-  most six digits and is converted to an exact integer byte count by
-  truncating any sub-byte remainder. JSONL stdout is checked before each
-  buffered write. File destinations are never committed on
-  `OUTPUT_LIMIT`; stdout may already contain a valid prefix.
+- `--max-output-bytes SIZE` accepts `B`, `K`, `M`, `G`, `T`, `KB`, `MB`, `GB`,
+  `TB`, `KiB`, `MiB`, `GiB`, and `TiB` byte-size units (`K`/`M`/`G`/`T` match
+  the decimal `KB`/`MB`/`GB`/`TB` powers of 1000, as DuckDB resource limits do)
+  and fails when the output exceeds the cap. Its decimal part may have at most
+  six digits and is converted to an exact integer byte count by truncating any
+  sub-byte remainder. JSONL stdout and uncompressed JSON/JSONL file outputs are
+  checked synchronously before each buffered write; compressed, CSV, TSV, and
+  Parquet file outputs are monitored during execution and verified before
+  commit. File destinations are never committed on `OUTPUT_LIMIT`; stdout may
+  already contain a valid prefix.
 - `--max-input-files N` accepts an integer from 1 through 1000000000 and stops
   processing when the cumulative count exceeds the cap. Files are canonicalized
   and deduplicated within each source, then counted across sources or bindings.
@@ -146,10 +154,11 @@ already been emitted, stdout may contain a valid partial JSONL prefix. Use
   incremental stdin reads before parsing.
 
 `check` accepts `--memory`, `--threads`, `--timeout`, `--max-rows`,
-`--max-input-files`, `--max-sql-bytes`, and `--strict-schema`, but not output,
-output-byte, spill, or stats options. `schema` accepts `--memory`, `--threads`,
-`--timeout`, `--max-input-files`, and `--strict-schema`. The memory value is a
-DuckDB memory limit, not a hard operating-system RSS limit. sqrail sets
+`--max-input-files`, `--max-sql-bytes`, `--strict-schema`, and
+`--all-varchar`, but not output, output-byte, spill, or stats options. `schema`
+accepts `--memory`, `--threads`, `--timeout`, `--max-input-files`,
+`--strict-schema`, and `--all-varchar`. The memory value is a DuckDB memory
+limit, not a hard operating-system RSS limit. sqrail sets
 `preserve_insertion_order=false`. Without `--spill`, external temporary
 storage is disabled.
 
@@ -189,8 +198,12 @@ that execution would use.
 
 ## Diagnostics
 
-Every handled failure writes exactly one UTF-8 JSON object to stderr. Invalid
-bytes in operating-system arguments are replaced with U+FFFD:
+Every handled failure writes exactly one UTF-8 JSON object to stderr. Valid
+UTF-8 text in `schema`, `check`, `run`, and diagnostics is emitted directly
+(with ASCII control bytes and `U+2028`/`U+2029` escaped); invalid bytes in
+operating-system arguments are replaced with U+FFFD. Passing `-h` or `--help`
+after a subcommand, or invoking the removed `--agent-help` flag, returns exit 2
+with `(use 'sqrail --help')` in `message`:
 
 ```json
 {

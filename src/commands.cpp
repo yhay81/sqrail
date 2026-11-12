@@ -9,6 +9,7 @@
 #include "platform.hpp"
 #include "result.hpp"
 
+#include <cctype>
 #include <chrono>
 #include <cstdint>
 #include <cstdio>
@@ -24,6 +25,14 @@ namespace fs = std::filesystem;
 namespace sqrail {
 
 namespace {
+
+bool IsUncompressedJsonPath(const fs::path &path) {
+	std::string ext = path.extension().string();
+	for (char &ch : ext) {
+		ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
+	}
+	return ext == ".json" || ext == ".jsonl" || ext == ".ndjson";
+}
 
 void FlushStdout(const char *message) {
 	std::cout.flush();
@@ -42,7 +51,11 @@ int Execute(int argc, char **argv, const bool check_only) {
 	duckdb::DuckDB database(nullptr);
 	duckdb::Connection connection(database);
 	const fs::path temporary_output = options.has_output ? TemporaryOutputPath(options.output) : fs::path();
-	ExecutionControl control(connection, started, options.timeout, temporary_output, options.max_output_bytes);
+	const fs::path monitored_output =
+	    (options.has_output && options.max_output_bytes != 0 && !IsUncompressedJsonPath(options.output))
+	        ? temporary_output
+	        : fs::path();
+	ExecutionControl control(connection, started, options.timeout, monitored_output, options.max_output_bytes);
 	bool committed_output = false;
 	try {
 		std::vector<fs::path> allowed_paths;
@@ -58,7 +71,7 @@ int Execute(int argc, char **argv, const bool check_only) {
 		}
 		Configure(connection, options, allowed_paths);
 		control.Checkpoint("query configuration exceeded --timeout");
-		BindTables(connection, options.tables, options.strict_schema);
+		BindTables(connection, options.tables, control, options.strict_schema, options.all_varchar);
 		control.Checkpoint("schema inference exceeded --timeout");
 		options.sql = ValidateSelectQuery(connection, options.sql);
 		const std::string execution_sql = LimitQuery(options.sql, options.max_rows);
@@ -99,7 +112,8 @@ int Execute(int argc, char **argv, const bool check_only) {
 		if (options.has_output) {
 			const auto type = DetectFileType(options.output, EXIT_OUTPUT, "UNSUPPORTED_OUTPUT");
 			if (IsJsonOutput(type)) {
-				rows = WriteJsonFile(database, connection, execution_sql, temporary_output, type, options.max_rows);
+				rows = WriteJsonFile(database, connection, execution_sql, temporary_output, type, options.max_rows,
+				                     options.max_output_bytes);
 			} else {
 				rows = CopyToFile(connection, execution_sql, temporary_output, options.output);
 				CheckRowLimit(rows, options.max_rows);
@@ -201,11 +215,11 @@ int Schema(int argc, char **argv) {
 			control.Checkpoint("schema inference exceeded --timeout");
 			const auto &input = inputs[index];
 			if (options.strict_schema) {
-				ValidateStrictSchemas(connection, input.paths, input.source);
+				ValidateStrictSchemas(connection, input.paths, input.source, control, options.all_varchar);
 			}
 			const std::string view_name = "__sqrail_schema_" + std::to_string(index);
 			const std::string bind_sql = "CREATE TEMP VIEW " + SqlIdentifier(view_name) + " AS SELECT * FROM " +
-			                             ReaderExpression(input.paths, options.strict_schema);
+			                             ReaderExpression(input.paths, options.strict_schema, options.all_varchar);
 			CheckResult(connection.Query(bind_sql), "SCHEMA_INFERENCE_FAILED");
 
 			auto result = connection.Query("DESCRIBE SELECT * FROM " + SqlIdentifier(view_name));
@@ -265,26 +279,25 @@ void PrintHelp() {
 	    << "sqrail runs read-only SQL over CSV, TSV, JSON, and Parquet.\n"
 	    << "\n"
 	    << "sqrail schema [--memory SIZE] [--threads N] [--timeout DURATION]\n"
-	    << "              [--max-input-files N] [--strict-schema] FILE...\n"
+	    << "              [--max-input-files N] [--strict-schema] [--all-varchar] FILE...\n"
 	    << "sqrail check [-t NAME=PATH]... [--memory SIZE] [--threads N] [--timeout DURATION]\n"
 	    << "             [--max-rows N] [--max-input-files N] [--max-sql-bytes SIZE]\n"
-	    << "             [--strict-schema] [SQL|-]\n"
+	    << "             [--strict-schema] [--all-varchar] [SQL|-]\n"
 	    << "sqrail run [-t NAME=PATH]... [-o FILE] [--memory SIZE] [--threads N]\n"
 	    << "           [--spill DIR [--max-spill SIZE]] [--timeout DURATION] [--max-rows N]\n"
 	    << "           [--max-output-bytes SIZE] [--max-input-files N] [--max-sql-bytes SIZE]\n"
-	    << "           [--stats] [--strict-schema] [SQL|-]\n"
+	    << "           [--stats] [--strict-schema] [--all-varchar] [SQL|-]\n"
 	    << "sqrail --help\n"
 	    << "sqrail --version\n"
 	    << "\n"
 	    << "Names/types result: schema once. Otherwise trust stated names/types, run once, and stop after success.\n"
-	    << "-t binds a file, Parquet directory, or glob; '-' reads SQL; '--' ends options.\n"
-	    << "Files union columns by name; --strict-schema requires exact schemas.\n"
+	    << "-t binds file, Parquet directory, or glob; '-' reads SQL; '--' ends options.\n"
+	    << "Files union by name; --strict-schema requires exact schemas; --all-varchar keeps CSV/TSV VARCHAR.\n"
 	    << "check emits columns, inputs, and plan without execution.\n"
-	    << "No -o: JSONL stdout. -o: extension selects format.\n"
-	    << "Limits fail closed; --stats writes versioned success JSON to stderr.\n"
-	    << "Text supports .gz/.zst. Outputs are private, atomic, never overwritten.\n"
-	    << "SQL is one SELECT, VALUES, or WITH; order needs ORDER BY.\n"
-	    << "Errors are one stderr JSON. Exit: 0 success, 2 usage, 3 input, 4 SQL, 5 output, 70 internal.\n"
+	    << "No -o: JSONL stdout. -o: extension selects format; outputs: private, atomic, never overwritten.\n"
+	    << "Limits fail closed; --stats writes stderr success JSON. Text supports .gz/.zst.\n"
+	    << "SQL is one SELECT, VALUES, WITH; order needs ORDER BY.\n"
+	    << "Errors: one stderr JSON (exit: 0 ok, 2 usage, 3 input, 4 SQL, 5 output, 70 internal).\n"
 	    << "\n"
 	    << "Examples:\n"
 	    << "  sqrail schema sales.csv\n"

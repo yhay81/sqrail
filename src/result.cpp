@@ -201,7 +201,8 @@ uint64_t StreamJson(duckdb::Connection &connection, const std::string &sql, cons
 }
 
 uint64_t WriteJsonFile(duckdb::DuckDB &database, duckdb::Connection &connection, const std::string &sql,
-                       const fs::path &temporary, const FileType &type, const uint64_t max_rows) {
+                       const fs::path &temporary, const FileType &type, const uint64_t max_rows,
+                       const uint64_t max_output_bytes) {
 	PrivateCreationMask private_creation;
 	auto flags = duckdb::FileFlags::FILE_FLAGS_WRITE | duckdb::FileFlags::FILE_FLAGS_FILE_CREATE |
 	             duckdb::FileFlags::FILE_FLAGS_EXCLUSIVE_CREATE | duckdb::FileFlags::FILE_FLAGS_PRIVATE |
@@ -213,12 +214,19 @@ uint64_t WriteJsonFile(duckdb::DuckDB &database, duckdb::Connection &connection,
 	} catch (const std::exception &error) {
 		throw SqrailError(EXIT_OUTPUT, "OUTPUT_WRITE", duckdb::ErrorData(error).Message());
 	}
+	const bool enforce_exact_bytes = type.compression.empty() && max_output_bytes != 0;
+	uint64_t written_bytes = 0;
 	const ResultWriter write = [&](const char *data, const std::size_t size) {
+		if (enforce_exact_bytes && (written_bytes > max_output_bytes || size > max_output_bytes - written_bytes)) {
+			throw SqrailError(EXIT_OUTPUT, "OUTPUT_LIMIT",
+			                  "output exceeded --max-output-bytes " + std::to_string(max_output_bytes));
+		}
 		try {
 			handle->Write(const_cast<char *>(data), size);
 		} catch (const std::exception &error) {
 			throw SqrailError(EXIT_OUTPUT, "OUTPUT_WRITE", duckdb::ErrorData(error).Message());
 		}
+		written_bytes += size;
 	};
 	const auto rows = StreamJson(connection, sql, type.extension == ".json", max_rows, write);
 	try {

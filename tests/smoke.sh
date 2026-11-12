@@ -40,6 +40,19 @@ schema=$("$sqrail_bin" schema "$test_dir/sales.csv")
 printf '%s\n' "$schema" | grep -q '"name":"drug_id"'
 printf '%s\n' "$schema" | grep -q '"name":"amount"'
 printf '%s\n' "$schema" | python3 -c 'import json,sys; json.load(sys.stdin)'
+
+printf '薬品名,売上\nアルファ,100\n' > "$test_dir/utf8.csv"
+utf8_schema=$("$sqrail_bin" schema "$test_dir/utf8.csv")
+printf '%s\n' "$utf8_schema" | grep -qF '"name":"薬品名"'
+printf '%s\n' "$utf8_schema" | grep -qF '"name":"売上"'
+if printf '%s\n' "$utf8_schema" | grep -q '\\u85ac'; then
+  echo "expected raw UTF-8 in schema output, got escaped hex" >&2
+  exit 1
+fi
+utf8_check=$("$sqrail_bin" check -t sales="$test_dir/utf8.csv" 'SELECT 薬品名, 売上 FROM sales')
+printf '%s\n' "$utf8_check" | grep -qF '"name":"薬品名"'
+utf8_run=$("$sqrail_bin" run -t sales="$test_dir/utf8.csv" 'SELECT 薬品名, 売上 FROM sales')
+test "$utf8_run" = '{"薬品名":"アルファ","売上":100}'
 python3 - "$sqrail_bin" <<'PY'
 import json
 import os
@@ -215,6 +228,13 @@ expect_error 5 OUTPUT_LIMIT "$test_dir/stdout-byte-limit.json" \
 test "$(wc -c < "$test_dir/exact-limit.jsonl" | tr -d ' ')" = "8"
 expect_error 5 OUTPUT_LIMIT "$test_dir/below-exact-limit.json" \
   "$sqrail_bin" run --max-output-bytes 7B 'SELECT 1 AS x'
+"$sqrail_bin" run --max-output-bytes 8B -o "$test_dir/exact-file.jsonl" 'SELECT 1 AS x'
+test "$(wc -c < "$test_dir/exact-file.jsonl" | tr -d ' ')" = "8"
+expect_error 5 OUTPUT_LIMIT "$test_dir/below-exact-file-limit.json" \
+  "$sqrail_bin" run --max-output-bytes 7B -o "$test_dir/below-exact-file.jsonl" 'SELECT 1 AS x'
+test ! -e "$test_dir/below-exact-file.jsonl"
+test "$(find "$test_dir" -name 'below-exact-file.jsonl.sqrail-tmp-*' | wc -l | tr -d ' ')" = "0"
+test "$("$sqrail_bin" run --timeout 1h --max-output-bytes 1M 'SELECT 1 AS x')" = '{"x":1}'
 "$sqrail_bin" run 'SELECT 1 AS x WHERE false' >"$test_dir/empty.jsonl"
 test ! -s "$test_dir/empty.jsonl"
 "$sqrail_bin" run -o "$test_dir/empty.json" 'SELECT 1 AS x WHERE false'
@@ -258,6 +278,50 @@ strict_dataset_result=$("$sqrail_bin" run --strict-schema -t data="$test_dir/dat
   'SELECT year, sum(amount) AS total FROM data GROUP BY year ORDER BY year')
 test "$strict_dataset_result" = "$dataset_result"
 "$sqrail_bin" schema --strict-schema "$test_dir/dataset" | grep -q '"files":2'
+
+mkdir -p "$test_dir/hive-mixed/tag=100" "$test_dir/hive-mixed/tag=abc"
+"$sqrail_bin" run -o "$test_dir/hive-mixed/tag=100/part-0.parquet" 'SELECT 1 AS id'
+"$sqrail_bin" run -o "$test_dir/hive-mixed/tag=abc/part-0.parquet" 'SELECT 2 AS id'
+hive_mixed_result=$("$sqrail_bin" run --strict-schema -t data="$test_dir/hive-mixed" \
+  'SELECT id, tag FROM data ORDER BY id')
+test "$hive_mixed_result" = '{"id":1,"tag":"100"}
+{"id":2,"tag":"abc"}'
+"$sqrail_bin" schema --strict-schema "$test_dir/hive-mixed" | grep -q '"files":2'
+"$sqrail_bin" check --strict-schema -t data="$test_dir/hive-mixed" 'SELECT id, tag FROM data' >/dev/null
+
+mkdir -p "$test_dir/hive-uneven/year=2025/month=1" "$test_dir/hive-uneven/year=2026"
+"$sqrail_bin" run -o "$test_dir/hive-uneven/year=2025/month=1/part-0.parquet" 'SELECT 1 AS id'
+"$sqrail_bin" run -o "$test_dir/hive-uneven/year=2026/part-0.parquet" 'SELECT 2 AS id'
+expect_error 3 SCHEMA_MISMATCH "$test_dir/hive-uneven.json" \
+  "$sqrail_bin" run --strict-schema -t data="$test_dir/hive-uneven" 'SELECT * FROM data'
+expect_error 3 SCHEMA_MISMATCH "$test_dir/hive-uneven-schema.json" \
+  "$sqrail_bin" schema --strict-schema "$test_dir/hive-uneven"
+
+mkdir -p "$test_dir/hive-collision/tag=100"
+"$sqrail_bin" run -o "$test_dir/hive-collision/tag=100/part-0.parquet" 'SELECT 1 AS id'
+"$sqrail_bin" run -o "$test_dir/hive-collision/part-1.parquet" "SELECT 2 AS id, 'abc' AS tag"
+expect_error 3 SCHEMA_MISMATCH "$test_dir/hive-collision.json" \
+  "$sqrail_bin" run --strict-schema -t data="$test_dir/hive-collision" 'SELECT * FROM data'
+
+python3 - "$test_dir/dirty.csv" <<'PY'
+import sys
+
+with open(sys.argv[1], "w", encoding="utf-8") as handle:
+    handle.write("drug_id,lot_code\n")
+    handle.write("1,00123\n")
+    for idx in range(2, 2500):
+        handle.write(f"{idx},{idx}\n")
+    handle.write("2,A-999\n")
+PY
+dirty_schema=$("$sqrail_bin" schema --all-varchar "$test_dir/dirty.csv")
+printf '%s\n' "$dirty_schema" | python3 -c \
+  'import json,sys; value=json.load(sys.stdin); assert [(c["name"], c["type"]) for c in value["columns"]] == [("drug_id", "VARCHAR"), ("lot_code", "VARCHAR")]'
+dirty_joined=$("$sqrail_bin" run --all-varchar \
+  -t dirty="$test_dir/dirty.csv" \
+  -t pq="$test_dir/result.parquet" \
+  "SELECT dirty.lot_code, typeof(pq.amount) AS pq_type FROM dirty JOIN pq ON CAST(dirty.drug_id AS BIGINT) = pq.drug_id WHERE dirty.lot_code IN ('00123', 'A-999') ORDER BY dirty.lot_code")
+test "$dirty_joined" = '{"lot_code":"00123","pq_type":"BIGINT"}
+{"lot_code":"A-999","pq_type":"BIGINT"}'
 
 mkdir "$test_dir/evolved"
 "$sqrail_bin" run -o "$test_dir/evolved/a.parquet" \
@@ -364,6 +428,15 @@ expect_error 2 CHECK_SPILL "$test_dir/check-spill.json" \
   "$sqrail_bin" check --spill "$test_dir/check-spill" 'SELECT 1'
 expect_error 2 CHECK_OUTPUT_LIMIT "$test_dir/check-output-limit.json" \
   "$sqrail_bin" check --max-output-bytes 1MiB 'SELECT 1'
+expect_error 2 UNKNOWN_COMMAND "$test_dir/agent-help.json" \
+  "$sqrail_bin" --agent-help
+grep -qF "(use 'sqrail --help')" "$test_dir/agent-help.json"
+expect_error 2 UNKNOWN_OPTION "$test_dir/run-help.json" \
+  "$sqrail_bin" run --help
+grep -qF "(use 'sqrail --help')" "$test_dir/run-help.json"
+expect_error 2 UNKNOWN_OPTION "$test_dir/schema-help.json" \
+  "$sqrail_bin" schema -h
+grep -qF "(use 'sqrail --help')" "$test_dir/schema-help.json"
 expect_error 4 QUERY_TIMEOUT "$test_dir/timeout.json" \
   "$sqrail_bin" run --timeout 1ms \
   'SELECT sum(left_side.i * right_side.i) FROM range(1000000) left_side(i), range(1000000) right_side(i)'
@@ -511,6 +584,7 @@ printf '%s\n' "$help_text" | grep -q 'run once, and stop after success'
 printf '%s\n' "$help_text" | grep -q 'SQL is one SELECT'
 printf '%s\n' "$help_text" | grep -q -- '--max-rows'
 printf '%s\n' "$help_text" | grep -q -- '--strict-schema'
+printf '%s\n' "$help_text" | grep -q -- '--all-varchar'
 printf '%s\n' "$help_text" | grep -q -- '--stats'
 printf '%s\n' "$help_text" | grep -q -- '--max-output-bytes'
 printf '%s\n' "$help_text" | grep -q -- '--max-input-files'

@@ -199,7 +199,15 @@ class BashCompletionTest(unittest.TestCase):
         self.assertEqual(self.complete("sqrail", "r"), ["run"])
         self.assertEqual(
             self.complete("sqrail", "schema", "-"),
-            ["--memory", "--threads", "--timeout", "--max-input-files", "--strict-schema", "--"],
+            [
+                "--memory",
+                "--threads",
+                "--timeout",
+                "--max-input-files",
+                "--strict-schema",
+                "--all-varchar",
+                "--",
+            ],
         )
         self.assertEqual(
             self.complete("sqrail", "check", "-"),
@@ -212,8 +220,13 @@ class BashCompletionTest(unittest.TestCase):
                 "--max-input-files",
                 "--max-sql-bytes",
                 "--strict-schema",
+                "--all-varchar",
                 "--",
             ],
+        )
+        self.assertEqual(
+            self.complete("sqrail", "run", "--all-"),
+            ["--all-varchar"],
         )
         self.assertEqual(
             self.complete("sqrail", "run", "--max-"),

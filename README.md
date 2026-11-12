@@ -224,14 +224,15 @@ JSON schemas and failure semantics.
 
 ```text
 sqrail schema [--memory SIZE] [--threads N] [--timeout DURATION]
-              [--max-input-files N] [--strict-schema] FILE...
+              [--max-input-files N] [--strict-schema] [--all-varchar] FILE...
 sqrail check [-t NAME=PATH]... [--memory SIZE] [--threads N]
              [--timeout DURATION] [--max-rows N] [--max-input-files N]
-             [--max-sql-bytes SIZE] [--strict-schema] [SQL|-]
+             [--max-sql-bytes SIZE] [--strict-schema] [--all-varchar] [SQL|-]
 sqrail run [-t NAME=PATH]... [-o FILE] [--memory SIZE] [--threads N]
            [--spill DIR [--max-spill SIZE]] [--timeout DURATION]
            [--max-rows N] [--max-output-bytes SIZE] [--max-input-files N]
-           [--max-sql-bytes SIZE] [--stats] [--strict-schema] [SQL|-]
+           [--max-sql-bytes SIZE] [--stats] [--strict-schema]
+           [--all-varchar] [SQL|-]
 ```
 
 ### Inputs and queries
@@ -241,7 +242,9 @@ sqrail run [-t NAME=PATH]... [-o FILE] [--memory SIZE] [--threads N]
   become columns. Repeat it for each table.
 - The files in one binding are combined by column name, and a column missing
   from some files is `null`. `--strict-schema` instead requires identical
-  names, order, and types.
+  names, order, and types across files.
+- `--all-varchar` keeps CSV and TSV columns as `VARCHAR` so leading-zero codes
+  and mid-file type shifts are preserved without altering Parquet or JSON types.
 - The SQL is one `SELECT`, `VALUES`, or `WITH` query in the DuckDB dialect that
   `sqrail --version` reports. Pass it as an argument, or as `-` to read it from
   stdin.

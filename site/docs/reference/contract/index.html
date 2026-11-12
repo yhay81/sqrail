@@ -159,14 +159,15 @@
           </p>
           <h2 id="commands">Commands</h2>
           <pre><code class="language-text">sqrail schema [--memory SIZE] [--threads N] [--timeout DURATION]
-              [--max-input-files N] [--strict-schema] FILE...
+              [--max-input-files N] [--strict-schema] [--all-varchar] FILE...
 sqrail check [-t NAME=PATH]... [--memory SIZE] [--threads N]
              [--timeout DURATION] [--max-rows N] [--max-input-files N]
-             [--max-sql-bytes SIZE] [--strict-schema] [SQL|-]
+             [--max-sql-bytes SIZE] [--strict-schema] [--all-varchar] [SQL|-]
 sqrail run [-t NAME=PATH]... [-o FILE] [--memory SIZE] [--threads N]
            [--spill DIR [--max-spill SIZE]] [--timeout DURATION]
            [--max-rows N] [--max-output-bytes SIZE] [--max-input-files N]
-           [--max-sql-bytes SIZE] [--stats] [--strict-schema] [SQL|-]
+           [--max-sql-bytes SIZE] [--stats] [--strict-schema]
+           [--all-varchar] [SQL|-]
 sqrail --help
 sqrail --version
 </code></pre>
@@ -196,8 +197,14 @@ sqrail --version
             removed between files are included in the combined schema and
             missing values become <code>null</code>.
             <code>--strict-schema</code> instead requires every matched file to
-            have identical column names, order, and inferred types; otherwise
-            the command fails with <code>SCHEMA_MISMATCH</code>. This option is
+            have identical physical column names, order, and inferred types plus
+            identical Hive partition keys across the dataset (while allowing
+            partition directory values such as <code>tag=100</code> and
+            <code>tag=abc</code> to resolve across the dataset); otherwise the
+            command fails with <code>SCHEMA_MISMATCH</code>.
+            <code>--all-varchar</code> disables CSV and TSV type inference so
+            every CSV/TSV column is read as <code>VARCHAR</code> while leaving
+            Parquet and JSON bindings at their native types. Both options are
             available to <code>run</code>, <code>check</code>, and
             <code>schema</code>.
           </p>
@@ -351,9 +358,10 @@ sqrail --version
             <li>
               <code>--timeout DURATION</code> accepts a positive duration from
               <code>1ms</code> through 7 days using <code>ms</code>,
-              <code>s</code>, or <code>m</code>. Its absolute deadline begins
-              when command handling starts and covers input discovery, schema
-              inference, planning, execution, and output finalization.
+              <code>s</code>, <code>m</code>, <code>h</code>, or <code>d</code>.
+              Its absolute deadline begins when command handling starts and
+              covers input discovery, schema inference, planning, execution, and
+              output finalization.
             </li>
             <li>
               <code>--max-rows N</code> accepts an integer from 1 through
@@ -364,19 +372,24 @@ sqrail --version
               may already contain a valid prefix of at most <code>N</code> rows.
             </li>
             <li>
-              <code>--max-output-bytes SIZE</code> accepts the explicit
-              <code>B</code>, <code>KB</code>, <code>MB</code>, <code>GB</code>,
+              <code>--max-output-bytes SIZE</code> accepts <code>B</code>,
+              <code>K</code>, <code>M</code>, <code>G</code>, <code>T</code>,
+              <code>KB</code>, <code>MB</code>, <code>GB</code>,
               <code>TB</code>, <code>KiB</code>, <code>MiB</code>,
-              <code>GiB</code>, and <code>TiB</code> byte-size units and
-              interrupts file output after it grows beyond the cap. The
-              <code>K</code>/<code>M</code>/<code>G</code>/<code>T</code>
-              resource shorthands are deliberately excluded from exact byte
-              caps. Its decimal part may have at most six digits and is
-              converted to an exact integer byte count by truncating any
-              sub-byte remainder. JSONL stdout is checked before each buffered
-              write. File destinations are never committed on
-              <code>OUTPUT_LIMIT</code>; stdout may already contain a valid
-              prefix.
+              <code>GiB</code>, and <code>TiB</code> byte-size units
+              (<code>K</code>/<code>M</code>/<code>G</code>/<code>T</code> match
+              the decimal <code>KB</code>/<code>MB</code>/<code>GB</code>/<code
+                >TB</code
+              >
+              powers of 1000, as DuckDB resource limits do) and fails when the
+              output exceeds the cap. Its decimal part may have at most six
+              digits and is converted to an exact integer byte count by
+              truncating any sub-byte remainder. JSONL stdout and uncompressed
+              JSON/JSONL file outputs are checked synchronously before each
+              buffered write; compressed, CSV, TSV, and Parquet file outputs are
+              monitored during execution and verified before commit. File
+              destinations are never committed on <code>OUTPUT_LIMIT</code>;
+              stdout may already contain a valid prefix.
             </li>
             <li>
               <code>--max-input-files N</code> accepts an integer from 1 through
@@ -396,13 +409,13 @@ sqrail --version
             <code>check</code> accepts <code>--memory</code>,
             <code>--threads</code>, <code>--timeout</code>,
             <code>--max-rows</code>, <code>--max-input-files</code>,
-            <code>--max-sql-bytes</code>, and <code>--strict-schema</code>, but
-            not output, output-byte, spill, or stats options.
-            <code>schema</code> accepts <code>--memory</code>,
+            <code>--max-sql-bytes</code>, <code>--strict-schema</code>, and
+            <code>--all-varchar</code>, but not output, output-byte, spill, or
+            stats options. <code>schema</code> accepts <code>--memory</code>,
             <code>--threads</code>, <code>--timeout</code>,
-            <code>--max-input-files</code>, and <code>--strict-schema</code>.
-            The memory value is a DuckDB memory limit, not a hard
-            operating-system RSS limit. sqrail sets
+            <code>--max-input-files</code>, <code>--strict-schema</code>, and
+            <code>--all-varchar</code>. The memory value is a DuckDB memory
+            limit, not a hard operating-system RSS limit. sqrail sets
             <code>preserve_insertion_order=false</code>. Without
             <code>--spill</code>, external temporary storage is disabled.
           </p>
@@ -438,8 +451,14 @@ sqrail --version
           <h2 id="diagnostics">Diagnostics</h2>
           <p>
             Every handled failure writes exactly one UTF-8 JSON object to
-            stderr. Invalid bytes in operating-system arguments are replaced
-            with U+FFFD:
+            stderr. Valid UTF-8 text in <code>schema</code>, <code>check</code>,
+            <code>run</code>, and diagnostics is emitted directly (with ASCII
+            control bytes and <code>U+2028</code>/<code>U+2029</code> escaped);
+            invalid bytes in operating-system arguments are replaced with
+            U+FFFD. Passing <code>-h</code> or <code>--help</code> after a
+            subcommand, or invoking the removed <code>--agent-help</code> flag,
+            returns exit 2 with <code>(use 'sqrail --help')</code> in
+            <code>message</code>:
           </p>
           <pre><code class="language-json">{
   &quot;schema_version&quot;: 1,

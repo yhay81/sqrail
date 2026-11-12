@@ -337,6 +337,33 @@ SQL
             <code>--strict-schema</code>; by default files are combined by
             column name.
           </p>
+          <h2 id="keep-dirty-csv-identifiers-as-text">
+            Keep dirty CSV identifiers as text
+          </h2>
+          <ul>
+            <li>
+              <strong>Inputs:</strong> a CSV whose identifier column mixes
+              leading-zero codes and alphanumeric strings.
+            </li>
+            <li>
+              <strong>Output:</strong> JSONL rows on stdout with leading zeros
+              preserved.
+            </li>
+            <li>
+              <strong>Limit that matters:</strong>
+              <code>--all-varchar</code> keeps every CSV/TSV column as
+              <code>VARCHAR</code> so type sniffing cannot strip leading zeros
+              or fail on a mid-file format shift, while leaving bound Parquet or
+              JSON tables at their native types.
+            </li>
+          </ul>
+          <pre><code class="language-sh">printf 'lot_code,units\n00123,10\nA-900,25\n' &gt; lots.csv
+sqrail run --all-varchar -t lots=lots.csv \
+  'SELECT lot_code, CAST(units AS BIGINT) AS units FROM lots ORDER BY lot_code'
+</code></pre>
+          <pre><code class="language-text">{&quot;lot_code&quot;:&quot;00123&quot;,&quot;units&quot;:10}
+{&quot;lot_code&quot;:&quot;A-900&quot;,&quot;units&quot;:25}
+</code></pre>
         </div>
 
         <nav
@@ -371,6 +398,9 @@ SQL
           <a href="#filter-partitioned-parquet">Filter partitioned Parquet</a>
           <a href="#validate-and-aggregate-jsonl"
             >Validate and aggregate JSONL</a
+          >
+          <a href="#keep-dirty-csv-identifiers-as-text"
+            >Keep dirty CSV identifiers as text</a
           >
         </nav>
       </aside>

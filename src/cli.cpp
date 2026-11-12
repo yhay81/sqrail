@@ -200,20 +200,21 @@ std::string ParseSize(const std::string &raw, const std::string &option, const s
 uint64_t ParseByteSize(const std::string &raw, const std::string &option, const std::string &code) {
 	const ParsedNumberUnit number = SplitNumberAndUnit(raw);
 	if (!number.valid || number.fraction.size() > 6U) {
-		throw SqrailError(EXIT_USAGE, code, option + " must be a size such as 1MiB or 2.5GB (at most six decimals)");
+		throw SqrailError(EXIT_USAGE, code,
+		                  option + " must be a size such as 512M, 1MiB, or 2.5GB (at most six decimals)");
 	}
 
 	const std::string unit = Lower(std::string(number.unit));
 	uint64_t multiplier = 0;
 	if (unit == "b") {
 		multiplier = 1U;
-	} else if (unit == "kb") {
+	} else if (unit == "k" || unit == "kb") {
 		multiplier = 1000U;
-	} else if (unit == "mb") {
+	} else if (unit == "m" || unit == "mb") {
 		multiplier = uint64_t {1000} * 1000U;
-	} else if (unit == "gb") {
+	} else if (unit == "g" || unit == "gb") {
 		multiplier = uint64_t {1000} * 1000U * 1000U;
-	} else if (unit == "tb") {
+	} else if (unit == "t" || unit == "tb") {
 		multiplier = uint64_t {1000} * 1000U * 1000U * 1000U;
 	} else if (unit == "kib") {
 		multiplier = 1024U;
@@ -224,7 +225,8 @@ uint64_t ParseByteSize(const std::string &raw, const std::string &option, const 
 	} else if (unit == "tib") {
 		multiplier = uint64_t {1024} * 1024U * 1024U * 1024U;
 	} else {
-		throw SqrailError(EXIT_USAGE, code, option + " must be a size such as 1MiB or 2.5GB (at most six decimals)");
+		throw SqrailError(EXIT_USAGE, code,
+		                  option + " must be a size such as 512M, 1MiB, or 2.5GB (at most six decimals)");
 	}
 
 	uint64_t whole = 0;
@@ -263,7 +265,7 @@ uint64_t ParseByteSize(const std::string &raw, const std::string &option, const 
 std::chrono::milliseconds ParseTimeout(const std::string &raw) {
 	const ParsedNumberUnit number = SplitNumberAndUnit(raw);
 	if (!number.valid) {
-		throw SqrailError(EXIT_USAGE, "INVALID_TIMEOUT", "--timeout must be a duration such as 250ms, 30s, or 2m");
+		throw SqrailError(EXIT_USAGE, "INVALID_TIMEOUT", "--timeout must be a duration such as 250ms, 30s, 10m, or 2h");
 	}
 	const std::string unit = Lower(std::string(number.unit));
 	uint64_t unit_ms = 0;
@@ -273,8 +275,12 @@ std::chrono::milliseconds ParseTimeout(const std::string &raw) {
 		unit_ms = 1000U;
 	} else if (unit == "m") {
 		unit_ms = 60000U;
+	} else if (unit == "h") {
+		unit_ms = uint64_t {60} * 60U * 1000U;
+	} else if (unit == "d") {
+		unit_ms = uint64_t {24} * 60U * 60U * 1000U;
 	} else {
-		throw SqrailError(EXIT_USAGE, "INVALID_TIMEOUT", "--timeout must be a duration such as 250ms, 30s, or 2m");
+		throw SqrailError(EXIT_USAGE, "INVALID_TIMEOUT", "--timeout must be a duration such as 250ms, 30s, 10m, or 2h");
 	}
 
 	constexpr uint64_t maximum_ms = uint64_t {7} * 24U * 60U * 60U * 1000U;
@@ -312,6 +318,15 @@ std::string RequireValue(int &index, int argc, char **argv, const std::string &o
 	return argv[index];
 }
 
+bool IsHelpOption(const std::string_view argument) {
+	return argument == "-h" || argument == "--help" || argument == "--agent-help";
+}
+
+[[noreturn]] void ThrowUnknownOption(const std::string &argument) {
+	const std::string hint = IsHelpOption(argument) ? " (use 'sqrail --help')" : "";
+	throw SqrailError(EXIT_USAGE, "UNKNOWN_OPTION", "unknown option: " + argument + hint);
+}
+
 } // namespace
 
 std::string NormalizeQuery(std::string sql) {
@@ -333,6 +348,7 @@ RunOptions ParseRun(int argc, char **argv, const bool check_only) {
 	bool has_max_sql_bytes = false;
 	bool has_stats = false;
 	bool has_strict_schema = false;
+	bool has_all_varchar = false;
 	bool positional_only = false;
 
 	for (int index = 2; index < argc; ++index) {
@@ -454,10 +470,16 @@ RunOptions ParseRun(int argc, char **argv, const bool check_only) {
 			}
 			options.strict_schema = true;
 			has_strict_schema = true;
+		} else if (!positional_only && argument == "--all-varchar") {
+			if (has_all_varchar) {
+				throw SqrailError(EXIT_USAGE, "DUPLICATE_OPTION", "--all-varchar may only be specified once");
+			}
+			options.all_varchar = true;
+			has_all_varchar = true;
 		} else if (positional_only || argument.empty() || argument == "-" || argument.front() != '-') {
 			positional.push_back(argument);
 		} else {
-			throw SqrailError(EXIT_USAGE, "UNKNOWN_OPTION", "unknown option: " + argument);
+			ThrowUnknownOption(argument);
 		}
 	}
 
@@ -524,6 +546,7 @@ SchemaOptions ParseSchema(int argc, char **argv) {
 	bool has_timeout = false;
 	bool has_max_input_files = false;
 	bool has_strict_schema = false;
+	bool has_all_varchar = false;
 
 	for (int index = 2; index < argc; ++index) {
 		const std::string argument = argv[index];
@@ -561,10 +584,16 @@ SchemaOptions ParseSchema(int argc, char **argv) {
 			}
 			options.strict_schema = true;
 			has_strict_schema = true;
+		} else if (!positional_only && argument == "--all-varchar") {
+			if (has_all_varchar) {
+				throw SqrailError(EXIT_USAGE, "DUPLICATE_OPTION", "--all-varchar may only be specified once");
+			}
+			options.all_varchar = true;
+			has_all_varchar = true;
 		} else if (positional_only || argument.empty() || argument == "-" || argument.front() != '-') {
 			options.sources.push_back(argument);
 		} else {
-			throw SqrailError(EXIT_USAGE, "UNKNOWN_OPTION", "unknown option: " + argument);
+			ThrowUnknownOption(argument);
 		}
 	}
 	if (options.sources.empty()) {

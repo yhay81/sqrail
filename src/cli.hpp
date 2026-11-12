@@ -31,12 +31,14 @@ struct RunOptions {
 	bool has_output = false;
 	bool stats = false;
 	bool strict_schema = false;
+	bool all_varchar = false;
 };
 
 struct SchemaOptions {
 	RunOptions resources;
 	std::vector<std::string> sources;
 	bool strict_schema = false;
+	bool all_varchar = false;
 };
 
 RunOptions ParseRun(int argc, char **argv, bool check_only);

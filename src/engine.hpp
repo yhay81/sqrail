@@ -20,7 +20,8 @@ struct FileType {
 std::string SqlString(const std::string &input);
 std::string SqlIdentifier(const std::string &input);
 FileType DetectFileType(const std::filesystem::path &path, int exit_code, const std::string &unsupported_code);
-std::string ReaderExpression(const std::vector<std::filesystem::path> &paths, bool strict_schema = false);
+std::string ReaderExpression(const std::vector<std::filesystem::path> &paths, bool strict_schema = false,
+                             bool all_varchar = false);
 bool IsJsonOutput(const FileType &type);
 std::string UniqueToken();
 
@@ -42,10 +43,11 @@ std::vector<std::filesystem::path> ResolveInputSet(duckdb::DuckDB &database, con
                                                    uint64_t max_input_files);
 void CheckResult(const duckdb::unique_ptr<duckdb::QueryResult> &result, const std::string &code = "QUERY_FAILED");
 void ValidateStrictSchemas(duckdb::Connection &connection, const std::vector<std::filesystem::path> &paths,
-                           const std::string &source);
+                           const std::string &source, ExecutionControl &control, bool all_varchar = false);
 void Configure(duckdb::Connection &connection, const RunOptions &options,
                const std::vector<std::filesystem::path> &allowed_paths);
-void BindTables(duckdb::Connection &connection, const std::vector<TableBinding> &tables, bool strict_schema);
+void BindTables(duckdb::Connection &connection, const std::vector<TableBinding> &tables, ExecutionControl &control,
+                bool strict_schema, bool all_varchar = false);
 std::string ValidateSelectQuery(duckdb::Connection &connection, const std::string &sql);
 std::string ResultColumnsJson(duckdb::Connection &connection, const std::string &sql);
 std::string InputBindingsJson(const std::vector<TableBinding> &tables);

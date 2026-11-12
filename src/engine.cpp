@@ -2,6 +2,7 @@
 
 #include "duckdb/common/error_data.hpp"
 #include "duckdb/common/file_system.hpp"
+#include "duckdb/common/hive_partitioning.hpp"
 #include "duckdb/common/multi_file/multi_file_list.hpp"
 #include "error.hpp"
 #include "json.hpp"
@@ -92,18 +93,72 @@ void CheckInputFileLimit(const std::size_t resolved, const uint64_t max_input_fi
 
 using ColumnSignature = std::vector<std::pair<std::string, std::string>>;
 
-ColumnSignature ReadColumnSignature(duckdb::Connection &connection, const fs::path &path) {
+struct ReaderOptions {
+	bool strict_schema = false;
+	bool all_varchar = false;
+	bool disable_hive_partitioning = false;
+};
+
+struct FileSchemaSignature {
+	ColumnSignature columns;
+	std::vector<std::string> hive_keys;
+
+	bool operator==(const FileSchemaSignature &other) const = default;
+};
+
+std::string BuildReaderExpression(const std::vector<fs::path> &paths, const ReaderOptions options) {
+	if (paths.empty()) {
+		throw SqrailError(EXIT_INPUT, "EMPTY_DATASET", "input dataset has no files");
+	}
+	const std::string argument = SqlPathArgument(paths);
+	const auto type = DetectFileType(paths.front(), EXIT_INPUT, "UNSUPPORTED_FORMAT");
+	const std::string union_option = paths.size() > 1 && !options.strict_schema ? ", union_by_name=true" : "";
+	const std::string hive_option = options.disable_hive_partitioning ? ", hive_partitioning=false" : "";
+	const std::string varchar_option = options.all_varchar ? ", all_varchar=true" : "";
+
+	if (type.extension == ".parquet") {
+		if (!type.compression.empty()) {
+			throw SqrailError(EXIT_INPUT, "UNSUPPORTED_COMPRESSION",
+			                  "externally compressed Parquet is not supported: " + paths.front().string());
+		}
+		return "read_parquet(" + argument + union_option + hive_option + ")";
+	}
+	if (type.extension == ".json" || type.extension == ".jsonl" || type.extension == ".ndjson") {
+		return "read_json_auto(" + argument + union_option + hive_option + ")";
+	}
+	if (type.extension == ".tsv" || type.extension == ".tab") {
+		return "read_csv_auto(" + argument + ", delim='\t'" + varchar_option + union_option + hive_option + ")";
+	}
+	if (type.extension == ".csv") {
+		return "read_csv_auto(" + argument + varchar_option + union_option + hive_option + ")";
+	}
+
+	throw SqrailError(EXIT_INPUT, "UNSUPPORTED_FORMAT",
+	                  "unsupported input format: " + paths.front().string() +
+	                      " (expected csv, tsv, json, jsonl, ndjson, or parquet)");
+}
+
+FileSchemaSignature ReadFileSchemaSignature(duckdb::Connection &connection, const fs::path &path,
+                                            const bool all_varchar) {
 	const std::vector<fs::path> single_path {path};
-	auto result = connection.Query("DESCRIBE SELECT * FROM " + ReaderExpression(single_path, true));
+	const ReaderOptions reader_options {true, all_varchar, true};
+	auto result = connection.Query("DESCRIBE SELECT * FROM " + BuildReaderExpression(single_path, reader_options));
 	CheckResult(result, "SCHEMA_INFERENCE_FAILED");
 
 	const auto &rows = result->Collection();
-	ColumnSignature signature;
-	signature.reserve(rows.Count());
+	ColumnSignature columns;
+	columns.reserve(rows.Count());
 	for (duckdb::idx_t row = 0; row < rows.Count(); ++row) {
-		signature.emplace_back(rows.GetValue(0, row).ToString(), rows.GetValue(1, row).ToString());
+		columns.emplace_back(rows.GetValue(0, row).ToString(), rows.GetValue(1, row).ToString());
 	}
-	return signature;
+
+	const auto partitions = duckdb::HivePartitioning::Parse(path.string());
+	std::vector<std::string> hive_keys;
+	hive_keys.reserve(partitions.size());
+	for (const auto &partition : partitions) {
+		hive_keys.push_back(partition.first);
+	}
+	return {std::move(columns), std::move(hive_keys)};
 }
 
 } // namespace
@@ -158,34 +213,8 @@ FileType DetectFileType(const fs::path &path, const int exit_code, const std::st
 	return {extension, compression};
 }
 
-std::string ReaderExpression(const std::vector<fs::path> &paths, const bool strict_schema) {
-	if (paths.empty()) {
-		throw SqrailError(EXIT_INPUT, "EMPTY_DATASET", "input dataset has no files");
-	}
-	const std::string argument = SqlPathArgument(paths);
-	const auto type = DetectFileType(paths.front(), EXIT_INPUT, "UNSUPPORTED_FORMAT");
-	const std::string union_option = paths.size() > 1 && !strict_schema ? ", union_by_name=true" : "";
-
-	if (type.extension == ".parquet") {
-		if (!type.compression.empty()) {
-			throw SqrailError(EXIT_INPUT, "UNSUPPORTED_COMPRESSION",
-			                  "externally compressed Parquet is not supported: " + paths.front().string());
-		}
-		return "read_parquet(" + argument + union_option + ")";
-	}
-	if (type.extension == ".json" || type.extension == ".jsonl" || type.extension == ".ndjson") {
-		return "read_json_auto(" + argument + union_option + ")";
-	}
-	if (type.extension == ".tsv" || type.extension == ".tab") {
-		return "read_csv_auto(" + argument + ", delim='\t'" + union_option + ")";
-	}
-	if (type.extension == ".csv") {
-		return "read_csv_auto(" + argument + union_option + ")";
-	}
-
-	throw SqrailError(EXIT_INPUT, "UNSUPPORTED_FORMAT",
-	                  "unsupported input format: " + paths.front().string() +
-	                      " (expected csv, tsv, json, jsonl, ndjson, or parquet)");
+std::string ReaderExpression(const std::vector<fs::path> &paths, const bool strict_schema, const bool all_varchar) {
+	return BuildReaderExpression(paths, {strict_schema, all_varchar, false});
 }
 
 bool IsJsonOutput(const FileType &type) {
@@ -321,13 +350,15 @@ void CheckResult(const duckdb::unique_ptr<duckdb::QueryResult> &result, const st
 }
 
 void ValidateStrictSchemas(duckdb::Connection &connection, const std::vector<fs::path> &paths,
-                           const std::string &source) {
+                           const std::string &source, ExecutionControl &control, const bool all_varchar) {
 	if (paths.size() < 2) {
 		return;
 	}
-	const auto expected = ReadColumnSignature(connection, paths.front());
+	control.Checkpoint("schema inference exceeded --timeout");
+	const auto expected = ReadFileSchemaSignature(connection, paths.front(), all_varchar);
 	for (std::size_t index = 1; index < paths.size(); ++index) {
-		if (ReadColumnSignature(connection, paths[index]) != expected) {
+		control.Checkpoint("schema inference exceeded --timeout");
+		if (ReadFileSchemaSignature(connection, paths[index], all_varchar) != expected) {
 			throw SqrailError(EXIT_INPUT, "SCHEMA_MISMATCH",
 			                  "input dataset contains different column names, order, or types: " + source);
 		}
@@ -368,13 +399,14 @@ void Configure(duckdb::Connection &connection, const RunOptions &options, const 
 	CheckResult(connection.Query("SET lock_configuration = true"));
 }
 
-void BindTables(duckdb::Connection &connection, const std::vector<TableBinding> &tables, const bool strict_schema) {
+void BindTables(duckdb::Connection &connection, const std::vector<TableBinding> &tables, ExecutionControl &control,
+                const bool strict_schema, const bool all_varchar) {
 	for (const auto &table : tables) {
 		if (strict_schema) {
-			ValidateStrictSchemas(connection, table.paths, table.source);
+			ValidateStrictSchemas(connection, table.paths, table.source, control, all_varchar);
 		}
 		const std::string sql = "CREATE OR REPLACE TEMP VIEW " + SqlIdentifier(table.name) + " AS SELECT * FROM " +
-		                        ReaderExpression(table.paths, strict_schema);
+		                        ReaderExpression(table.paths, strict_schema, all_varchar);
 		CheckResult(connection.Query(sql), "TABLE_BIND_FAILED");
 	}
 }

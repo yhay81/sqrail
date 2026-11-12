@@ -7,6 +7,7 @@
 namespace sqrail {
 
 std::string JsonEscape(std::string_view input);
+bool IsValidUtf8(std::string_view input);
 
 bool HasNonFiniteJsonToken(std::string_view input);
 std::string RewriteNonFiniteJson(std::string_view input);

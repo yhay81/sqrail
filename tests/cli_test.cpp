@@ -53,6 +53,7 @@ TEST_CASE("run options preserve the agent-facing contract", "[cli]") {
 	                        "8KiB",
 	                        "--stats",
 	                        "--strict-schema",
+	                        "--all-varchar",
 	                        "--memory",
 	                        "64MiB",
 	                        "--threads",
@@ -67,6 +68,7 @@ TEST_CASE("run options preserve the agent-facing contract", "[cli]") {
 	CHECK(run.max_rows == 42);
 	CHECK(run.stats);
 	CHECK(run.strict_schema);
+	CHECK(run.all_varchar);
 	CHECK(run.memory_limit == "64MiB");
 	CHECK(run.threads == 2);
 	CHECK(run.timeout == std::chrono::milliseconds(1500));
@@ -81,13 +83,14 @@ TEST_CASE("run options preserve the agent-facing contract", "[cli]") {
 
 TEST_CASE("schema options preserve paths after the option terminator", "[cli]") {
 	const auto schema = Parse({"sqrail", "schema", "--memory", "32MB", "--threads", "1", "--timeout", "2s",
-	                           "--max-input-files", "9", "--strict-schema", "--", "--data.csv"},
+	                           "--max-input-files", "9", "--strict-schema", "--all-varchar", "--", "--data.csv"},
 	                          [](const int argc, char **argv) { return sqrail::ParseSchema(argc, argv); });
 
 	CHECK(schema.resources.memory_limit == "32MB");
 	CHECK(schema.resources.threads == 1);
 	CHECK(schema.resources.timeout == std::chrono::seconds(2));
 	CHECK(schema.strict_schema);
+	CHECK(schema.all_varchar);
 	REQUIRE(schema.sources.size() == 1);
 	CHECK(schema.sources[0] == "--data.csv");
 	CHECK(schema.resources.max_input_files == 9);
@@ -114,6 +117,14 @@ TEST_CASE("invalid and conflicting options have stable error codes", "[cli]") {
 		Parse({"sqrail", "schema", "--timeout", "1s", "--timeout", "2s", "data.csv"},
 		      [](const int argc, char **argv) { return sqrail::ParseSchema(argc, argv); });
 	});
+	CheckError("DUPLICATE_OPTION", []() {
+		Parse({"sqrail", "run", "--all-varchar", "--all-varchar", "SELECT 1"},
+		      [](const int argc, char **argv) { return sqrail::ParseRun(argc, argv, false); });
+	});
+	CheckError("DUPLICATE_OPTION", []() {
+		Parse({"sqrail", "schema", "--all-varchar", "--all-varchar", "data.csv"},
+		      [](const int argc, char **argv) { return sqrail::ParseSchema(argc, argv); });
+	});
 	CheckError("UNKNOWN_OPTION", []() {
 		Parse({"sqrail", "schema", "--memroy", "1GB", "data.csv"},
 		      [](const int argc, char **argv) { return sqrail::ParseSchema(argc, argv); });
@@ -122,10 +133,27 @@ TEST_CASE("invalid and conflicting options have stable error codes", "[cli]") {
 		Parse({"sqrail", "schema", "-t", "data=data.csv"},
 		      [](const int argc, char **argv) { return sqrail::ParseSchema(argc, argv); });
 	});
-	CheckError("UNKNOWN_OPTION", []() {
-		Parse({"sqrail", "schema", "--help"},
-		      [](const int argc, char **argv) { return sqrail::ParseSchema(argc, argv); });
-	});
+	for (const auto &help_flag : {"-h", "--help", "--agent-help"}) {
+		CAPTURE(help_flag);
+		try {
+			static_cast<void>(Parse({"sqrail", "schema", help_flag},
+			                        [](const int argc, char **argv) { return sqrail::ParseSchema(argc, argv); }));
+			FAIL("expected SqrailError for subcommand help flag");
+		} catch (const sqrail::SqrailError &error) {
+			CHECK(error.exit_code == sqrail::EXIT_USAGE);
+			CHECK(error.code == "UNKNOWN_OPTION");
+			CHECK(std::string(error.what()).find("(use 'sqrail --help')") != std::string::npos);
+		}
+		try {
+			static_cast<void>(Parse({"sqrail", "run", help_flag},
+			                        [](const int argc, char **argv) { return sqrail::ParseRun(argc, argv, false); }));
+			FAIL("expected SqrailError for subcommand help flag");
+		} catch (const sqrail::SqrailError &error) {
+			CHECK(error.exit_code == sqrail::EXIT_USAGE);
+			CHECK(error.code == "UNKNOWN_OPTION");
+			CHECK(std::string(error.what()).find("(use 'sqrail --help')") != std::string::npos);
+		}
+	}
 	CheckError("EMPTY_SQL", []() { static_cast<void>(sqrail::NormalizeQuery(" ; \n")); });
 	CheckError("EMPTY_SQL", []() { static_cast<void>(sqrail::NormalizeQuery(" ; \r\n")); });
 }
@@ -152,13 +180,13 @@ TEST_CASE("query text and exact resource sizes round-trip", "[cli]") {
 
 	const auto exact_sizes =
 	    Parse({"sqrail", "run", "--max-output-bytes", "1.5KiB", "--max-sql-bytes", "18446744073709551615B", "SELECT 1"},
-	          [](const int argc, char **argv) { return sqrail::ParseRun(argc, argv, false); });
+		      [](const int argc, char **argv) { return sqrail::ParseRun(argc, argv, false); });
 	CHECK(exact_sizes.max_output_bytes == 1536);
 	CHECK(exact_sizes.max_sql_bytes == std::numeric_limits<uint64_t>::max());
 
 	const auto short_resource_sizes =
 	    Parse({"sqrail", "run", "--memory", "128M", "--spill", "spill", "--max-spill", "2G", "SELECT 1"},
-	          [](const int argc, char **argv) { return sqrail::ParseRun(argc, argv, false); });
+		      [](const int argc, char **argv) { return sqrail::ParseRun(argc, argv, false); });
 	CHECK(short_resource_sizes.memory_limit == "128M");
 	CHECK(short_resource_sizes.max_spill == "2G");
 }
@@ -179,7 +207,7 @@ TEST_CASE("bounded numeric options round-trip", "[cli][property]") {
 		const auto raw = std::to_string(value);
 		const auto parsed =
 		    Parse({"sqrail", "run", "--max-input-files", raw, "--max-output-bytes", raw + "B", "SELECT 1"},
-		          [](const int argc, char **argv) { return sqrail::ParseRun(argc, argv, false); });
+			      [](const int argc, char **argv) { return sqrail::ParseRun(argc, argv, false); });
 		CAPTURE(value);
 		CHECK(parsed.max_input_files == value);
 		CHECK(parsed.max_output_bytes == value);
@@ -195,6 +223,14 @@ TEST_CASE("numeric resource limits enforce their documented boundaries", "[cli]"
 	CHECK(accepted.max_input_files == 1000000000U);
 	CHECK(accepted.timeout == std::chrono::hours(24 * 7));
 
+	const auto hours_timeout = Parse({"sqrail", "run", "--timeout", "1.5h", "SELECT 1"},
+	                                 [](const int argc, char **argv) { return sqrail::ParseRun(argc, argv, false); });
+	CHECK(hours_timeout.timeout == std::chrono::minutes(90));
+
+	const auto days_timeout = Parse({"sqrail", "run", "--timeout", "7d", "SELECT 1"},
+	                                [](const int argc, char **argv) { return sqrail::ParseRun(argc, argv, false); });
+	CHECK(days_timeout.timeout == std::chrono::hours(24 * 7));
+
 	const std::vector<std::tuple<std::string, std::string, std::string>> rejected {
 	    {"--threads", "0", "INVALID_THREADS"},
 	    {"--threads", "1025", "INVALID_THREADS"},
@@ -204,6 +240,8 @@ TEST_CASE("numeric resource limits enforce their documented boundaries", "[cli]"
 	    {"--max-input-files", "1000000001", "INVALID_MAX_INPUT_FILES"},
 	    {"--timeout", "0.999ms", "INVALID_TIMEOUT"},
 	    {"--timeout", "10080.001m", "INVALID_TIMEOUT"},
+	    {"--timeout", "168.001h", "INVALID_TIMEOUT"},
+	    {"--timeout", "7.001d", "INVALID_TIMEOUT"},
 	};
 	for (const auto &[option, value, code] : rejected) {
 		CAPTURE(option, value);
@@ -216,10 +254,10 @@ TEST_CASE("numeric resource limits enforce their documented boundaries", "[cli]"
 
 TEST_CASE("exact byte limits truncate fractions and reject invalid or overflowing values", "[cli]") {
 	const std::vector<std::pair<std::string, uint64_t>> accepted {
-	    {"1.999999B", 1},
-	    {"0.001KB", 1},
-	    {"1.234567KiB", 1264},
-	    {"16777215.999999TiB", 18446744073708452104ULL},
+	    {"1.999999B", 1},      {"1K", 1000},
+	    {"0.001KB", 1},        {"64M", 64000000},
+	    {"2G", 2000000000ULL}, {"1T", 1000000000000ULL},
+	    {"1.234567KiB", 1264}, {"16777215.999999TiB", 18446744073708452104ULL},
 	};
 	for (const auto &[value, expected] : accepted) {
 		CAPTURE(value);
@@ -227,7 +265,7 @@ TEST_CASE("exact byte limits truncate fractions and reject invalid or overflowin
 		                          [](const int argc, char **argv) { return sqrail::ParseRun(argc, argv, false); });
 		CHECK(parsed.max_output_bytes == expected);
 	}
-	for (const auto &value : {"0B", "0.999999B", "1K", "1.0000001MiB", "16777216TiB"}) {
+	for (const auto &value : {"0B", "0.999999B", "0K", "1P", "1.0000001MiB", "16777216TiB"}) {
 		CAPTURE(value);
 		CheckError("INVALID_MAX_OUTPUT", [&]() {
 			Parse({"sqrail", "run", "--max-output-bytes", value, "SELECT 1"},
@@ -325,7 +363,7 @@ TEST_CASE("output path validation rejects empty paths and dangling symlinks and 
 	if (!symlink_error) {
 		const auto parsed_symlink_parent =
 		    Parse({"sqrail", "run", "-o", (symlink_parent / "out.parquet").string(), "SELECT 1"},
-		          [](const int argc, char **argv) { return sqrail::ParseRun(argc, argv, false); });
+			      [](const int argc, char **argv) { return sqrail::ParseRun(argc, argv, false); });
 		CHECK(parsed_symlink_parent.output == std::filesystem::weakly_canonical(temp_root / "real") / "out.parquet");
 	}
 }

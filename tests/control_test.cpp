@@ -40,3 +40,25 @@ TEST_CASE("an expired deadline interrupts a statement that starts afterwards", "
 	}
 	CHECK(timed_out);
 }
+
+TEST_CASE("idle execution control without timeout or file polling starts and stops cleanly", "[control]") {
+	duckdb::DuckDB database(nullptr);
+	duckdb::Connection connection(database);
+	{
+		sqrail::ExecutionControl control(connection, std::chrono::steady_clock::now(), std::chrono::milliseconds(0));
+		const auto result = connection.Query("SELECT sum(i) FROM range(10000) t(i)");
+		REQUIRE(!result->HasError());
+		CHECK_NOTHROW(control.Checkpoint("query exceeded --timeout"));
+		control.Stop();
+		control.Stop();
+	}
+
+	sqrail::InstallSignalHandlers();
+	{
+		sqrail::ExecutionControl control(connection, std::chrono::steady_clock::now(), std::chrono::milliseconds(0));
+		const auto result = connection.Query("SELECT sum(i) FROM range(10000) t(i)");
+		REQUIRE(!result->HasError());
+		CHECK_NOTHROW(control.Checkpoint("query exceeded --timeout"));
+		control.Stop();
+	}
+}
