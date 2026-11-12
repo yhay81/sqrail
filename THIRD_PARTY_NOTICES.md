@@ -14,7 +14,7 @@ licence and third-party notices.
 Source: <https://github.com/duckdb/duckdb>
 
 ```text
-Copyright 2018-2025 Stichting DuckDB Foundation
+Copyright 2018-2026 Stichting DuckDB Foundation
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in

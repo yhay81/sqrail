@@ -5,6 +5,17 @@ versions follow semantic versioning.
 
 ## [Unreleased]
 
+### Changed
+
+- the pinned documentation toolchain to Wrangler 4.157.0 and html-validate
+  11.18.0, and the Cloudflare Workers compatibility date to 2026-11-03
+- the pinned release workflow actions to `actions/attest` v4.2.2,
+  `actions/upload-artifact` v7.0.2, and `actions/download-artifact` v8.0.2
+- the pinned C++ development container base image to
+  `mcr.microsoft.com/devcontainers/cpp:3-ubuntu24.04`
+- the DuckDB copyright notice in `THIRD_PARTY_NOTICES.md` to match the bundled
+  DuckDB v2.0.0 license text
+
 ## [0.4.0] - 2026-10-29
 
 ### Added

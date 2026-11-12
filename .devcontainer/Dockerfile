@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/devcontainers/cpp:2-ubuntu-24.04@sha256:2c413470d822e147ef6f2f53f1c2001940fedbb35f39e040ec379ec9a160070f
+FROM mcr.microsoft.com/devcontainers/cpp:3-ubuntu24.04@sha256:1d34d230e61d345eff5fe098c354e186e2f4832780cf4fd19490a3561a355b0a
 
 RUN apt-get update \
     && export DEBIAN_FRONTEND=noninteractive \
