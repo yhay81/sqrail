@@ -15,6 +15,7 @@ const [
   homepage,
   readme,
   discovery,
+  cmake,
 ] = await Promise.all([
   read("skills/sqrail/SKILL.md"),
   read("skills/sqrail/agents/openai.yaml"),
@@ -24,6 +25,7 @@ const [
   read("site/index.html"),
   read("README.md"),
   read("site/llms.txt"),
+  read("CMakeLists.txt"),
 ]);
 
 const frontmatter = skill.match(/^---\n([\s\S]*?)\n---\n/);
@@ -84,6 +86,15 @@ for (const found of new Set(homepageVersions)) {
     `site/index.html still references version ${found}`,
   );
 }
+
+const duckdbVersion = cmake.match(
+  /SQRAIL_PINNED_DUCKDB_VERSION\s+"(v\d+\.\d+\.\d+)"/,
+)?.[1];
+assert(duckdbVersion, "CMakeLists.txt must pin SQRAIL_PINNED_DUCKDB_VERSION");
+assert(
+  homepage.includes(`sqrail embeds DuckDB ${duckdbVersion}.`),
+  `site/index.html must state the pinned DuckDB version (${duckdbVersion})`,
+);
 
 for (const required of [
   "brew install yhay81/tap/sqrail",

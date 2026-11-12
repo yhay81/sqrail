@@ -148,7 +148,7 @@ run_case() {
 
     fingerprint=$(
       output_path=$(sql_quote "$BENCH_OUTPUT")
-      "$duckdb_bin" -csv -noheader -c \
+      "$duckdb_bin" -no-init -csv -noheader -c \
         "SELECT count(*), bit_xor(hash(row_value))
          FROM ${output_reader}('${output_path}') AS row_value"
     )

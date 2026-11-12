@@ -112,6 +112,7 @@
             <div>
               <a href="/docs/reference/contract/" aria-current="page"
                 >CLI contract</a
+              ><a href="/docs/reference/recipes/">Recipes</a
               ><a href="/docs/reference/agents/">Agent integration</a>
             </div>
           </div>
@@ -154,7 +155,7 @@
         </p>
         <div class="docs-markdown">
           <p>
-            This document defines the sqrail v0.3 command and process contract.
+            This document defines the sqrail v0.4 command and process contract.
           </p>
           <h2 id="commands">Commands</h2>
           <pre><code class="language-text">sqrail schema [--memory SIZE] [--threads N] [--timeout DURATION]
@@ -171,10 +172,15 @@ sqrail --version
 </code></pre>
           <p>
             Options may appear before or after the SQL positional argument.
-            Every option that takes a value may appear at most once, except
-            <code>-t</code>, which may be repeated for distinct case-insensitive
-            table names. <code>--</code> ends option parsing, which allows a SQL
-            argument or schema path beginning with <code>-</code>.
+            Every option, including boolean flags, may appear at most once,
+            except <code>-t</code> (<code>--table</code>), which may be repeated
+            for distinct case-insensitive table names. Long aliases
+            <code>--table</code> and <code>--output</code> are accepted for
+            <code>-t</code> and <code>-o</code>; <code>-h</code> and
+            <code>help</code> are accepted for <code>--help</code>;
+            <code>-V</code> is accepted for <code>--version</code>.
+            <code>--</code> ends option parsing, which allows a SQL argument or
+            schema path beginning with <code>-</code>.
           </p>
           <p>
             <code>NAME</code> must match <code>[A-Za-z_][A-Za-z0-9_]*</code>.
@@ -487,7 +493,7 @@ sqrail --version
               </tr>
               <tr>
                 <td class="align-right">5</td>
-                <td>output path or commit</td>
+                <td>output path, write, or commit</td>
               </tr>
               <tr>
                 <td class="align-right">70</td>
@@ -511,10 +517,10 @@ sqrail --version
 
           <a
             class="docs-pagination-link docs-pagination-next"
-            href="/docs/reference/agents/"
+            href="/docs/reference/recipes/"
           >
             <span>Next</span>
-            <strong>Agent integration <span aria-hidden="true">→</span></strong>
+            <strong>Recipes <span aria-hidden="true">→</span></strong>
           </a>
         </nav>
       </article>

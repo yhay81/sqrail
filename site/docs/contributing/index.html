@@ -110,6 +110,7 @@
             <p>Use</p>
             <div>
               <a href="/docs/reference/contract/">CLI contract</a
+              ><a href="/docs/reference/recipes/">Recipes</a
               ><a href="/docs/reference/agents/">Agent integration</a>
             </div>
           </div>
@@ -247,19 +248,25 @@ npm run docs:build
 npm run site:check
 </code></pre>
           <p>
-            Format C++ with the repository <code>.clang-format</code>. CI
-            enforces the same check with <code>clang-format</code> 18, so a
-            different major version can disagree;
-            <code>uvx clang-format@18.1.8</code> provides it when your platform
-            packages another release. Give Zizmor a <code>GH_TOKEN</code> so it
-            runs the online audits CI performs, including the action reference
-            checks a local run otherwise skips. GitHub Actions additionally run
-            CodeQL and audit every workflow with Actionlint and Zizmor. The
-            <code>windows-x64</code> and <code>windows-arm64</code> presets
-            follow the Windows 2025 and Windows 11 Arm64 hosted images, which
-            both provide Visual Studio 2026, and need a CMake version that
-            provides the <code>Visual Studio 18 2026</code> generator. Both
-            select the static MSVC runtime and the Release configuration.
+            Format C++ with the repository <code>.clang-format</code> (<code
+              >uvx clang-format@18.1.8</code
+            >
+            provides LLVM 18 formatting when your platform packages another
+            release) and run
+            <code>tests/static-analysis.sh &lt;build-dir&gt;</code> with
+            <code>clang-tidy</code> before opening a C++ change. Audit workflow
+            edits with <code>actionlint</code> and <code>zizmor</code> (give
+            Zizmor a <code>GH_TOKEN</code> when you want online action-reference
+            checks in addition to offline audits). Pull request CI
+            (<code>.github/workflows/ci.yml</code>) runs whitespace/diff hygiene
+            and <code>npm run site:check</code>, while tagged release builds
+            (<code>.github/workflows/release.yml</code>) compile, test, package,
+            and attest all six targets. The <code>windows-x64</code> and
+            <code>windows-arm64</code> presets follow the Windows 2025 and
+            Windows 11 Arm64 hosted images, which both provide Visual Studio
+            2026, and need a CMake version that provides the
+            <code>Visual Studio 18 2026</code> generator. Both select the static
+            MSVC runtime and the Release configuration.
           </p>
           <p>
             The <code>core</code> workflow runs Catch2-based native unit tests

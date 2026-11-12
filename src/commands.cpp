@@ -11,9 +11,9 @@
 
 #include <chrono>
 #include <cstdint>
+#include <cstdio>
 #include <filesystem>
 #include <iostream>
-#include <sstream>
 #include <string>
 #include <system_error>
 #include <utility>
@@ -84,7 +84,7 @@ int Execute(int argc, char **argv, const bool check_only) {
 			}
 			std::cout << "{\"schema_version\":1,\"sqrail_version\":\"" << SQRAIL_VERSION
 			          << "\",\"ok\":true,\"columns\":" << columns << ",\"inputs\":" << InputBindingsJson(options.tables)
-			          << ",\"plan\":" << StrictJson(plan) << "}\n";
+			          << ",\"plan\":" << StrictJson(std::move(plan)) << "}\n";
 			if (!std::cout) {
 				throw SqrailError(EXIT_OUTPUT, "STDOUT_WRITE", "cannot write query plan to stdout");
 			}
@@ -179,7 +179,15 @@ int Schema(int argc, char **argv) {
 
 	try {
 		for (const auto &raw_source : options.sources) {
-			const auto source = fs::absolute(fs::path(raw_source)).lexically_normal().string();
+			if (raw_source.empty()) {
+				throw SqrailError(EXIT_INPUT, "INPUT_NOT_FOUND", "input path must not be empty");
+			}
+			std::error_code source_error;
+			const auto source = fs::absolute(fs::path(raw_source), source_error).lexically_normal().string();
+			if (source_error) {
+				throw SqrailError(EXIT_INPUT, "INPUT_NOT_FOUND",
+				                  "cannot resolve input path: " + raw_source + ": " + source_error.message());
+			}
 			auto paths =
 			    ResolveInputSet(database, source, control, allowed_paths.size(), options.resources.max_input_files);
 			allowed_paths.insert(allowed_paths.end(), paths.begin(), paths.end());
@@ -203,9 +211,15 @@ int Schema(int argc, char **argv) {
 			auto result = connection.Query("DESCRIBE SELECT * FROM " + SqlIdentifier(view_name));
 			CheckResult(result, "SCHEMA_INFERENCE_FAILED");
 
-			std::ostringstream output;
-			output << "{\"schema_version\":1,\"sqrail_version\":\"" << SQRAIL_VERSION << "\",\"file\":\""
-			       << JsonEscape(input.source) << "\",\"files\":" << input.paths.size() << ",\"columns\":[";
+			std::string output;
+			output.reserve(256);
+			output += "{\"schema_version\":1,\"sqrail_version\":\"";
+			output += SQRAIL_VERSION;
+			output += "\",\"file\":\"";
+			output += JsonEscape(input.source);
+			output += "\",\"files\":";
+			output += std::to_string(input.paths.size());
+			output += ",\"columns\":[";
 			bool first = true;
 			while (true) {
 				auto chunk = result->Fetch();
@@ -214,18 +228,23 @@ int Schema(int argc, char **argv) {
 				}
 				for (duckdb::idx_t row = 0; row < chunk->size(); ++row) {
 					if (!first) {
-						output << ',';
+						output.push_back(',');
 					}
 					first = false;
 					const auto name = chunk->GetValue(0, row).ToString();
 					const auto type = chunk->GetValue(1, row).ToString();
 					const auto nullable = chunk->GetValue(2, row).ToString();
-					output << "{\"name\":\"" << JsonEscape(name) << "\",\"type\":\"" << JsonEscape(type)
-					       << "\",\"nullable\":" << (nullable == "YES" ? "true" : "false") << '}';
+					output += "{\"name\":\"";
+					output += JsonEscape(name);
+					output += "\",\"type\":\"";
+					output += JsonEscape(type);
+					output += "\",\"nullable\":";
+					output += (nullable == "YES" ? "true" : "false");
+					output.push_back('}');
 				}
 			}
-			output << "]}\n";
-			std::cout << output.str();
+			output += "]}\n";
+			std::cout << output;
 			if (!std::cout) {
 				throw SqrailError(EXIT_OUTPUT, "STDOUT_WRITE", "cannot write schema result to stdout");
 			}
@@ -273,9 +292,16 @@ void PrintHelp() {
 	    << "  sqrail run -t sales=sales.csv -o result.parquet - < query.sql\n";
 }
 
-void PrintError(const std::string &code, const std::string &message) {
-	std::cerr << "{\"schema_version\":1,\"sqrail_version\":\"" << SQRAIL_VERSION << "\",\"ok\":false,\"code\":\""
-	          << JsonEscape(code) << "\",\"message\":\"" << JsonEscape(message) << "\"}\n";
+void PrintError(const std::string_view code, const std::string_view message) noexcept {
+	try {
+		std::cerr << "{\"schema_version\":1,\"sqrail_version\":\"" << SQRAIL_VERSION << "\",\"ok\":false,\"code\":\""
+		          << JsonEscape(code) << "\",\"message\":\"" << JsonEscape(message) << "\"}\n";
+	} catch (...) {
+		constexpr std::string_view fallback =
+		    "{\"schema_version\":1,\"sqrail_version\":\"" SQRAIL_VERSION
+		    "\",\"ok\":false,\"code\":\"INTERNAL\",\"message\":\"error reporting failed\"}\n";
+		(void)std::fwrite(fallback.data(), 1U, fallback.size(), stderr);
+	}
 }
 
 } // namespace sqrail

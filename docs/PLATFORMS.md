@@ -9,8 +9,8 @@ layout, and release packaging all pass on that target.
 
 | Tier      | Target                                            | CI runner                              | Release archive    |
 | --------- | ------------------------------------------------- | -------------------------------------- | ------------------ |
-| 1         | Linux x86-64                                      | Ubuntu 24.04 x64                       | `.tar.gz`          |
-| 1         | Linux Arm64                                       | Ubuntu 24.04 Arm64                     | `.tar.gz`          |
+| 1         | Linux x86-64                                      | Ubuntu 22.04 x64                       | `.tar.gz`          |
+| 1         | Linux Arm64                                       | Ubuntu 22.04 Arm64                     | `.tar.gz`          |
 | 1         | macOS x86-64                                      | macOS 15 Intel                         | `.tar.gz`          |
 | 1         | macOS Arm64                                       | macOS 15 Arm64                         | `.tar.gz`          |
 | 1         | Windows x86-64                                    | Windows 2025 x64                       | `.zip`             |

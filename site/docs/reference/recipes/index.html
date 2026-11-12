@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Copy-and-run examples for schema inspection, conversion, joins, partitioned Parquet, and JSONL validation."
+    />
+    <meta name="theme-color" content="#090a09" />
+    <meta property="og:title" content="Recipes — sqrail" />
+    <meta
+      property="og:description"
+      content="Copy-and-run examples for schema inspection, conversion, joins, partitioned Parquet, and JSONL validation."
+    />
+    <meta property="og:type" content="article" />
+    <meta
+      property="og:url"
+      content="https://sqrail.yhay81.com/docs/reference/recipes/"
+    />
+    <meta
+      property="og:image"
+      content="https://sqrail.yhay81.com/social-card.png"
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link
+      rel="canonical"
+      href="https://sqrail.yhay81.com/docs/reference/recipes/"
+    />
+    <link
+      rel="alternate"
+      type="text/markdown"
+      href="https://raw.githubusercontent.com/yhay81/sqrail/main/docs/RECIPES.md"
+    />
+    <title>Recipes — sqrail documentation</title>
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="/app.js" defer></script>
+  </head>
+  <body class="docs-body">
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header" data-site-header>
+      <div class="nav">
+        <div class="nav-brand">
+          <a class="wordmark" href="/" aria-label="sqrail home">
+            <span class="wordmark-mark" aria-hidden="true"></span>
+            sqrail
+          </a>
+          <span class="nav-tagline">Agent-safe SQL on files</span>
+        </div>
+        <nav class="nav-links" aria-label="Primary">
+          <a href="/docs/">Get started</a>
+          <a href="/docs/agents/">Agent setup</a>
+          <a href="/docs/reference/contract/" aria-current="location"
+            >Reference</a
+          >
+        </nav>
+        <div class="nav-actions">
+          <a
+            class="github-repo"
+            data-github-repo
+            href="https://github.com/yhay81/sqrail"
+            aria-label="View yhay81/sqrail on GitHub — 1 star"
+          >
+            <svg
+              class="github-icon"
+              viewBox="0 0 16 16"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <path
+                d="M8 0C3.58 0 0 3.64 0 8.13c0 3.59 2.29 6.64 5.47 7.71.4.08.55-.18.55-.39 0-.19-.01-.83-.01-1.51-2.01.38-2.53-.5-2.69-.96-.09-.23-.48-.96-.82-1.15-.28-.15-.68-.54-.01-.55.63-.01 1.08.59 1.23.83.72 1.23 1.87.88 2.33.67.07-.53.28-.88.51-1.08-1.78-.2-3.64-.9-3.64-4.01 0-.89.31-1.62.82-2.19-.08-.2-.36-1.04.08-2.16 0 0 .67-.22 2.2.84A7.48 7.48 0 0 1 8 3.91c.68 0 1.36.09 2 .27 1.53-1.06 2.2-.84 2.2-.84.44 1.12.16 1.96.08 2.16.51.57.82 1.3.82 2.19 0 3.12-1.87 3.81-3.65 4.01.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.47.55.39A8.13 8.13 0 0 0 16 8.13C16 3.64 12.42 0 8 0Z"
+              />
+            </svg>
+            <span class="github-label">GitHub</span>
+            <span class="github-stars">
+              <svg
+                class="github-star-icon"
+                viewBox="0 0 16 16"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <path
+                  d="M8 0.25a0.75 0.75 0 0 1 0.673 0.418l1.882 3.815 4.21 0.612a0.75 0.75 0 0 1 0.416 1.279l-3.046 2.97 0.719 4.193a0.75 0.75 0 0 1-1.088 0.79L8 12.347l-3.766 1.98a0.75 0.75 0 0 1-1.088-0.79l0.719-4.194L0.819 6.374a0.75 0.75 0 0 1 0.416-1.28l4.21-0.611 1.882-3.815A0.75 0.75 0 0 1 8 0.25Z"
+                />
+              </svg>
+              <span
+                class="github-star-count"
+                data-github-stars
+                aria-live="polite"
+                >1</span
+              >
+            </span>
+          </a>
+          <a class="nav-install" href="/docs/">Install</a>
+        </div>
+      </div>
+    </header>
+
+    <main class="docs-shell docs-shell-reference" id="main">
+      <aside class="docs-sidebar" aria-label="Documentation navigation">
+        <p class="docs-sidebar-title">sqrail docs</p>
+        <nav class="docs-global-nav" aria-label="Documentation pages">
+          <div class="docs-nav-group">
+            <p>Start</p>
+            <div>
+              <a href="/docs/">Quick start</a
+              ><a href="/docs/agents/">Agent setup</a>
+            </div>
+          </div>
+          <div class="docs-nav-group">
+            <p>Use</p>
+            <div>
+              <a href="/docs/reference/contract/">CLI contract</a
+              ><a href="/docs/reference/recipes/" aria-current="page">Recipes</a
+              ><a href="/docs/reference/agents/">Agent integration</a>
+            </div>
+          </div>
+          <div class="docs-nav-group">
+            <p>Operate</p>
+            <div>
+              <a href="/docs/reference/performance/">Performance</a
+              ><a href="/docs/reference/benchmarks/">Benchmark policy</a
+              ><a href="/docs/reference/platforms/">Platforms</a
+              ><a href="/docs/security/">Security</a>
+            </div>
+          </div>
+          <div class="docs-nav-group">
+            <p>Project</p>
+            <div>
+              <a href="/docs/contributing/">Contributing</a
+              ><a href="/docs/contributing/testing/">Testing</a
+              ><a href="/docs/contributing/support/">Support</a
+              ><a href="/docs/contributing/code-of-conduct/">Code of Conduct</a>
+            </div>
+          </div>
+        </nav>
+      </aside>
+
+      <article class="docs-content docs-reference-content">
+        <div class="docs-page-meta">
+          <p class="eyebrow"><span>Reference</span> sqrail docs</p>
+          <a
+            class="docs-markdown-link"
+            href="https://raw.githubusercontent.com/yhay81/sqrail/main/docs/RECIPES.md"
+            type="text/markdown"
+          >
+            Markdown <span aria-hidden="true">↗</span>
+          </a>
+        </div>
+        <h1>Recipes</h1>
+        <p class="docs-deck">
+          Copy-and-run examples for schema inspection, conversion, joins,
+          partitioned Parquet, and JSONL validation.
+        </p>
+        <div class="docs-markdown">
+          <p>
+            &lt;!-- tests/smoke.sh runs every sh block in order and requires
+            each line of every text block to appear in the output. --&gt;
+          </p>
+          <p>
+            Copy-pasteable sqrail commands for common file tasks. Each recipe
+            states its inputs, the command, what it writes, and the limit that
+            matters most. The recipes use a POSIX shell and run in order against
+            the sample files from the first section, so the whole page can be
+            executed in an empty directory.
+          </p>
+          <p>
+            The <a href="/docs/reference/contract/">CLI contract</a> is
+            normative for every option and diagnostic used here.
+          </p>
+          <h2 id="sample-files">Sample files</h2>
+          <p>
+            sqrail can write its own fixtures. These commands create a CSV of
+            sales, a Parquet table of drug names, a JSONL file of trial records,
+            and a Hive-partitioned Parquet directory of events:
+          </p>
+          <pre><code class="language-sh">sqrail run -o sales.csv \
+  &quot;SELECT * FROM (VALUES (1, 'alpha', 10), (2, 'beta', 20), (1, 'alpha', 15)) AS sales(drug_id, name, amount)&quot;
+sqrail run -o drugs.parquet \
+  &quot;SELECT * FROM (VALUES (1, 'Alphazol'), (2, 'Betamab')) AS drugs(drug_id, drug_name)&quot;
+sqrail run -o trials.jsonl \
+  &quot;SELECT * FROM (VALUES (1, 2, 'active'), (2, 3, 'active'), (3, NULL, 'withdrawn')) AS trials(drug_id, phase, status)&quot;
+mkdir -p events/year=2025 events/year=2026
+sqrail run -o events/year=2025/part-0.parquet \
+  'SELECT i AS event_id, i % 2 + 1 AS drug_id FROM range(4) AS t(i)'
+sqrail run -o events/year=2026/part-0.parquet \
+  'SELECT i AS event_id, i % 2 + 1 AS drug_id FROM range(4, 10) AS t(i)'
+</code></pre>
+          <h2 id="inspect-a-schema">Inspect a schema</h2>
+          <ul>
+            <li>
+              <strong>Inputs:</strong> any supported file, Parquet directory, or
+              glob.
+            </li>
+            <li>
+              <strong>Output:</strong> one JSON object per argument on stdout,
+              with the resolved file count and each column’s name, type, and
+              nullability.
+            </li>
+            <li>
+              <strong>Limit that matters:</strong>
+              <code>--max-input-files</code> stops directory and glob expansion
+              as soon as the cumulative count exceeds the cap.
+            </li>
+          </ul>
+          <pre><code class="language-sh">sqrail schema --max-input-files 100 sales.csv events
+</code></pre>
+          <p>
+            The <code>events</code> object reports two files and includes the
+            Hive partition column:
+          </p>
+          <pre><code class="language-text">{&quot;name&quot;:&quot;year&quot;,&quot;type&quot;:&quot;BIGINT&quot;,&quot;nullable&quot;:true}
+</code></pre>
+          <p>Skip this step when the names and types are already known.</p>
+          <h2 id="convert-csv-to-parquet">Convert CSV to Parquet</h2>
+          <ul>
+            <li>
+              <strong>Inputs:</strong> one CSV file bound as <code>sales</code>.
+            </li>
+            <li>
+              <strong>Output:</strong> nothing on stdout.
+              <code>-o</code> selects the format from the extension, writes a
+              private temporary file, and commits it atomically. An existing
+              destination is never overwritten; sqrail fails with
+              <code>OUTPUT_EXISTS</code> (exit 5) instead.
+            </li>
+            <li>
+              <strong>Limit that matters:</strong> <code>--memory</code> bounds
+              the sort. Add <code>--spill DIR</code> and
+              <code>--max-spill SIZE</code> for inputs that do not fit, and
+              <code>--max-output-bytes</code> to cap the file.
+            </li>
+          </ul>
+          <pre><code class="language-sh">sqrail run --memory 512MB -t sales=sales.csv -o sales.parquet \
+  'SELECT drug_id, name, amount FROM sales ORDER BY drug_id, amount'
+</code></pre>
+          <h2 id="join-csv-and-parquet">Join CSV and Parquet</h2>
+          <ul>
+            <li>
+              <strong>Inputs:</strong> <code>sales.csv</code> bound as
+              <code>sales</code> and <code>drugs.parquet</code> bound as
+              <code>drugs</code>.
+            </li>
+            <li>
+              <strong>Output:</strong> <code>check</code> prints the result
+              columns, the bound inputs, and the physical plan without executing
+              the query. <code>run</code> streams JSONL rows.
+            </li>
+            <li>
+              <strong>Limit that matters:</strong> <code>--max-rows</code> fails
+              with <code>RESULT_LIMIT</code> (exit 4) instead of returning a
+              silently truncated result. Streaming stdout may already contain a
+              valid prefix of at most that many rows.
+            </li>
+          </ul>
+          <p>
+            Keep the query in a file when quoting would otherwise be awkward,
+            then check it before running it:
+          </p>
+          <pre><code class="language-sh">cat &gt; top-drugs.sql &lt;&lt;'SQL'
+SELECT d.drug_name, sum(s.amount) AS total
+FROM sales AS s
+JOIN drugs AS d USING (drug_id)
+GROUP BY d.drug_name
+ORDER BY total DESC
+SQL
+sqrail check -t sales=sales.csv -t drugs=drugs.parquet - &lt; top-drugs.sql
+sqrail run --max-rows 100 -t sales=sales.csv -t drugs=drugs.parquet - &lt; top-drugs.sql
+</code></pre>
+          <pre><code class="language-text">{&quot;drug_name&quot;:&quot;Alphazol&quot;,&quot;total&quot;:25}
+{&quot;drug_name&quot;:&quot;Betamab&quot;,&quot;total&quot;:20}
+</code></pre>
+          <h2 id="filter-partitioned-parquet">Filter partitioned Parquet</h2>
+          <ul>
+            <li>
+              <strong>Inputs:</strong> the <code>events</code> directory bound
+              as one table. Every Parquet file beneath it is read, and
+              <code>key=value</code> directory names such as
+              <code>year=2026</code> become columns.
+            </li>
+            <li><strong>Output:</strong> JSONL rows on stdout.</li>
+            <li>
+              <strong>Limit that matters:</strong>
+              <code>--max-input-files</code> fails with
+              <code>INPUT_LIMIT</code> (exit 3) before a directory that is
+              larger than expected is read.
+            </li>
+          </ul>
+          <pre><code class="language-sh">sqrail run --max-input-files 100 -t events=events \
+  'SELECT drug_id, count(*) AS events FROM events WHERE year = 2026 GROUP BY drug_id ORDER BY drug_id'
+</code></pre>
+          <pre><code class="language-text">{&quot;drug_id&quot;:1,&quot;events&quot;:3}
+{&quot;drug_id&quot;:2,&quot;events&quot;:3}
+</code></pre>
+          <h2 id="validate-and-aggregate-jsonl">
+            Validate and aggregate JSONL
+          </h2>
+          <ul>
+            <li>
+              <strong>Inputs:</strong> <code>trials.jsonl</code> bound as
+              <code>trials</code>.
+            </li>
+            <li>
+              <strong>Output:</strong> one JSONL row on stdout.
+              <code>--stats</code> adds one versioned success object on stderr
+              with the row count, bytes written, elapsed time, and input file
+              count.
+            </li>
+            <li>
+              <strong>Limit that matters:</strong> <code>--timeout</code> puts
+              one deadline on input discovery, schema inference, planning, and
+              execution. <code>--memory</code> and <code>--max-rows</code> bound
+              the rest of the work.
+            </li>
+          </ul>
+          <p>
+            A malformed line is never skipped: the command fails with one JSON
+            diagnostic on stderr and exit 4, so a successful aggregate covers
+            every record. The query then reports the records that are present
+            but incomplete:
+          </p>
+          <pre><code class="language-sh">sqrail run --stats --timeout 30s --memory 256MB --max-rows 10 \
+  -t trials=trials.jsonl - &lt;&lt;'SQL'
+SELECT
+  count(*) AS records,
+  count(*) FILTER (WHERE phase IS NULL) AS missing_phase,
+  count(DISTINCT drug_id) AS drugs
+FROM trials
+SQL
+</code></pre>
+          <pre><code class="language-text">{&quot;records&quot;:3,&quot;missing_phase&quot;:1,&quot;drugs&quot;:3}
+</code></pre>
+          <p>
+            When several JSONL files must share one exact schema, add
+            <code>--strict-schema</code>; by default files are combined by
+            column name.
+          </p>
+        </div>
+
+        <nav
+          class="docs-pagination"
+          aria-label="Previous and next documentation pages"
+        >
+          <a
+            class="docs-pagination-link docs-pagination-previous"
+            href="/docs/reference/contract/"
+          >
+            <span>Previous</span>
+            <strong><span aria-hidden="true">←</span> CLI contract</strong>
+          </a>
+
+          <a
+            class="docs-pagination-link docs-pagination-next"
+            href="/docs/reference/agents/"
+          >
+            <span>Next</span>
+            <strong>Agent integration <span aria-hidden="true">→</span></strong>
+          </a>
+        </nav>
+      </article>
+
+      <aside class="docs-page-sidebar" aria-label="On this page">
+        <p>On this page</p>
+        <nav class="docs-section-nav" aria-label="Page sections">
+          <a href="#sample-files" aria-current="location">Sample files</a>
+          <a href="#inspect-a-schema">Inspect a schema</a>
+          <a href="#convert-csv-to-parquet">Convert CSV to Parquet</a>
+          <a href="#join-csv-and-parquet">Join CSV and Parquet</a>
+          <a href="#filter-partitioned-parquet">Filter partitioned Parquet</a>
+          <a href="#validate-and-aggregate-jsonl"
+            >Validate and aggregate JSONL</a
+          >
+        </nav>
+      </aside>
+    </main>
+
+    <footer>
+      <a class="wordmark" href="/">
+        <span class="wordmark-mark" aria-hidden="true"></span>
+        sqrail
+      </a>
+      <p>One query at a time.</p>
+      <div>
+        <a href="/docs/">Docs</a>
+        <a href="https://github.com/yhay81/sqrail">Source</a>
+        <a href="https://github.com/yhay81/sqrail/discussions">Community</a>
+        <a href="https://github.com/yhay81/sqrail/releases">Releases</a>
+      </div>
+    </footer>
+  </body>
+</html>

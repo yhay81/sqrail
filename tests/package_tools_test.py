@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -126,6 +127,33 @@ class PackageToolsTest(unittest.TestCase):
             )
             completion = prefix / datadir / "bash-completion" / "completions" / "sqrail"
             self.assertEqual(completion.read_bytes(), COMPLETION.read_bytes())
+            docdir = prefix / datadir / "doc" / "sqrail"
+            for relative in (
+                "README.md",
+                "CONTRIBUTING.md",
+                "SUPPORT.md",
+                "CODE_OF_CONDUCT.md",
+                "docs/README.md",
+                "docs/RECIPES.md",
+                "docs/CONTRACT.md",
+            ):
+                self.assertTrue((docdir / relative).is_file(), relative)
+            self.assertTrue(
+                (prefix / datadir / "sqrail" / "skills" / "sqrail" / "SKILL.md").is_file()
+            )
+            link_pattern = re.compile(r"\[[^\]]*\]\(([^)#\s]+\.md)(?:#[^)]*)?\)")
+            for markdown in sorted(docdir.rglob("*.md")):
+                stripped = re.sub(
+                    r"```.*?```", "", markdown.read_text(encoding="utf-8"), flags=re.DOTALL
+                )
+                for match in link_pattern.finditer(stripped):
+                    target = match.group(1)
+                    if "://" in target or target.endswith("skills/sqrail/SKILL.md"):
+                        continue
+                    self.assertTrue(
+                        (markdown.parent / target).resolve().is_file(),
+                        f"broken installed doc link in {markdown.relative_to(docdir)}: {target}",
+                    )
 
 
 @unittest.skipIf(os.name == "nt" or shutil.which("bash") is None, "Bash completion is POSIX-only")
@@ -192,7 +220,15 @@ class BashCompletionTest(unittest.TestCase):
             ["--max-spill", "--max-rows", "--max-output-bytes", "--max-input-files", "--max-sql-bytes"],
         )
         self.assertEqual(self.complete("sqrail", "run", "--st"), ["--stats", "--strict-schema"])
-        for option in ("-t", "--memory", "--threads", "--max-spill", "--timeout", "--max-rows"):
+        for option in (
+            "-t",
+            "--table",
+            "--memory",
+            "--threads",
+            "--max-spill",
+            "--timeout",
+            "--max-rows",
+        ):
             with self.subTest(option=option):
                 self.assertEqual(self.complete("sqrail", "run", option, ""), [])
         self.assertEqual(self.complete("sqrail", "run", "SELECT"), [])
@@ -205,8 +241,16 @@ class BashCompletionTest(unittest.TestCase):
             sorted(self.complete("sqrail", "run", "-t", "sales", "=")),
             ["-odd.csv", "data", "data.csv", "other.parquet", "spill dir"],
         )
+        self.assertEqual(
+            sorted(self.complete("sqrail", "run", "--table", "sales", "=")),
+            ["-odd.csv", "data", "data.csv", "other.parquet", "spill dir"],
+        )
         self.assertEqual(self.complete("sqrail", "check", "-t", "sales", "=", "o"), ["other.parquet"])
+        self.assertEqual(
+            self.complete("sqrail", "check", "--table", "sales", "=", "o"), ["other.parquet"]
+        )
         self.assertEqual(self.complete("sqrail", "run", "-o", "o"), ["other.parquet"])
+        self.assertEqual(self.complete("sqrail", "run", "--output", "o"), ["other.parquet"])
         self.assertEqual(sorted(self.complete("sqrail", "run", "--spill", "")), ["data", "spill dir"])
         self.assertEqual(sorted(self.complete("sqrail", "run", "-", "<", "da")), ["data", "data.csv"])
 

@@ -37,7 +37,7 @@ const headerLinks = [
 
 const docsGroups = [
   ["Start", "Quick start", "Agent setup"],
-  ["Use", "CLI contract", "Agent integration"],
+  ["Use", "CLI contract", "Recipes", "Agent integration"],
   ["Operate", "Performance", "Benchmark policy", "Platforms", "Security"],
   ["Project", "Contributing", "Testing", "Support", "Code of Conduct"],
 ];
@@ -49,6 +49,11 @@ const docsSequence = [
     "site/docs/reference/contract/index.html",
     "/docs/reference/contract/",
     "CLI contract",
+  ],
+  [
+    "site/docs/reference/recipes/index.html",
+    "/docs/reference/recipes/",
+    "Recipes",
   ],
   [
     "site/docs/reference/agents/index.html",

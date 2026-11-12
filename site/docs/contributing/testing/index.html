@@ -113,6 +113,7 @@
             <p>Use</p>
             <div>
               <a href="/docs/reference/contract/">CLI contract</a
+              ><a href="/docs/reference/recipes/">Recipes</a
               ><a href="/docs/reference/agents/">Agent integration</a>
             </div>
           </div>
@@ -159,8 +160,8 @@
           <p>
             sqrail separates native product tests from Python-based integration
             and research tooling. A contributor can build and test the C++
-            product without a Python interpreter, while repository CI still
-            exercises every layer.
+            product without a Python interpreter, while the full CMake workflow
+            presets and release builds exercise every layer.
           </p>
           <h2 id="test-layers">Test layers</h2>
           <table>
@@ -216,7 +217,7 @@
             ordinary source configure does not require a Python interpreter.
           </p>
           <p>
-            Catch2 v3.15.3 is fetched at an immutable commit when native tests
+            Catch2 v3.16.1 is fetched at an immutable commit when native tests
             are enabled. It is a build-only dependency: neither the sqrail
             executable nor release archives contain the test framework.
           </p>
@@ -230,9 +231,13 @@
           <p>
             The <code>dev</code>, <code>release</code>, <code>strict</code>,
             <code>sanitize</code>, <code>thread</code>, <code>system</code>, and
-            Windows presets inherit the full test configuration used by CI. The
-            <code>fuzz</code> preset turns off every other test layer and builds
-            only the two libFuzzer targets.
+            Windows presets inherit the full test configuration executed locally
+            and in the multi-platform release workflow
+            (<code>.github/workflows/release.yml</code>), while pull request CI
+            (<code>.github/workflows/ci.yml</code>) runs fast repository hygiene
+            and documentation/site verification. The <code>fuzz</code> preset
+            turns off every other test layer and builds only the two libFuzzer
+            targets.
           </p>
           <p>
             The execution-control unit test links the embedded DuckDB engine.

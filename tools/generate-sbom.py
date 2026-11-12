@@ -29,12 +29,14 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def digest(path: Path, algorithm: str) -> str:
-    value = hashlib.new(algorithm)
+def digests(path: Path) -> tuple[str, str]:
+    sha256_value = hashlib.sha256()
+    sha1_value = hashlib.sha1()
     with path.open("rb") as handle:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            value.update(chunk)
-    return value.hexdigest()
+            sha256_value.update(chunk)
+            sha1_value.update(chunk)
+    return sha256_value.hexdigest(), sha1_value.hexdigest()
 
 
 def main() -> int:
@@ -55,7 +57,8 @@ def main() -> int:
         if not path.is_file() or path == output:
             continue
         relative = "./" + path.relative_to(root).as_posix()
-        files.append((relative, path, digest(path, "sha256"), digest(path, "sha1")))
+        sha256_value, sha1_value = digests(path)
+        files.append((relative, path, sha256_value, sha1_value))
     if not files:
         raise ValueError("installed tree contains no files")
 

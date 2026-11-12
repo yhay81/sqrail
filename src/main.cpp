@@ -6,6 +6,7 @@
 #include <exception>
 #include <iostream>
 #include <string>
+#include <string_view>
 
 int main(int argc, char **argv) {
 	try {
@@ -15,7 +16,7 @@ int main(int argc, char **argv) {
 			return sqrail::EXIT_USAGE;
 		}
 
-		const std::string command = argv[1];
+		const std::string_view command = argv[1];
 		if (command == "--help" || command == "-h" || command == "help") {
 			sqrail::PrintHelp();
 			return 0;
@@ -34,7 +35,7 @@ int main(int argc, char **argv) {
 			return sqrail::Execute(argc, argv, true);
 		}
 
-		throw sqrail::SqrailError(sqrail::EXIT_USAGE, "UNKNOWN_COMMAND", "unknown command: " + command);
+		throw sqrail::SqrailError(sqrail::EXIT_USAGE, "UNKNOWN_COMMAND", "unknown command: " + std::string(command));
 	} catch (const sqrail::SqrailError &error) {
 		sqrail::PrintError(error.code, error.what());
 		return error.exit_code;

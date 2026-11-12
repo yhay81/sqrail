@@ -21,6 +21,11 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://sqrail.yhay81.com/docs/reference/recipes/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://sqrail.yhay81.com/docs/reference/agents/</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>

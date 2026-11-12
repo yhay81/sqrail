@@ -1,5 +1,7 @@
 #include "result.hpp"
 
+#include "duckdb/common/error_data.hpp"
+#include "duckdb/common/exception.hpp"
 #include "duckdb/common/file_open_flags.hpp"
 #include "duckdb/common/file_system.hpp"
 #include "error.hpp"
@@ -8,6 +10,7 @@
 
 #include <chrono>
 #include <cstdint>
+#include <exception>
 #include <filesystem>
 #include <iostream>
 #include <string>
@@ -86,7 +89,15 @@ uint64_t CopyToFile(duckdb::Connection &connection, const std::string &sql, cons
 	const std::string copy_sql =
 	    "COPY (" + sql + ") TO " + SqlString(temporary.string()) + " (" + CopyOptionsFor(output) + ")";
 	auto result = connection.Query(copy_sql);
-	CheckResult(result);
+	if (result->HasError()) {
+		const auto error_type = result->GetErrorType();
+		const auto &message = result->GetError();
+		if ((error_type == duckdb::ExceptionType::IO || error_type == duckdb::ExceptionType::PERMISSION) &&
+		    message.find(temporary.string()) != std::string::npos) {
+			throw SqrailError(EXIT_OUTPUT, "OUTPUT_WRITE", message);
+		}
+		CheckResult(result);
+	}
 	if (result->RowCount() != 1 || result->ColumnCount() != 1) {
 		throw SqrailError(EXIT_INTERNAL, "INTERNAL", "DuckDB COPY returned an unexpected result shape");
 	}
@@ -116,7 +127,7 @@ uint64_t StreamJson(duckdb::Connection &connection, const std::string &sql, cons
 
 	constexpr std::size_t buffer_capacity = std::size_t {1024} * 1024U;
 	std::string buffer;
-	buffer.reserve(buffer_capacity);
+	buffer.reserve(buffer_capacity + 2U);
 	uint64_t rows = 0;
 
 	const auto flush = [&]() {
@@ -162,10 +173,10 @@ uint64_t StreamJson(duckdb::Connection &connection, const std::string &sql, cons
 				} else {
 					const auto &value = values[index];
 					const std::string_view json(value.GetData(), value.GetSize());
-					if (json.find("NaN") == std::string_view::npos && json.find("Infinity") == std::string_view::npos) {
+					if (!HasNonFiniteJsonToken(json)) {
 						append(json);
 					} else {
-						append(StrictJson(std::string(json)));
+						append(RewriteNonFiniteJson(json));
 					}
 				}
 				if (!array) {
@@ -191,16 +202,30 @@ uint64_t StreamJson(duckdb::Connection &connection, const std::string &sql, cons
 
 uint64_t WriteJsonFile(duckdb::DuckDB &database, duckdb::Connection &connection, const std::string &sql,
                        const fs::path &temporary, const FileType &type, const uint64_t max_rows) {
+	PrivateCreationMask private_creation;
 	auto flags = duckdb::FileFlags::FILE_FLAGS_WRITE | duckdb::FileFlags::FILE_FLAGS_FILE_CREATE |
 	             duckdb::FileFlags::FILE_FLAGS_EXCLUSIVE_CREATE | duckdb::FileFlags::FILE_FLAGS_PRIVATE |
 	             duckdb::FileOpenFlags(CompressionTypeFor(type));
 	auto &file_system = database.instance->GetFileSystem();
-	auto handle = file_system.OpenFile(temporary.string(), flags);
+	duckdb::unique_ptr<duckdb::FileHandle> handle;
+	try {
+		handle = file_system.OpenFile(temporary.string(), flags);
+	} catch (const std::exception &error) {
+		throw SqrailError(EXIT_OUTPUT, "OUTPUT_WRITE", duckdb::ErrorData(error).Message());
+	}
 	const ResultWriter write = [&](const char *data, const std::size_t size) {
-		handle->Write(const_cast<char *>(data), size);
+		try {
+			handle->Write(const_cast<char *>(data), size);
+		} catch (const std::exception &error) {
+			throw SqrailError(EXIT_OUTPUT, "OUTPUT_WRITE", duckdb::ErrorData(error).Message());
+		}
 	};
 	const auto rows = StreamJson(connection, sql, type.extension == ".json", max_rows, write);
-	handle->Close();
+	try {
+		handle->Close();
+	} catch (const std::exception &error) {
+		throw SqrailError(EXIT_OUTPUT, "OUTPUT_WRITE", duckdb::ErrorData(error).Message());
+	}
 	return rows;
 }
 

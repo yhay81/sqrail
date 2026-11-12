@@ -59,7 +59,7 @@ case $engine in
         exit 2
         ;;
     esac
-    "$DUCKDB_BIN" -no-stdin -c "
+    "$DUCKDB_BIN" -no-init -no-stdin -c "
 SET memory_limit = '$(sql_quote "$BENCH_MEMORY")';
 SET temp_directory = '$(sql_quote "$BENCH_SPILL")';
 SET max_temp_directory_size = '$(sql_quote "$BENCH_MAX_SPILL")';

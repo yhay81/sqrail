@@ -79,12 +79,15 @@ npm run docs:build
 npm run site:check
 ```
 
-Format C++ with the repository `.clang-format`. CI enforces the same check with
-`clang-format` 18, so a different major version can disagree; `uvx
-clang-format@18.1.8` provides it when your platform packages another release.
-Give Zizmor a `GH_TOKEN` so it runs the online audits CI performs, including the
-action reference checks a local run otherwise skips. GitHub Actions additionally
-run CodeQL and audit every workflow with Actionlint and Zizmor. The `windows-x64`
+Format C++ with the repository `.clang-format` (`uvx clang-format@18.1.8`
+provides LLVM 18 formatting when your platform packages another release) and run
+`tests/static-analysis.sh <build-dir>` with `clang-tidy` before opening a C++
+change. Audit workflow edits with `actionlint` and `zizmor` (give Zizmor a
+`GH_TOKEN` when you want online action-reference checks in addition to offline
+audits). Pull request CI (`.github/workflows/ci.yml`) runs whitespace/diff
+hygiene and `npm run site:check`, while tagged release builds
+(`.github/workflows/release.yml`) compile, test, package, and attest all six
+targets. The `windows-x64`
 and `windows-arm64` presets follow the Windows 2025 and Windows 11 Arm64 hosted
 images, which both provide Visual Studio 2026, and need a CMake version that
 provides the `Visual Studio 18 2026` generator. Both select the static MSVC

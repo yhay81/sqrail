@@ -15,11 +15,15 @@ jobs:
     name: Native build on Mac mini
     runs-on: [self-hosted, macOS, ARM64, home-macmini]
     timeout-minutes: 90
+    env:
+      PATH: /opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - name: Configure
-        run: /opt/homebrew/bin/cmake --preset release
+        run: cmake --preset release
       - name: Build
-        run: /opt/homebrew/bin/cmake --build --preset release
+        run: cmake --build --preset release
+      - name: Test
+        run: ctest --preset release --output-on-failure

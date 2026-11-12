@@ -67,7 +67,7 @@ hyperfine \
   --command-name sqrail-version "$sqrail_command --version" \
   --command-name duckdb-version "$duckdb_command --version" \
   --command-name sqrail-select-one "$sqrail_command run 'SELECT 1'" \
-  --command-name duckdb-select-one "$duckdb_command -no-stdin -c 'SELECT 1'"
+  --command-name duckdb-select-one "$duckdb_command -no-init -no-stdin -c 'SELECT 1'"
 
 parameters=$(
   jq -cn \

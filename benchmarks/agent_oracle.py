@@ -83,7 +83,7 @@ def parse_json_rows(raw: bytes) -> list[dict[str, Any]]:
                     f"stdout line {number} is not JSON: {error.msg}"
                 ) from error
             if not isinstance(value, dict):
-                raise OracleError(f"stdout line {number} is not a JSON object")
+                raise OracleError(f"stdout line {number} is not a JSON object") from None
             rows.append(value)
         return rows
     if isinstance(value, dict):

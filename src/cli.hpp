@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SQRAIL_CLI_HPP
+#define SQRAIL_CLI_HPP
 
 #include <chrono>
 #include <cstdint>
@@ -43,3 +44,5 @@ SchemaOptions ParseSchema(int argc, char **argv);
 std::string NormalizeQuery(std::string sql);
 
 } // namespace sqrail
+
+#endif // SQRAIL_CLI_HPP

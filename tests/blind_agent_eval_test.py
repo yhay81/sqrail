@@ -213,9 +213,55 @@ class BlindAgentEvaluationTest(unittest.TestCase):
 
     def test_protocol_requires_help_as_first_rail_invocation(self) -> None:
         self.assertTrue(RUNNER.starts_with_help([["--help"], ["run", "SELECT 1"]]))
+        self.assertTrue(
+            RUNNER.starts_with_help([["help"], ["run", "SELECT 1"]], arm="sqrail")
+        )
+        self.assertFalse(
+            RUNNER.starts_with_help([["help"], ["SELECT 1"]], arm="duckdb")
+        )
+        self.assertTrue(RUNNER.is_help_invocation(["help"], arm="sqrail"))
+        self.assertTrue(RUNNER.is_help_invocation([], arm="sqrail"))
+        self.assertFalse(RUNNER.is_help_invocation(["help"], arm="duckdb"))
         self.assertFalse(RUNNER.starts_with_help([]))
         self.assertFalse(RUNNER.starts_with_help([["--version"]]))
         self.assertFalse(RUNNER.starts_with_help([["schema", "input.csv"]]))
+
+    def test_launcher_conceals_sqrail_help_subcommand_and_no_arg_invocation(self) -> None:
+        target = shutil.which("false")
+        if target is None:
+            self.skipTest("false executable is unavailable")
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            help_path = root / "help.txt"
+            log_path = root / "invocations.log"
+            launcher = root / "rail"
+            help_path.write_text("rail sanitized help\n", encoding="utf-8")
+            RUNNER.compile_launcher(
+                arm="sqrail",
+                launcher_source=ROOT / "benchmarks" / "agent-eval" / "launcher.c",
+                target=Path(target),
+                help_path=help_path,
+                log_path=log_path,
+                output=launcher,
+            )
+            subcommand = subprocess.run(
+                [str(launcher), "help"],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(subcommand.returncode, 0)
+            self.assertEqual(subcommand.stdout, "rail sanitized help\n")
+            self.assertNotIn("sqrail", subcommand.stdout.lower())
+
+            no_args = subprocess.run(
+                [str(launcher)],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(no_args.returncode, 2)
+            self.assertEqual(no_args.stdout, "rail sanitized help\n")
 
     def test_launcher_records_concurrent_invocations_atomically(self) -> None:
         target = shutil.which("true")

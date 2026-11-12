@@ -30,6 +30,16 @@ const pages = [
     navRoute: "/docs/reference/contract/",
   },
   {
+    source: "docs/RECIPES.md",
+    output: "site/docs/reference/recipes/index.html",
+    route: "/docs/reference/recipes/",
+    title: "Recipes",
+    category: "Reference",
+    description:
+      "Copy-and-run examples for schema inspection, conversion, joins, partitioned Parquet, and JSONL validation.",
+    navRoute: "/docs/reference/recipes/",
+  },
+  {
     source: "docs/AGENT_INTEGRATION.md",
     output: "site/docs/reference/agents/index.html",
     route: "/docs/reference/agents/",
@@ -138,6 +148,7 @@ const documentationNavigation = [
     label: "Use",
     links: [
       ["CLI contract", "/docs/reference/contract/"],
+      ["Recipes", "/docs/reference/recipes/"],
       ["Agent integration", "/docs/reference/agents/"],
     ],
   },
