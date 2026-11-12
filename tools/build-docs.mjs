@@ -13,7 +13,7 @@ const pages = [
     output: "site/docs/agents/index.html",
     route: "/docs/agents/",
     title: "Agent setup",
-    category: "Guide",
+    category: "Start",
     description:
       "Install sqrail and its optional Agent Skill with a review-first path for the agent you already use.",
     machineUrl: "https://sqrail.yhay81.com/install-agent.md",
@@ -24,7 +24,7 @@ const pages = [
     output: "site/docs/reference/contract/index.html",
     route: "/docs/reference/contract/",
     title: "CLI contract",
-    category: "Reference",
+    category: "Use",
     description:
       "Normative commands, query behavior, streams, resource controls, schemas, and diagnostics.",
     navRoute: "/docs/reference/contract/",
@@ -34,7 +34,7 @@ const pages = [
     output: "site/docs/reference/recipes/index.html",
     route: "/docs/reference/recipes/",
     title: "Recipes",
-    category: "Reference",
+    category: "Use",
     description:
       "Copy-and-run examples for schema inspection, conversion, joins, partitioned Parquet, and JSONL validation.",
     navRoute: "/docs/reference/recipes/",
@@ -44,7 +44,7 @@ const pages = [
     output: "site/docs/reference/agents/index.html",
     route: "/docs/reference/agents/",
     title: "Agent integration",
-    category: "Reference",
+    category: "Use",
     description:
       "Minimal context, install discovery, invocation rules, limits, stop conditions, and error handling for coding agents.",
     navRoute: "/docs/reference/agents/",
@@ -54,7 +54,7 @@ const pages = [
     output: "site/docs/reference/performance/index.html",
     route: "/docs/reference/performance/",
     title: "Performance baselines",
-    category: "Evidence",
+    category: "Operate",
     description:
       "Reproducible size, startup, memory, and throughput measurements against the pinned DuckDB CLI.",
     navRoute: "/docs/reference/performance/",
@@ -64,17 +64,17 @@ const pages = [
     output: "site/docs/reference/benchmarks/index.html",
     route: "/docs/reference/benchmarks/",
     title: "Benchmark policy",
-    category: "Evidence",
+    category: "Operate",
     description:
       "The rules and workload matrix used to keep every published performance claim reproducible.",
-    navRoute: "/docs/reference/performance/",
+    navRoute: "/docs/reference/benchmarks/",
   },
   {
     source: "docs/PLATFORMS.md",
     output: "site/docs/reference/platforms/index.html",
     route: "/docs/reference/platforms/",
     title: "Platform support",
-    category: "Reference",
+    category: "Operate",
     description:
       "Release targets, support tiers, filesystem semantics, and the exact meaning of tested support.",
     navRoute: "/docs/reference/platforms/",
@@ -84,7 +84,7 @@ const pages = [
     output: "site/docs/security/index.html",
     route: "/docs/security/",
     title: "Security boundary",
-    category: "Project",
+    category: "Operate",
     description:
       "Supported versions, private reporting, guarantees, threat boundaries, and explicit non-goals.",
     navRoute: "/docs/security/",
@@ -107,7 +107,7 @@ const pages = [
     category: "Project",
     description:
       "Test layers, workflow placement, sanitizers, fuzzing, and checks for the website and Agent Skill.",
-    navRoute: "/docs/contributing/",
+    navRoute: "/docs/contributing/testing/",
   },
   {
     source: "SUPPORT.md",
@@ -117,7 +117,7 @@ const pages = [
     category: "Project",
     description:
       "Choose the right public or private channel for usage questions, defects, security reports, and proposals.",
-    navRoute: "/docs/contributing/",
+    navRoute: "/docs/contributing/support/",
   },
   {
     source: "CODE_OF_CONDUCT.md",
@@ -127,7 +127,7 @@ const pages = [
     category: "Project",
     description:
       "The conduct, reporting, and repair expectations that keep the sqrail community safe and productive.",
-    navRoute: "/docs/contributing/",
+    navRoute: "/docs/contributing/code-of-conduct/",
   },
 ];
 
@@ -224,20 +224,80 @@ const rewriteHref = (page, href) => {
   return `${publicRoutes.get(resolved) ?? githubBlobUrl(resolved)}${fragment}`;
 };
 
+const renderCopyBlock = (
+  codeId,
+  content,
+  language = "",
+  copyLabel = "Copy code",
+) => {
+  const langClass = language ? ` class="language-${escapeHtml(language)}"` : "";
+  return `<div class="code-block">
+    <span class="copy-control">
+      <button class="copy-button" type="button" command="--copy" commandfor="${codeId}" aria-label="${escapeHtml(copyLabel)}">
+        <svg class="copy-icon copy-icon-clipboard" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+          <path d="M5.5 1.5h7a1 1 0 0 1 1 1v8h-1.5v-7.5h-6.5V1.5Zm-3 3h7a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1Zm.5 1.5v7h6V6H3Z" />
+        </svg>
+        <svg class="copy-icon copy-icon-check" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+          <path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z" />
+        </svg>
+        Copy
+      </button>
+      <span class="copy-status" role="status"></span>
+    </span>
+    <pre><code id="${codeId}"${langClass}>${escapeHtml(content)}</code></pre>
+  </div>`;
+};
+
 const markdown = new MarkdownIt({
   html: false,
   linkify: true,
   typographer: true,
 });
 
+markdown.renderer.rules.fence = (tokens, index, _options, env) => {
+  const token = tokens[index];
+  const language = token.info.trim().split(/\s+/)[0] ?? "";
+  env.codeIndex += 1;
+  return renderCopyBlock(
+    `doc-code-${env.codeIndex}`,
+    token.content,
+    language,
+    token.meta?.copyLabel,
+  );
+};
+
+markdown.renderer.rules.code_block = (tokens, index, _options, env) => {
+  const token = tokens[index];
+  env.codeIndex += 1;
+  return renderCopyBlock(
+    `doc-code-${env.codeIndex}`,
+    token.content,
+    "",
+    token.meta?.copyLabel,
+  );
+};
+
+markdown.renderer.rules.table_open = (tokens, index) => {
+  const regionLabel = tokens[index].meta?.regionLabel ?? "Data table";
+  return `<section class="table-wrapper" tabindex="0" aria-label="${escapeHtml(regionLabel)}"><table>`;
+};
+
+markdown.renderer.rules.table_close = () => "</table></section>";
+
 const renderMarkdown = (page, source) => {
   const body = source.replace(/^# .+\n+/, "");
   const tokens = markdown.parse(body, {});
   const headings = [];
   const slugCounts = new Map();
+  const tableLabelCounts = new Map();
+  const copyLabelCounts = new Map();
+  let inThead = false;
 
   const visit = (tokenList) =>
     tokenList.forEach((token) => {
+      if (token.type === "thead_open") inThead = true;
+      if (token.type === "thead_close") inThead = false;
+
       if (token.children) visit(token.children);
 
       if (token.type === "link_open") {
@@ -246,6 +306,9 @@ const renderMarkdown = (page, source) => {
       }
 
       if (["th_open", "td_open"].includes(token.type)) {
+        if (token.type === "th_open" && inThead && !token.attrGet("scope")) {
+          token.attrSet("scope", "col");
+        }
         const style = token.attrGet("style");
         const alignment = style?.match(
           /text-align:\s*(left|center|right)/,
@@ -257,6 +320,7 @@ const renderMarkdown = (page, source) => {
     });
   visit(tokens);
 
+  let currentHeadingLabel = page.title;
   tokens.forEach((token, index) => {
     if (token.type === "heading_open") {
       const label = tokens[index + 1]?.content ?? "Section";
@@ -265,13 +329,36 @@ const renderMarkdown = (page, source) => {
       slugCounts.set(base, count + 1);
       const id = count ? `${base}-${count + 1}` : base;
       token.attrSet("id", id);
+      token.attrSet("tabindex", "-1");
+      currentHeadingLabel = label;
       if (token.tag === "h2") headings.push({ id, label });
+    }
+
+    if (token.type === "table_open") {
+      const baseLabel = `${currentHeadingLabel} table`;
+      const count = tableLabelCounts.get(baseLabel) ?? 0;
+      tableLabelCounts.set(baseLabel, count + 1);
+      token.meta = {
+        regionLabel: count ? `${baseLabel} ${count + 1}` : baseLabel,
+      };
+    }
+
+    if (token.type === "fence" || token.type === "code_block") {
+      const language =
+        token.type === "fence" ? (token.info.trim().split(/\s+/)[0] ?? "") : "";
+      const baseLabel = `Copy ${currentHeadingLabel} ${language ? `${language} ` : ""}code`;
+      const count = copyLabelCounts.get(baseLabel) ?? 0;
+      copyLabelCounts.set(baseLabel, count + 1);
+      token.meta = {
+        ...token.meta,
+        copyLabel: count ? `${baseLabel} ${count + 1}` : baseLabel,
+      };
     }
   });
 
   return {
     headings,
-    html: markdown.renderer.render(tokens, markdown.options, {}),
+    html: markdown.renderer.render(tokens, markdown.options, { codeIndex: 0 }),
   };
 };
 
@@ -368,13 +455,19 @@ const renderPage = async (page, source) => {
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="text-scale" content="scale" />
     <meta name="description" content="${description}" />
     <meta name="theme-color" content="#090a09" />
+    <meta name="color-scheme" content="dark" />
     <meta property="og:title" content="${title} — sqrail" />
     <meta property="og:description" content="${description}" />
+    <meta property="og:site_name" content="sqrail" />
     <meta property="og:type" content="article" />
     <meta property="og:url" content="${canonical}" />
     <meta property="og:image" content="https://sqrail.yhay81.com/social-card.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="sqrail — SQL in. Files out." />
     <meta name="twitter:card" content="summary_large_image" />
     <link rel="canonical" href="${canonical}" />
     <link rel="alternate" type="text/markdown" href="${machineUrl}" />
@@ -396,15 +489,36 @@ const renderPage = async (page, source) => {
           <span class="nav-tagline">Agent-safe SQL on files</span>
         </div>
         <nav class="nav-links" aria-label="Primary">
-          <a href="/docs/"${page.route === "/docs/" ? ' aria-current="page"' : ""}>Get started</a>
-          <a href="/docs/agents/"${page.route === "/docs/agents/" ? ' aria-current="page"' : ""}>Agent setup</a>
-          <a href="/docs/reference/contract/"${
-            page.route === "/docs/reference/contract/"
-              ? ' aria-current="page"'
-              : page.route !== "/docs/agents/"
-                ? ' aria-current="location"'
-                : ""
-          }>Reference</a>
+          <button
+            class="nav-menu-button"
+            type="button"
+            popovertarget="site-menu"
+            popovertargetaction="toggle"
+            aria-controls="site-menu"
+          >
+            <svg class="nav-menu-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+              <path d="M2 3.25h12v1.5H2v-1.5Zm0 4h12v1.5H2v-1.5Zm0 4h12v1.5H2v-1.5Z" />
+            </svg>
+            <span>Menu</span>
+          </button>
+          <ul id="site-menu" class="nav-menu" popover="auto">
+            <li>
+              <a href="/docs/"${page.route === "/docs/" ? ' aria-current="page"' : ""}>Get started</a>
+            </li>
+            <li>
+              <a href="/docs/agents/"${page.route === "/docs/agents/" ? ' aria-current="page"' : ""}>Agent setup</a>
+            </li>
+            <li>
+              <a href="/docs/reference/contract/"${
+                page.route === "/docs/reference/contract/"
+                  ? ' aria-current="page"'
+                  : page.route.startsWith("/docs/reference/") ||
+                      page.route === "/docs/security/"
+                    ? ' aria-current="location"'
+                    : ""
+              }>Reference</a>
+            </li>
+          </ul>
         </nav>
         <div class="nav-actions">
           ${renderRepositoryLink()}
@@ -416,7 +530,17 @@ const renderPage = async (page, source) => {
     <main class="docs-shell docs-shell-reference" id="main">
       <aside class="docs-sidebar" aria-label="Documentation navigation">
         <p class="docs-sidebar-title">sqrail docs</p>
-        <nav class="docs-global-nav" aria-label="Documentation pages">
+        <button
+          class="docs-sidebar-toggle"
+          type="button"
+          aria-expanded="true"
+          aria-controls="docs-global-nav"
+          data-docs-sidebar-toggle
+        >
+          <span>Docs · ${title}</span>
+          <span class="docs-sidebar-chevron" aria-hidden="true">▾</span>
+        </button>
+        <nav class="docs-global-nav" id="docs-global-nav" aria-label="Documentation pages">
           ${renderPageNavigation(page)}
         </nav>
       </aside>

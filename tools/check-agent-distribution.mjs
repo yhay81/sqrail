@@ -16,6 +16,8 @@ const [
   readme,
   discovery,
   cmake,
+  baseline,
+  helpText,
 ] = await Promise.all([
   read("skills/sqrail/SKILL.md"),
   read("skills/sqrail/agents/openai.yaml"),
@@ -26,6 +28,8 @@ const [
   read("README.md"),
   read("site/llms.txt"),
   read("CMakeLists.txt"),
+  read("docs/BASELINE.md"),
+  read("site/help.txt"),
 ]);
 
 const frontmatter = skill.match(/^---\n([\s\S]*?)\n---\n/);
@@ -94,6 +98,33 @@ assert(duckdbVersion, "CMakeLists.txt must pin SQRAIL_PINNED_DUCKDB_VERSION");
 assert(
   homepage.includes(`sqrail embeds DuckDB ${duckdbVersion}.`),
   `site/index.html must state the pinned DuckDB version (${duckdbVersion})`,
+);
+
+const outOfCoreWallTime = baseline.match(
+  /\|\s*Harness wall time\s*\|\s*(\d+\.\d+)\s*s\s*\|/,
+)?.[1];
+assert(
+  outOfCoreWallTime,
+  "docs/BASELINE.md must record the current out-of-core Harness wall time",
+);
+assert(
+  homepage.includes(`<dt>${outOfCoreWallTime} <small>s</small></dt>`),
+  `site/index.html must display the current out-of-core baseline (${outOfCoreWallTime} s)`,
+);
+
+const helpSnippetMatch = homepage.match(
+  /<pre\s+id="help-code"\s*><code>([\s\S]*?)<\/code><\/pre>/,
+);
+assert(helpSnippetMatch, "site/index.html must include #help-code");
+const helpSnippet = helpSnippetMatch[1]
+  .replaceAll("&lt;", "<")
+  .replaceAll("&gt;", ">")
+  .replaceAll("&quot;", '"')
+  .replaceAll("&amp;", "&")
+  .trim();
+assert(
+  helpText.includes(helpSnippet),
+  "site/index.html #help-code must stay a verbatim excerpt of site/help.txt",
 );
 
 for (const required of [

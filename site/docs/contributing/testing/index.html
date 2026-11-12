@@ -3,16 +3,19 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="text-scale" content="scale" />
     <meta
       name="description"
       content="Test layers, workflow placement, sanitizers, fuzzing, and checks for the website and Agent Skill."
     />
     <meta name="theme-color" content="#090a09" />
+    <meta name="color-scheme" content="dark" />
     <meta property="og:title" content="Testing architecture — sqrail" />
     <meta
       property="og:description"
       content="Test layers, workflow placement, sanitizers, fuzzing, and checks for the website and Agent Skill."
     />
+    <meta property="og:site_name" content="sqrail" />
     <meta property="og:type" content="article" />
     <meta
       property="og:url"
@@ -22,6 +25,9 @@
       property="og:image"
       content="https://sqrail.yhay81.com/social-card.png"
     />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="sqrail — SQL in. Files out." />
     <meta name="twitter:card" content="summary_large_image" />
     <link
       rel="canonical"
@@ -50,11 +56,36 @@
           <span class="nav-tagline">Agent-safe SQL on files</span>
         </div>
         <nav class="nav-links" aria-label="Primary">
-          <a href="/docs/">Get started</a>
-          <a href="/docs/agents/">Agent setup</a>
-          <a href="/docs/reference/contract/" aria-current="location"
-            >Reference</a
+          <button
+            class="nav-menu-button"
+            type="button"
+            popovertarget="site-menu"
+            popovertargetaction="toggle"
+            aria-controls="site-menu"
           >
+            <svg
+              class="nav-menu-icon"
+              viewBox="0 0 16 16"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <path
+                d="M2 3.25h12v1.5H2v-1.5Zm0 4h12v1.5H2v-1.5Zm0 4h12v1.5H2v-1.5Z"
+              />
+            </svg>
+            <span>Menu</span>
+          </button>
+          <ul id="site-menu" class="nav-menu" popover="auto">
+            <li>
+              <a href="/docs/">Get started</a>
+            </li>
+            <li>
+              <a href="/docs/agents/">Agent setup</a>
+            </li>
+            <li>
+              <a href="/docs/reference/contract/">Reference</a>
+            </li>
+          </ul>
         </nav>
         <div class="nav-actions">
           <a
@@ -101,7 +132,21 @@
     <main class="docs-shell docs-shell-reference" id="main">
       <aside class="docs-sidebar" aria-label="Documentation navigation">
         <p class="docs-sidebar-title">sqrail docs</p>
-        <nav class="docs-global-nav" aria-label="Documentation pages">
+        <button
+          class="docs-sidebar-toggle"
+          type="button"
+          aria-expanded="true"
+          aria-controls="docs-global-nav"
+          data-docs-sidebar-toggle
+        >
+          <span>Docs · Testing architecture</span>
+          <span class="docs-sidebar-chevron" aria-hidden="true">▾</span>
+        </button>
+        <nav
+          class="docs-global-nav"
+          id="docs-global-nav"
+          aria-label="Documentation pages"
+        >
           <div class="docs-nav-group">
             <p>Start</p>
             <div>
@@ -129,8 +174,7 @@
           <div class="docs-nav-group">
             <p>Project</p>
             <div>
-              <a href="/docs/contributing/" aria-current="location"
-                >Contributing</a
+              <a href="/docs/contributing/">Contributing</a
               ><a href="/docs/contributing/testing/" aria-current="page"
                 >Testing</a
               ><a href="/docs/contributing/support/">Support</a
@@ -163,54 +207,61 @@
             product without a Python interpreter, while the full CMake workflow
             presets and release builds exercise every layer.
           </p>
-          <h2 id="test-layers">Test layers</h2>
-          <table>
-            <thead>
-              <tr>
-                <th>Layer</th>
-                <th>CMake option</th>
-                <th>Runtime</th>
-                <th>Responsibility</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>native unit</td>
-                <td><code>SQRAIL_BUILD_TESTS</code></td>
-                <td>C++20 + Catch2</td>
-                <td>
-                  CLI parsing, limits, query normalization, strict JSON,
-                  timeouts
-                </td>
-              </tr>
-              <tr>
-                <td>CLI integration</td>
-                <td><code>SQRAIL_BUILD_INTEGRATION_TESTS</code></td>
-                <td>Python 3; Bash on Unix</td>
-                <td>
-                  real processes, files, signals, races, limits, platform
-                  behavior
-                </td>
-              </tr>
-              <tr>
-                <td>agent evaluation</td>
-                <td><code>SQRAIL_BUILD_AGENT_TESTS</code></td>
-                <td>Python 3</td>
-                <td>
-                  blinded experiment runner, oracle, reports, environment
-                  capture
-                </td>
-              </tr>
-              <tr>
-                <td>release tools</td>
-                <td><code>SQRAIL_BUILD_RELEASE_TOOL_TESTS</code></td>
-                <td>Python 3</td>
-                <td>
-                  deterministic archives, SPDX SBOMs, install layout, completion
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          <h2 id="test-layers" tabindex="-1">Test layers</h2>
+          <section
+            class="table-wrapper"
+            tabindex="0"
+            aria-label="Test layers table"
+          >
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Layer</th>
+                  <th scope="col">CMake option</th>
+                  <th scope="col">Runtime</th>
+                  <th scope="col">Responsibility</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>native unit</td>
+                  <td><code>SQRAIL_BUILD_TESTS</code></td>
+                  <td>C++20 + Catch2</td>
+                  <td>
+                    CLI parsing, limits, query normalization, strict JSON,
+                    timeouts
+                  </td>
+                </tr>
+                <tr>
+                  <td>CLI integration</td>
+                  <td><code>SQRAIL_BUILD_INTEGRATION_TESTS</code></td>
+                  <td>Python 3; Bash on Unix</td>
+                  <td>
+                    real processes, files, signals, races, limits, platform
+                    behavior
+                  </td>
+                </tr>
+                <tr>
+                  <td>agent evaluation</td>
+                  <td><code>SQRAIL_BUILD_AGENT_TESTS</code></td>
+                  <td>Python 3</td>
+                  <td>
+                    blinded experiment runner, oracle, reports, environment
+                    capture
+                  </td>
+                </tr>
+                <tr>
+                  <td>release tools</td>
+                  <td><code>SQRAIL_BUILD_RELEASE_TOOL_TESTS</code></td>
+                  <td>Python 3</td>
+                  <td>
+                    deterministic archives, SPDX SBOMs, install layout,
+                    completion
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
           <p>
             <code>SQRAIL_BUILD_TESTS</code> defaults to <code>ON</code>. The
             three Python-backed layers default to <code>OFF</code>, so an
@@ -221,13 +272,81 @@
             are enabled. It is a build-only dependency: neither the sqrail
             executable nor release archives contain the test framework.
           </p>
-          <h2 id="workflows">Workflows</h2>
+          <h2 id="workflows" tabindex="-1">Workflows</h2>
           <p>Run only native product tests:</p>
-          <pre><code class="language-sh">cmake --workflow --preset core
+          <div class="code-block">
+            <span class="copy-control">
+              <button
+                class="copy-button"
+                type="button"
+                command="--copy"
+                commandfor="doc-code-1"
+                aria-label="Copy Workflows sh code"
+              >
+                <svg
+                  class="copy-icon copy-icon-clipboard"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M5.5 1.5h7a1 1 0 0 1 1 1v8h-1.5v-7.5h-6.5V1.5Zm-3 3h7a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1Zm.5 1.5v7h6V6H3Z"
+                  />
+                </svg>
+                <svg
+                  class="copy-icon copy-icon-check"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"
+                  />
+                </svg>
+                Copy
+              </button>
+              <span class="copy-status" role="status"></span>
+            </span>
+            <pre><code id="doc-code-1" class="language-sh">cmake --workflow --preset core
 </code></pre>
+          </div>
           <p>Run the full developer suite:</p>
-          <pre><code class="language-sh">cmake --workflow --preset dev
+          <div class="code-block">
+            <span class="copy-control">
+              <button
+                class="copy-button"
+                type="button"
+                command="--copy"
+                commandfor="doc-code-2"
+                aria-label="Copy Workflows sh code 2"
+              >
+                <svg
+                  class="copy-icon copy-icon-clipboard"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M5.5 1.5h7a1 1 0 0 1 1 1v8h-1.5v-7.5h-6.5V1.5Zm-3 3h7a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1Zm.5 1.5v7h6V6H3Z"
+                  />
+                </svg>
+                <svg
+                  class="copy-icon copy-icon-check"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"
+                  />
+                </svg>
+                Copy
+              </button>
+              <span class="copy-status" role="status"></span>
+            </span>
+            <pre><code id="doc-code-2" class="language-sh">cmake --workflow --preset dev
 </code></pre>
+          </div>
           <p>
             The <code>dev</code>, <code>release</code>, <code>strict</code>,
             <code>sanitize</code>, <code>thread</code>, <code>system</code>, and
@@ -246,12 +365,46 @@
             instead of repeating the engine’s slowest link step.
           </p>
           <p>For a production-only build, disable native tests too:</p>
-          <pre><code class="language-sh">cmake -S . -B out/build/product -G Ninja \
+          <div class="code-block">
+            <span class="copy-control">
+              <button
+                class="copy-button"
+                type="button"
+                command="--copy"
+                commandfor="doc-code-3"
+                aria-label="Copy Workflows sh code 3"
+              >
+                <svg
+                  class="copy-icon copy-icon-clipboard"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M5.5 1.5h7a1 1 0 0 1 1 1v8h-1.5v-7.5h-6.5V1.5Zm-3 3h7a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1Zm.5 1.5v7h6V6H3Z"
+                  />
+                </svg>
+                <svg
+                  class="copy-icon copy-icon-check"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"
+                  />
+                </svg>
+                Copy
+              </button>
+              <span class="copy-status" role="status"></span>
+            </span>
+            <pre><code id="doc-code-3" class="language-sh">cmake -S . -B out/build/product -G Ninja \
   -DCMAKE_BUILD_TYPE=Release \
   -DSQRAIL_BUILD_TESTS=OFF
 cmake --build out/build/product --target sqrail
 </code></pre>
-          <h2 id="placement-rules">Placement rules</h2>
+          </div>
+          <h2 id="placement-rules" tabindex="-1">Placement rules</h2>
           <ul>
             <li>
               Put deterministic functions and parser behavior in a Catch2 test
@@ -279,15 +432,51 @@ cmake --build out/build/product --target sqrail
             names use stable <code>sqrail-</code> prefixes so a preset or CI job
             can select a responsibility without depending on source-file layout.
           </p>
-          <h2 id="website-and-agent-skill">Website and Agent Skill</h2>
+          <h2 id="website-and-agent-skill" tabindex="-1">
+            Website and Agent Skill
+          </h2>
           <p>
             The static website and public Agent Skill use the pinned Node.js
             development tooling:
           </p>
-          <pre><code class="language-sh">npm ci
+          <div class="code-block">
+            <span class="copy-control">
+              <button
+                class="copy-button"
+                type="button"
+                command="--copy"
+                commandfor="doc-code-4"
+                aria-label="Copy Website and Agent Skill sh code"
+              >
+                <svg
+                  class="copy-icon copy-icon-clipboard"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M5.5 1.5h7a1 1 0 0 1 1 1v8h-1.5v-7.5h-6.5V1.5Zm-3 3h7a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1Zm.5 1.5v7h6V6H3Z"
+                  />
+                </svg>
+                <svg
+                  class="copy-icon copy-icon-check"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"
+                  />
+                </svg>
+                Copy
+              </button>
+              <span class="copy-status" role="status"></span>
+            </span>
+            <pre><code id="doc-code-4" class="language-sh">npm ci
 npm run docs:build
 npm run site:check
 </code></pre>
+          </div>
           <p>
             Human-readable reference pages under <code>site/docs/</code> are
             generated from the repository Markdown by

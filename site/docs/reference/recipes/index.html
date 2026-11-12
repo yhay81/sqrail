@@ -3,16 +3,19 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="text-scale" content="scale" />
     <meta
       name="description"
       content="Copy-and-run examples for schema inspection, conversion, joins, partitioned Parquet, and JSONL validation."
     />
     <meta name="theme-color" content="#090a09" />
+    <meta name="color-scheme" content="dark" />
     <meta property="og:title" content="Recipes — sqrail" />
     <meta
       property="og:description"
       content="Copy-and-run examples for schema inspection, conversion, joins, partitioned Parquet, and JSONL validation."
     />
+    <meta property="og:site_name" content="sqrail" />
     <meta property="og:type" content="article" />
     <meta
       property="og:url"
@@ -22,6 +25,9 @@
       property="og:image"
       content="https://sqrail.yhay81.com/social-card.png"
     />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="sqrail — SQL in. Files out." />
     <meta name="twitter:card" content="summary_large_image" />
     <link
       rel="canonical"
@@ -50,11 +56,38 @@
           <span class="nav-tagline">Agent-safe SQL on files</span>
         </div>
         <nav class="nav-links" aria-label="Primary">
-          <a href="/docs/">Get started</a>
-          <a href="/docs/agents/">Agent setup</a>
-          <a href="/docs/reference/contract/" aria-current="location"
-            >Reference</a
+          <button
+            class="nav-menu-button"
+            type="button"
+            popovertarget="site-menu"
+            popovertargetaction="toggle"
+            aria-controls="site-menu"
           >
+            <svg
+              class="nav-menu-icon"
+              viewBox="0 0 16 16"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <path
+                d="M2 3.25h12v1.5H2v-1.5Zm0 4h12v1.5H2v-1.5Zm0 4h12v1.5H2v-1.5Z"
+              />
+            </svg>
+            <span>Menu</span>
+          </button>
+          <ul id="site-menu" class="nav-menu" popover="auto">
+            <li>
+              <a href="/docs/">Get started</a>
+            </li>
+            <li>
+              <a href="/docs/agents/">Agent setup</a>
+            </li>
+            <li>
+              <a href="/docs/reference/contract/" aria-current="location"
+                >Reference</a
+              >
+            </li>
+          </ul>
         </nav>
         <div class="nav-actions">
           <a
@@ -101,7 +134,21 @@
     <main class="docs-shell docs-shell-reference" id="main">
       <aside class="docs-sidebar" aria-label="Documentation navigation">
         <p class="docs-sidebar-title">sqrail docs</p>
-        <nav class="docs-global-nav" aria-label="Documentation pages">
+        <button
+          class="docs-sidebar-toggle"
+          type="button"
+          aria-expanded="true"
+          aria-controls="docs-global-nav"
+          data-docs-sidebar-toggle
+        >
+          <span>Docs · Recipes</span>
+          <span class="docs-sidebar-chevron" aria-hidden="true">▾</span>
+        </button>
+        <nav
+          class="docs-global-nav"
+          id="docs-global-nav"
+          aria-label="Documentation pages"
+        >
           <div class="docs-nav-group">
             <p>Start</p>
             <div>
@@ -140,7 +187,7 @@
 
       <article class="docs-content docs-reference-content">
         <div class="docs-page-meta">
-          <p class="eyebrow"><span>Reference</span> sqrail docs</p>
+          <p class="eyebrow"><span>Use</span> sqrail docs</p>
           <a
             class="docs-markdown-link"
             href="https://raw.githubusercontent.com/yhay81/sqrail/main/docs/RECIPES.md"
@@ -170,13 +217,46 @@
             The <a href="/docs/reference/contract/">CLI contract</a> is
             normative for every option and diagnostic used here.
           </p>
-          <h2 id="sample-files">Sample files</h2>
+          <h2 id="sample-files" tabindex="-1">Sample files</h2>
           <p>
             sqrail can write its own fixtures. These commands create a CSV of
             sales, a Parquet table of drug names, a JSONL file of trial records,
             and a Hive-partitioned Parquet directory of events:
           </p>
-          <pre><code class="language-sh">sqrail run -o sales.csv \
+          <div class="code-block">
+            <span class="copy-control">
+              <button
+                class="copy-button"
+                type="button"
+                command="--copy"
+                commandfor="doc-code-1"
+                aria-label="Copy Sample files sh code"
+              >
+                <svg
+                  class="copy-icon copy-icon-clipboard"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M5.5 1.5h7a1 1 0 0 1 1 1v8h-1.5v-7.5h-6.5V1.5Zm-3 3h7a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1Zm.5 1.5v7h6V6H3Z"
+                  />
+                </svg>
+                <svg
+                  class="copy-icon copy-icon-check"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"
+                  />
+                </svg>
+                Copy
+              </button>
+              <span class="copy-status" role="status"></span>
+            </span>
+            <pre><code id="doc-code-1" class="language-sh">sqrail run -o sales.csv \
   &quot;SELECT * FROM (VALUES (1, 'alpha', 10), (2, 'beta', 20), (1, 'alpha', 15)) AS sales(drug_id, name, amount)&quot;
 sqrail run -o drugs.parquet \
   &quot;SELECT * FROM (VALUES (1, 'Alphazol'), (2, 'Betamab')) AS drugs(drug_id, drug_name)&quot;
@@ -188,7 +268,8 @@ sqrail run -o events/year=2025/part-0.parquet \
 sqrail run -o events/year=2026/part-0.parquet \
   'SELECT i AS event_id, i % 2 + 1 AS drug_id FROM range(4, 10) AS t(i)'
 </code></pre>
-          <h2 id="inspect-a-schema">Inspect a schema</h2>
+          </div>
+          <h2 id="inspect-a-schema" tabindex="-1">Inspect a schema</h2>
           <ul>
             <li>
               <strong>Inputs:</strong> any supported file, Parquet directory, or
@@ -205,16 +286,86 @@ sqrail run -o events/year=2026/part-0.parquet \
               as soon as the cumulative count exceeds the cap.
             </li>
           </ul>
-          <pre><code class="language-sh">sqrail schema --max-input-files 100 sales.csv events
+          <div class="code-block">
+            <span class="copy-control">
+              <button
+                class="copy-button"
+                type="button"
+                command="--copy"
+                commandfor="doc-code-2"
+                aria-label="Copy Inspect a schema sh code"
+              >
+                <svg
+                  class="copy-icon copy-icon-clipboard"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M5.5 1.5h7a1 1 0 0 1 1 1v8h-1.5v-7.5h-6.5V1.5Zm-3 3h7a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1Zm.5 1.5v7h6V6H3Z"
+                  />
+                </svg>
+                <svg
+                  class="copy-icon copy-icon-check"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"
+                  />
+                </svg>
+                Copy
+              </button>
+              <span class="copy-status" role="status"></span>
+            </span>
+            <pre><code id="doc-code-2" class="language-sh">sqrail schema --max-input-files 100 sales.csv events
 </code></pre>
+          </div>
           <p>
             The <code>events</code> object reports two files and includes the
             Hive partition column:
           </p>
-          <pre><code class="language-text">{&quot;name&quot;:&quot;year&quot;,&quot;type&quot;:&quot;BIGINT&quot;,&quot;nullable&quot;:true}
+          <div class="code-block">
+            <span class="copy-control">
+              <button
+                class="copy-button"
+                type="button"
+                command="--copy"
+                commandfor="doc-code-3"
+                aria-label="Copy Inspect a schema text code"
+              >
+                <svg
+                  class="copy-icon copy-icon-clipboard"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M5.5 1.5h7a1 1 0 0 1 1 1v8h-1.5v-7.5h-6.5V1.5Zm-3 3h7a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1Zm.5 1.5v7h6V6H3Z"
+                  />
+                </svg>
+                <svg
+                  class="copy-icon copy-icon-check"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"
+                  />
+                </svg>
+                Copy
+              </button>
+              <span class="copy-status" role="status"></span>
+            </span>
+            <pre><code id="doc-code-3" class="language-text">{&quot;name&quot;:&quot;year&quot;,&quot;type&quot;:&quot;BIGINT&quot;,&quot;nullable&quot;:true}
 </code></pre>
+          </div>
           <p>Skip this step when the names and types are already known.</p>
-          <h2 id="convert-csv-to-parquet">Convert CSV to Parquet</h2>
+          <h2 id="convert-csv-to-parquet" tabindex="-1">
+            Convert CSV to Parquet
+          </h2>
           <ul>
             <li>
               <strong>Inputs:</strong> one CSV file bound as <code>sales</code>.
@@ -233,10 +384,44 @@ sqrail run -o events/year=2026/part-0.parquet \
               <code>--max-output-bytes</code> to cap the file.
             </li>
           </ul>
-          <pre><code class="language-sh">sqrail run --memory 512MB -t sales=sales.csv -o sales.parquet \
+          <div class="code-block">
+            <span class="copy-control">
+              <button
+                class="copy-button"
+                type="button"
+                command="--copy"
+                commandfor="doc-code-4"
+                aria-label="Copy Convert CSV to Parquet sh code"
+              >
+                <svg
+                  class="copy-icon copy-icon-clipboard"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M5.5 1.5h7a1 1 0 0 1 1 1v8h-1.5v-7.5h-6.5V1.5Zm-3 3h7a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1Zm.5 1.5v7h6V6H3Z"
+                  />
+                </svg>
+                <svg
+                  class="copy-icon copy-icon-check"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"
+                  />
+                </svg>
+                Copy
+              </button>
+              <span class="copy-status" role="status"></span>
+            </span>
+            <pre><code id="doc-code-4" class="language-sh">sqrail run --memory 512MB -t sales=sales.csv -o sales.parquet \
   'SELECT drug_id, name, amount FROM sales ORDER BY drug_id, amount'
 </code></pre>
-          <h2 id="join-csv-and-parquet">Join CSV and Parquet</h2>
+          </div>
+          <h2 id="join-csv-and-parquet" tabindex="-1">Join CSV and Parquet</h2>
           <ul>
             <li>
               <strong>Inputs:</strong> <code>sales.csv</code> bound as
@@ -259,7 +444,40 @@ sqrail run -o events/year=2026/part-0.parquet \
             Keep the query in a file when quoting would otherwise be awkward,
             then check it before running it:
           </p>
-          <pre><code class="language-sh">cat &gt; top-drugs.sql &lt;&lt;'SQL'
+          <div class="code-block">
+            <span class="copy-control">
+              <button
+                class="copy-button"
+                type="button"
+                command="--copy"
+                commandfor="doc-code-5"
+                aria-label="Copy Join CSV and Parquet sh code"
+              >
+                <svg
+                  class="copy-icon copy-icon-clipboard"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M5.5 1.5h7a1 1 0 0 1 1 1v8h-1.5v-7.5h-6.5V1.5Zm-3 3h7a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1Zm.5 1.5v7h6V6H3Z"
+                  />
+                </svg>
+                <svg
+                  class="copy-icon copy-icon-check"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"
+                  />
+                </svg>
+                Copy
+              </button>
+              <span class="copy-status" role="status"></span>
+            </span>
+            <pre><code id="doc-code-5" class="language-sh">cat &gt; top-drugs.sql &lt;&lt;'SQL'
 SELECT d.drug_name, sum(s.amount) AS total
 FROM sales AS s
 JOIN drugs AS d USING (drug_id)
@@ -269,10 +487,47 @@ SQL
 sqrail check -t sales=sales.csv -t drugs=drugs.parquet - &lt; top-drugs.sql
 sqrail run --max-rows 100 -t sales=sales.csv -t drugs=drugs.parquet - &lt; top-drugs.sql
 </code></pre>
-          <pre><code class="language-text">{&quot;drug_name&quot;:&quot;Alphazol&quot;,&quot;total&quot;:25}
+          </div>
+          <div class="code-block">
+            <span class="copy-control">
+              <button
+                class="copy-button"
+                type="button"
+                command="--copy"
+                commandfor="doc-code-6"
+                aria-label="Copy Join CSV and Parquet text code"
+              >
+                <svg
+                  class="copy-icon copy-icon-clipboard"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M5.5 1.5h7a1 1 0 0 1 1 1v8h-1.5v-7.5h-6.5V1.5Zm-3 3h7a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1Zm.5 1.5v7h6V6H3Z"
+                  />
+                </svg>
+                <svg
+                  class="copy-icon copy-icon-check"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"
+                  />
+                </svg>
+                Copy
+              </button>
+              <span class="copy-status" role="status"></span>
+            </span>
+            <pre><code id="doc-code-6" class="language-text">{&quot;drug_name&quot;:&quot;Alphazol&quot;,&quot;total&quot;:25}
 {&quot;drug_name&quot;:&quot;Betamab&quot;,&quot;total&quot;:20}
 </code></pre>
-          <h2 id="filter-partitioned-parquet">Filter partitioned Parquet</h2>
+          </div>
+          <h2 id="filter-partitioned-parquet" tabindex="-1">
+            Filter partitioned Parquet
+          </h2>
           <ul>
             <li>
               <strong>Inputs:</strong> the <code>events</code> directory bound
@@ -288,13 +543,81 @@ sqrail run --max-rows 100 -t sales=sales.csv -t drugs=drugs.parquet - &lt; top-d
               larger than expected is read.
             </li>
           </ul>
-          <pre><code class="language-sh">sqrail run --max-input-files 100 -t events=events \
+          <div class="code-block">
+            <span class="copy-control">
+              <button
+                class="copy-button"
+                type="button"
+                command="--copy"
+                commandfor="doc-code-7"
+                aria-label="Copy Filter partitioned Parquet sh code"
+              >
+                <svg
+                  class="copy-icon copy-icon-clipboard"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M5.5 1.5h7a1 1 0 0 1 1 1v8h-1.5v-7.5h-6.5V1.5Zm-3 3h7a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1Zm.5 1.5v7h6V6H3Z"
+                  />
+                </svg>
+                <svg
+                  class="copy-icon copy-icon-check"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"
+                  />
+                </svg>
+                Copy
+              </button>
+              <span class="copy-status" role="status"></span>
+            </span>
+            <pre><code id="doc-code-7" class="language-sh">sqrail run --max-input-files 100 -t events=events \
   'SELECT drug_id, count(*) AS events FROM events WHERE year = 2026 GROUP BY drug_id ORDER BY drug_id'
 </code></pre>
-          <pre><code class="language-text">{&quot;drug_id&quot;:1,&quot;events&quot;:3}
+          </div>
+          <div class="code-block">
+            <span class="copy-control">
+              <button
+                class="copy-button"
+                type="button"
+                command="--copy"
+                commandfor="doc-code-8"
+                aria-label="Copy Filter partitioned Parquet text code"
+              >
+                <svg
+                  class="copy-icon copy-icon-clipboard"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M5.5 1.5h7a1 1 0 0 1 1 1v8h-1.5v-7.5h-6.5V1.5Zm-3 3h7a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1Zm.5 1.5v7h6V6H3Z"
+                  />
+                </svg>
+                <svg
+                  class="copy-icon copy-icon-check"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"
+                  />
+                </svg>
+                Copy
+              </button>
+              <span class="copy-status" role="status"></span>
+            </span>
+            <pre><code id="doc-code-8" class="language-text">{&quot;drug_id&quot;:1,&quot;events&quot;:3}
 {&quot;drug_id&quot;:2,&quot;events&quot;:3}
 </code></pre>
-          <h2 id="validate-and-aggregate-jsonl">
+          </div>
+          <h2 id="validate-and-aggregate-jsonl" tabindex="-1">
             Validate and aggregate JSONL
           </h2>
           <ul>
@@ -321,7 +644,40 @@ sqrail run --max-rows 100 -t sales=sales.csv -t drugs=drugs.parquet - &lt; top-d
             every record. The query then reports the records that are present
             but incomplete:
           </p>
-          <pre><code class="language-sh">sqrail run --stats --timeout 30s --memory 256MB --max-rows 10 \
+          <div class="code-block">
+            <span class="copy-control">
+              <button
+                class="copy-button"
+                type="button"
+                command="--copy"
+                commandfor="doc-code-9"
+                aria-label="Copy Validate and aggregate JSONL sh code"
+              >
+                <svg
+                  class="copy-icon copy-icon-clipboard"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M5.5 1.5h7a1 1 0 0 1 1 1v8h-1.5v-7.5h-6.5V1.5Zm-3 3h7a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1Zm.5 1.5v7h6V6H3Z"
+                  />
+                </svg>
+                <svg
+                  class="copy-icon copy-icon-check"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"
+                  />
+                </svg>
+                Copy
+              </button>
+              <span class="copy-status" role="status"></span>
+            </span>
+            <pre><code id="doc-code-9" class="language-sh">sqrail run --stats --timeout 30s --memory 256MB --max-rows 10 \
   -t trials=trials.jsonl - &lt;&lt;'SQL'
 SELECT
   count(*) AS records,
@@ -330,14 +686,49 @@ SELECT
 FROM trials
 SQL
 </code></pre>
-          <pre><code class="language-text">{&quot;records&quot;:3,&quot;missing_phase&quot;:1,&quot;drugs&quot;:3}
+          </div>
+          <div class="code-block">
+            <span class="copy-control">
+              <button
+                class="copy-button"
+                type="button"
+                command="--copy"
+                commandfor="doc-code-10"
+                aria-label="Copy Validate and aggregate JSONL text code"
+              >
+                <svg
+                  class="copy-icon copy-icon-clipboard"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M5.5 1.5h7a1 1 0 0 1 1 1v8h-1.5v-7.5h-6.5V1.5Zm-3 3h7a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1Zm.5 1.5v7h6V6H3Z"
+                  />
+                </svg>
+                <svg
+                  class="copy-icon copy-icon-check"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"
+                  />
+                </svg>
+                Copy
+              </button>
+              <span class="copy-status" role="status"></span>
+            </span>
+            <pre><code id="doc-code-10" class="language-text">{&quot;records&quot;:3,&quot;missing_phase&quot;:1,&quot;drugs&quot;:3}
 </code></pre>
+          </div>
           <p>
             When several JSONL files must share one exact schema, add
             <code>--strict-schema</code>; by default files are combined by
             column name.
           </p>
-          <h2 id="keep-dirty-csv-identifiers-as-text">
+          <h2 id="keep-dirty-csv-identifiers-as-text" tabindex="-1">
             Keep dirty CSV identifiers as text
           </h2>
           <ul>
@@ -357,13 +748,81 @@ SQL
               JSON tables at their native types.
             </li>
           </ul>
-          <pre><code class="language-sh">printf 'lot_code,units\n00123,10\nA-900,25\n' &gt; lots.csv
+          <div class="code-block">
+            <span class="copy-control">
+              <button
+                class="copy-button"
+                type="button"
+                command="--copy"
+                commandfor="doc-code-11"
+                aria-label="Copy Keep dirty CSV identifiers as text sh code"
+              >
+                <svg
+                  class="copy-icon copy-icon-clipboard"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M5.5 1.5h7a1 1 0 0 1 1 1v8h-1.5v-7.5h-6.5V1.5Zm-3 3h7a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1Zm.5 1.5v7h6V6H3Z"
+                  />
+                </svg>
+                <svg
+                  class="copy-icon copy-icon-check"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"
+                  />
+                </svg>
+                Copy
+              </button>
+              <span class="copy-status" role="status"></span>
+            </span>
+            <pre><code id="doc-code-11" class="language-sh">printf 'lot_code,units\n00123,10\nA-900,25\n' &gt; lots.csv
 sqrail run --all-varchar -t lots=lots.csv \
   'SELECT lot_code, CAST(units AS BIGINT) AS units FROM lots ORDER BY lot_code'
 </code></pre>
-          <pre><code class="language-text">{&quot;lot_code&quot;:&quot;00123&quot;,&quot;units&quot;:10}
+          </div>
+          <div class="code-block">
+            <span class="copy-control">
+              <button
+                class="copy-button"
+                type="button"
+                command="--copy"
+                commandfor="doc-code-12"
+                aria-label="Copy Keep dirty CSV identifiers as text text code"
+              >
+                <svg
+                  class="copy-icon copy-icon-clipboard"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M5.5 1.5h7a1 1 0 0 1 1 1v8h-1.5v-7.5h-6.5V1.5Zm-3 3h7a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1Zm.5 1.5v7h6V6H3Z"
+                  />
+                </svg>
+                <svg
+                  class="copy-icon copy-icon-check"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"
+                  />
+                </svg>
+                Copy
+              </button>
+              <span class="copy-status" role="status"></span>
+            </span>
+            <pre><code id="doc-code-12" class="language-text">{&quot;lot_code&quot;:&quot;00123&quot;,&quot;units&quot;:10}
 {&quot;lot_code&quot;:&quot;A-900&quot;,&quot;units&quot;:25}
 </code></pre>
+          </div>
         </div>
 
         <nav
