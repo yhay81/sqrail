@@ -5,6 +5,8 @@ versions follow semantic versioning.
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-11-13
+
 ### Added
 
 - `--all-varchar` on `schema`, `check`, and `run` to keep CSV and TSV columns as
@@ -327,7 +329,8 @@ versions follow semantic versioning.
 - Linux and macOS release archives for x86-64 and Arm64
 - SHA-256 checksums and build-provenance attestations
 
-[Unreleased]: https://github.com/yhay81/sqrail/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/yhay81/sqrail/compare/v0.4.2...HEAD
+[0.4.2]: https://github.com/yhay81/sqrail/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/yhay81/sqrail/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/yhay81/sqrail/compare/v0.3.4...v0.4.0
 [0.3.4]: https://github.com/yhay81/sqrail/compare/v0.3.3...v0.3.4
