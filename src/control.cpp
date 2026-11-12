@@ -209,7 +209,7 @@ private:
 			int remaining_ms = 0;
 			if (now < deadline) {
 				const auto remaining = std::chrono::ceil<std::chrono::milliseconds>(deadline - now).count();
-				constexpr auto max_int = static_cast<decltype(remaining)>(std::numeric_limits<int>::max());
+				constexpr auto max_int = static_cast<std::chrono::milliseconds::rep>(std::numeric_limits<int>::max());
 				remaining_ms = remaining > max_int ? std::numeric_limits<int>::max() : static_cast<int>(remaining);
 			}
 			timeout_ms = timeout_ms < 0 ? remaining_ms : std::min(timeout_ms, remaining_ms);
