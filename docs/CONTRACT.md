@@ -95,7 +95,7 @@ stderr after the result is complete:
 ```json
 {
   "schema_version": 1,
-  "sqrail_version": "0.4.1",
+  "sqrail_version": "0.4.2",
   "ok": true,
   "command": "run",
   "rows": 3,
@@ -171,7 +171,7 @@ executing the query:
 ```json
 {
   "schema_version": 1,
-  "sqrail_version": "0.4.1",
+  "sqrail_version": "0.4.2",
   "ok": true,
   "columns": [{ "name": "total", "type": "HUGEINT", "nullable": true }],
   "inputs": [{ "table": "sales", "files": 1 }],
@@ -189,7 +189,7 @@ that execution would use.
 ```json
 {
   "schema_version": 1,
-  "sqrail_version": "0.4.1",
+  "sqrail_version": "0.4.2",
   "file": "/absolute/data.csv",
   "files": 1,
   "columns": [{ "name": "id", "type": "BIGINT", "nullable": true }]
@@ -208,7 +208,7 @@ with `(use 'sqrail --help')` in `message`:
 ```json
 {
   "schema_version": 1,
-  "sqrail_version": "0.4.1",
+  "sqrail_version": "0.4.2",
   "ok": false,
   "code": "INPUT_NOT_FOUND",
   "message": "input file not found: missing.csv"

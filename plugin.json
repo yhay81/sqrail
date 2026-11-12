@@ -1,6 +1,6 @@
 {
   "name": "sqrail",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "Bounded SQL over local CSV, JSON, and Parquet for coding agents.",
   "author": {
     "name": "yhay81"
