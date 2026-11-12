@@ -1,6 +1,6 @@
 # CLI contract
 
-This document defines the sqrail v0.3 command and process contract.
+This document defines the sqrail v0.4 command and process contract.
 
 ## Commands
 
@@ -18,10 +18,12 @@ sqrail --help
 sqrail --version
 ```
 
-Options may appear before or after the SQL positional argument. Every option
-that takes a value may appear at most once, except `-t`, which may be repeated
-for distinct case-insensitive table names. `--` ends option parsing, which
-allows a SQL argument or schema path beginning with `-`.
+Options may appear before or after the SQL positional argument. Every option,
+including boolean flags, may appear at most once, except `-t` (`--table`),
+which may be repeated for distinct case-insensitive table names. Long aliases
+`--table` and `--output` are accepted for `-t` and `-o`; `-h` and `help` are
+accepted for `--help`; `-V` is accepted for `--version`. `--` ends option
+parsing, which allows a SQL argument or schema path beginning with `-`.
 
 `NAME` must match `[A-Za-z_][A-Za-z0-9_]*`. `PATH` may name one regular file, a
 glob whose matches have one format, or a directory containing a partitioned
@@ -220,5 +222,5 @@ Exit codes are stable:
 |    2 | command usage                 |
 |    3 | input file or format          |
 |    4 | SQL parse, bind, or execution |
-|    5 | output path or commit         |
+|    5 | output path, write, or commit |
 |   70 | unexpected internal failure   |

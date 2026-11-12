@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SQRAIL_CONTROL_HPP
+#define SQRAIL_CONTROL_HPP
 
 #include <chrono>
 #include <cstdint>
@@ -32,3 +33,5 @@ private:
 };
 
 } // namespace sqrail
+
+#endif // SQRAIL_CONTROL_HPP

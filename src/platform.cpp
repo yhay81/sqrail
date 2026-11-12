@@ -128,7 +128,7 @@ void CommitOutput(const fs::path &temporary, const fs::path &output) {
 	}
 	const auto code = GetLastError();
 	std::error_code ignored;
-	if (code == ERROR_ALREADY_EXISTS || code == ERROR_FILE_EXISTS || fs::exists(output, ignored)) {
+	if (code == ERROR_ALREADY_EXISTS || code == ERROR_FILE_EXISTS || fs::exists(fs::symlink_status(output, ignored))) {
 		fs::remove(temporary, ignored);
 		throw SqrailError(EXIT_OUTPUT, "OUTPUT_EXISTS", "output appeared during execution: " + output.string());
 	}
@@ -141,7 +141,7 @@ void CommitOutput(const fs::path &temporary, const fs::path &output) {
 	if (error) {
 		std::error_code ignored;
 		fs::remove(temporary, ignored);
-		if (fs::exists(output, ignored)) {
+		if (fs::exists(fs::symlink_status(output, ignored))) {
 			throw SqrailError(EXIT_OUTPUT, "OUTPUT_EXISTS", "output appeared during execution: " + output.string());
 		}
 		throw SqrailError(EXIT_OUTPUT, "OUTPUT_COMMIT",

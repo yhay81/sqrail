@@ -2,7 +2,8 @@
 
 sqrail separates native product tests from Python-based integration and
 research tooling. A contributor can build and test the C++ product without a
-Python interpreter, while repository CI still exercises every layer.
+Python interpreter, while the full CMake workflow presets and release builds
+exercise every layer.
 
 ## Test layers
 
@@ -17,7 +18,7 @@ Python interpreter, while repository CI still exercises every layer.
 to `OFF`, so an ordinary source configure does not require a Python
 interpreter.
 
-Catch2 v3.15.3 is fetched at an immutable commit when native tests are enabled.
+Catch2 v3.16.1 is fetched at an immutable commit when native tests are enabled.
 It is a build-only dependency: neither the sqrail executable nor release
 archives contain the test framework.
 
@@ -36,8 +37,11 @@ cmake --workflow --preset dev
 ```
 
 The `dev`, `release`, `strict`, `sanitize`, `thread`, `system`, and Windows
-presets inherit the full test configuration used by CI. The `fuzz` preset turns
-off every other test layer and builds only the two libFuzzer targets.
+presets inherit the full test configuration executed locally and in the
+multi-platform release workflow (`.github/workflows/release.yml`), while pull
+request CI (`.github/workflows/ci.yml`) runs fast repository hygiene and
+documentation/site verification. The `fuzz` preset turns off every other test
+layer and builds only the two libFuzzer targets.
 
 The execution-control unit test links the embedded DuckDB engine. Trees built
 with whole-program optimization, such as `release` and the presets derived from

@@ -1,5 +1,6 @@
 #include "engine.hpp"
 
+#include "duckdb/common/error_data.hpp"
 #include "duckdb/common/file_system.hpp"
 #include "duckdb/common/multi_file/multi_file_list.hpp"
 #include "error.hpp"
@@ -12,7 +13,6 @@
 #include <filesystem>
 #include <random>
 #include <set>
-#include <sstream>
 #include <string>
 #include <system_error>
 #include <utility>
@@ -195,6 +195,9 @@ bool IsJsonOutput(const FileType &type) {
 std::vector<fs::path> ResolveInputSet(duckdb::DuckDB &database, const std::string &source, ExecutionControl &control,
                                       const std::size_t previously_resolved, const uint64_t max_input_files) {
 	control.Checkpoint("input resolution exceeded --timeout");
+	if (source.empty()) {
+		throw SqrailError(EXIT_INPUT, "INPUT_NOT_FOUND", "input path must not be empty");
+	}
 	std::error_code error;
 	const fs::path absolute = fs::absolute(fs::path(source), error).lexically_normal();
 	if (error) {
@@ -243,7 +246,7 @@ std::vector<fs::path> ResolveInputSet(duckdb::DuckDB &database, const std::strin
 			throw;
 		} catch (const std::exception &exception) {
 			throw SqrailError(EXIT_INPUT, "DATASET_GLOB_FAILED",
-			                  "cannot expand input dataset: " + source + ": " + exception.what());
+			                  "cannot expand input dataset: " + source + ": " + duckdb::ErrorData(exception).Message());
 		}
 	}
 
@@ -381,7 +384,7 @@ std::string ValidateSelectQuery(duckdb::Connection &connection, const std::strin
 	try {
 		statements = connection.ExtractStatements(sql);
 	} catch (const std::exception &error) {
-		throw SqrailError(EXIT_QUERY, "QUERY_FAILED", error.what());
+		throw SqrailError(EXIT_QUERY, "QUERY_FAILED", duckdb::ErrorData(error).Message());
 	}
 
 	if (statements.size() != 1) {
@@ -398,34 +401,42 @@ std::string ResultColumnsJson(duckdb::Connection &connection, const std::string 
 	CheckResult(result, "PLAN_FAILED");
 
 	const auto &rows = result->Collection();
-	std::ostringstream output;
-	output << '[';
+	std::string output = "[";
+	output.reserve(rows.Count() * 64U + 2U);
 	for (duckdb::idx_t row = 0; row < rows.Count(); ++row) {
 		if (row != 0) {
-			output << ',';
+			output.push_back(',');
 		}
 		const auto name = rows.GetValue(0, row).ToString();
 		const auto type = rows.GetValue(1, row).ToString();
 		const auto nullable = rows.GetValue(2, row).ToString();
-		output << "{\"name\":\"" << JsonEscape(name) << "\",\"type\":\"" << JsonEscape(type)
-		       << "\",\"nullable\":" << (nullable == "YES" ? "true" : "false") << '}';
+		output += "{\"name\":\"";
+		output += JsonEscape(name);
+		output += "\",\"type\":\"";
+		output += JsonEscape(type);
+		output += "\",\"nullable\":";
+		output += (nullable == "YES" ? "true" : "false");
+		output.push_back('}');
 	}
-	output << ']';
-	return output.str();
+	output.push_back(']');
+	return output;
 }
 
 std::string InputBindingsJson(const std::vector<TableBinding> &tables) {
-	std::ostringstream output;
-	output << '[';
+	std::string output = "[";
+	output.reserve(tables.size() * 40U + 2U);
 	for (std::size_t index = 0; index < tables.size(); ++index) {
 		if (index != 0) {
-			output << ',';
+			output.push_back(',');
 		}
-		output << "{\"table\":\"" << JsonEscape(tables[index].name) << "\",\"files\":" << tables[index].paths.size()
-		       << '}';
+		output += "{\"table\":\"";
+		output += JsonEscape(tables[index].name);
+		output += "\",\"files\":";
+		output += std::to_string(tables[index].paths.size());
+		output.push_back('}');
 	}
-	output << ']';
-	return output.str();
+	output.push_back(']');
+	return output;
 }
 
 } // namespace sqrail

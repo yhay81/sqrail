@@ -5,13 +5,10 @@
 #include <algorithm>
 #include <cctype>
 #include <charconv>
-#include <cmath>
 #include <filesystem>
 #include <iostream>
 #include <limits>
-#include <regex>
-#include <sstream>
-#include <stdexcept>
+#include <string_view>
 #include <system_error>
 #include <unordered_set>
 #include <utility>
@@ -27,6 +24,68 @@ std::string Lower(std::string value) {
 	return value;
 }
 
+bool IsAsciiDigit(const char ch) {
+	return ch >= '0' && ch <= '9';
+}
+
+bool IsIdentifierStart(const char ch) {
+	return (ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z') || ch == '_';
+}
+
+bool IsIdentifierContinue(const char ch) {
+	return IsIdentifierStart(ch) || IsAsciiDigit(ch);
+}
+
+bool IsValidIdentifier(const std::string_view name) {
+	if (name.empty() || !IsIdentifierStart(name.front())) {
+		return false;
+	}
+	for (std::size_t index = 1; index < name.size(); ++index) {
+		if (!IsIdentifierContinue(name[index])) {
+			return false;
+		}
+	}
+	return true;
+}
+
+bool HasNonZeroDigit(const std::string_view digits) {
+	return std::any_of(digits.begin(), digits.end(), [](const char ch) { return ch != '0'; });
+}
+
+struct ParsedNumberUnit {
+	std::string_view whole;
+	std::string_view fraction;
+	std::string_view unit;
+	bool valid = false;
+};
+
+ParsedNumberUnit SplitNumberAndUnit(const std::string_view raw) {
+	std::size_t index = 0;
+	while (index < raw.size() && IsAsciiDigit(raw[index])) {
+		++index;
+	}
+	if (index == 0) {
+		return {};
+	}
+	const std::string_view whole = raw.substr(0, index);
+	std::string_view fraction;
+	if (index < raw.size() && raw[index] == '.') {
+		++index;
+		const std::size_t fraction_start = index;
+		while (index < raw.size() && IsAsciiDigit(raw[index])) {
+			++index;
+		}
+		if (index == fraction_start) {
+			return {};
+		}
+		fraction = raw.substr(fraction_start, index - fraction_start);
+	}
+	if (index >= raw.size()) {
+		return {};
+	}
+	return {whole, fraction, raw.substr(index), true};
+}
+
 TableBinding ParseBinding(const std::string &raw) {
 	const auto separator = raw.find('=');
 	if (separator == std::string::npos || separator == 0 || separator + 1 >= raw.size()) {
@@ -34,8 +93,7 @@ TableBinding ParseBinding(const std::string &raw) {
 	}
 
 	const std::string name = raw.substr(0, separator);
-	static const std::regex identifier("^[A-Za-z_][A-Za-z0-9_]*$");
-	if (!std::regex_match(name, identifier)) {
+	if (!IsValidIdentifier(name)) {
 		throw SqrailError(EXIT_USAGE, "INVALID_TABLE_NAME", "table name must match [A-Za-z_][A-Za-z0-9_]*: " + name);
 	}
 	return {name, raw.substr(separator + 1), {}};
@@ -118,40 +176,38 @@ uint64_t ParsePositiveInteger(const std::string &raw, const std::string &option,
 }
 
 std::string ParseSize(const std::string &raw, const std::string &option, const std::string &code) {
-	static const std::regex size_pattern("^[0-9]+([.][0-9]+)?(B|K|M|G|T|KB|MB|GB|TB|KiB|MiB|GiB|TiB)$",
-	                                     std::regex::icase);
-	if (!std::regex_match(raw, size_pattern)) {
+	const ParsedNumberUnit number = SplitNumberAndUnit(raw);
+	if (!number.valid) {
 		throw SqrailError(EXIT_USAGE, code, option + " must be a size such as 512M, 512MB, or 2GiB");
 	}
-	try {
-		if (std::stod(raw) <= 0) {
-			throw SqrailError(EXIT_USAGE, code, option + " must be greater than zero");
-		}
-	} catch (const std::invalid_argument &) {
+	const std::string unit = Lower(std::string(number.unit));
+	const bool valid_unit = unit == "b" || unit == "k" || unit == "m" || unit == "g" || unit == "t" || unit == "kb" ||
+	                        unit == "mb" || unit == "gb" || unit == "tb" || unit == "kib" || unit == "mib" ||
+	                        unit == "gib" || unit == "tib";
+	if (!valid_unit) {
 		throw SqrailError(EXIT_USAGE, code, option + " must be a size such as 512M, 512MB, or 2GiB");
-	} catch (const std::out_of_range &) {
+	}
+	if (!HasNonZeroDigit(number.whole) && !HasNonZeroDigit(number.fraction)) {
+		throw SqrailError(EXIT_USAGE, code, option + " must be greater than zero");
+	}
+	const auto first_non_zero = number.whole.find_first_not_of('0');
+	if (first_non_zero != std::string_view::npos && number.whole.size() - first_non_zero > 20U) {
 		throw SqrailError(EXIT_USAGE, code, option + " value is too large");
 	}
 	return raw;
 }
 
 uint64_t ParseByteSize(const std::string &raw, const std::string &option, const std::string &code) {
-	static const std::regex size_pattern("^([0-9]+)(?:[.]([0-9]{1,6}))?(B|KB|MB|GB|TB|KiB|MiB|GiB|TiB)$",
-	                                     std::regex::icase);
-	std::smatch match;
-	if (!std::regex_match(raw, match, size_pattern)) {
+	const ParsedNumberUnit number = SplitNumberAndUnit(raw);
+	if (!number.valid || number.fraction.size() > 6U) {
 		throw SqrailError(EXIT_USAGE, code, option + " must be a size such as 1MiB or 2.5GB (at most six decimals)");
 	}
 
-	uint64_t whole = 0;
-	const auto whole_text = match[1].str();
-	const auto parsed = std::from_chars(whole_text.data(), whole_text.data() + whole_text.size(), whole);
-	if (parsed.ec != std::errc() || parsed.ptr != whole_text.data() + whole_text.size()) {
-		throw SqrailError(EXIT_USAGE, code, option + " value is too large");
-	}
-	const std::string unit = Lower(match[3].str());
-	uint64_t multiplier = 1;
-	if (unit == "kb") {
+	const std::string unit = Lower(std::string(number.unit));
+	uint64_t multiplier = 0;
+	if (unit == "b") {
+		multiplier = 1U;
+	} else if (unit == "kb") {
 		multiplier = 1000U;
 	} else if (unit == "mb") {
 		multiplier = uint64_t {1000} * 1000U;
@@ -167,22 +223,29 @@ uint64_t ParseByteSize(const std::string &raw, const std::string &option, const 
 		multiplier = uint64_t {1024} * 1024U * 1024U;
 	} else if (unit == "tib") {
 		multiplier = uint64_t {1024} * 1024U * 1024U * 1024U;
+	} else {
+		throw SqrailError(EXIT_USAGE, code, option + " must be a size such as 1MiB or 2.5GB (at most six decimals)");
+	}
+
+	uint64_t whole = 0;
+	const auto parsed = std::from_chars(number.whole.data(), number.whole.data() + number.whole.size(), whole);
+	if (parsed.ec != std::errc() || parsed.ptr != number.whole.data() + number.whole.size()) {
+		throw SqrailError(EXIT_USAGE, code, option + " value is too large");
 	}
 	constexpr auto maximum = std::numeric_limits<uint64_t>::max();
 	if (whole > maximum / multiplier) {
 		throw SqrailError(EXIT_USAGE, code, option + " must resolve to between 1 and 18446744073709551615 bytes");
 	}
 	uint64_t bytes = whole * multiplier;
-	const auto fraction_text = match[2].str();
-	if (!fraction_text.empty()) {
+	if (!number.fraction.empty()) {
 		uint64_t fraction = 0;
 		const auto fraction_parsed =
-		    std::from_chars(fraction_text.data(), fraction_text.data() + fraction_text.size(), fraction);
+		    std::from_chars(number.fraction.data(), number.fraction.data() + number.fraction.size(), fraction);
 		if (fraction_parsed.ec != std::errc()) {
 			throw SqrailError(EXIT_USAGE, code, option + " has an invalid decimal fraction");
 		}
 		uint64_t scale = 1;
-		for (std::size_t index = 0; index < fraction_text.size(); ++index) {
+		for (std::size_t index = 0; index < number.fraction.size(); ++index) {
 			scale *= 10U;
 		}
 		const uint64_t fractional_bytes = (fraction * multiplier) / scale;
@@ -198,23 +261,44 @@ uint64_t ParseByteSize(const std::string &raw, const std::string &option, const 
 }
 
 std::chrono::milliseconds ParseTimeout(const std::string &raw) {
-	static const std::regex duration_pattern("^([0-9]+([.][0-9]+)?)(ms|s|m)$", std::regex::icase);
-	std::smatch match;
-	if (!std::regex_match(raw, match, duration_pattern)) {
+	const ParsedNumberUnit number = SplitNumberAndUnit(raw);
+	if (!number.valid) {
+		throw SqrailError(EXIT_USAGE, "INVALID_TIMEOUT", "--timeout must be a duration such as 250ms, 30s, or 2m");
+	}
+	const std::string unit = Lower(std::string(number.unit));
+	uint64_t unit_ms = 0;
+	if (unit == "ms") {
+		unit_ms = 1U;
+	} else if (unit == "s") {
+		unit_ms = 1000U;
+	} else if (unit == "m") {
+		unit_ms = 60000U;
+	} else {
 		throw SqrailError(EXIT_USAGE, "INVALID_TIMEOUT", "--timeout must be a duration such as 250ms, 30s, or 2m");
 	}
 
-	double value = 0;
-	try {
-		value = std::stod(match[1].str());
-	} catch (const std::exception &) {
-		throw SqrailError(EXIT_USAGE, "INVALID_TIMEOUT", "--timeout must be a finite positive duration");
+	constexpr uint64_t maximum_ms = uint64_t {7} * 24U * 60U * 60U * 1000U;
+	uint64_t whole = 0;
+	const auto parsed = std::from_chars(number.whole.data(), number.whole.data() + number.whole.size(), whole);
+	if (parsed.ec != std::errc() || parsed.ptr != number.whole.data() + number.whole.size() ||
+	    whole > maximum_ms / unit_ms) {
+		throw SqrailError(EXIT_USAGE, "INVALID_TIMEOUT", "--timeout must be between 1ms and 7 days");
 	}
-	const std::string unit = Lower(match[3].str());
-	const double multiplier = unit == "ms" ? 1.0 : (unit == "s" ? 1000.0 : 60000.0);
-	const double milliseconds = value * multiplier;
-	constexpr double maximum = 7.0 * 24.0 * 60.0 * 60.0 * 1000.0;
-	if (milliseconds < 1.0 || milliseconds > maximum) {
+
+	constexpr uint64_t fraction_scale = 1000000U;
+	uint64_t scaled_fraction = 0;
+	const std::size_t significant_digits = std::min<std::size_t>(number.fraction.size(), 6U);
+	for (std::size_t index = 0; index < 6U; ++index) {
+		const uint64_t digit = index < significant_digits ? static_cast<uint64_t>(number.fraction[index] - '0') : 0U;
+		scaled_fraction = scaled_fraction * 10U + digit;
+	}
+	const bool extra_nonzero = number.fraction.size() > 6U && HasNonZeroDigit(number.fraction.substr(6U));
+	const uint64_t product = scaled_fraction * unit_ms;
+	const uint64_t fractional_ms = product / fraction_scale;
+	const bool has_sub_ms = (product % fraction_scale) != 0U || extra_nonzero;
+
+	const uint64_t milliseconds = whole * unit_ms + fractional_ms;
+	if (milliseconds < 1U || milliseconds > maximum_ms || (milliseconds == maximum_ms && has_sub_ms)) {
 		throw SqrailError(EXIT_USAGE, "INVALID_TIMEOUT", "--timeout must be between 1ms and 7 days");
 	}
 	return std::chrono::milliseconds(static_cast<int64_t>(milliseconds));
@@ -268,7 +352,16 @@ RunOptions ParseRun(int argc, char **argv, const bool check_only) {
 			if (options.has_output) {
 				throw SqrailError(EXIT_USAGE, "DUPLICATE_OPTION", "--output may only be specified once");
 			}
-			options.output = fs::absolute(RequireValue(index, argc, argv, argument));
+			const std::string raw_output = RequireValue(index, argc, argv, argument);
+			if (raw_output.empty()) {
+				throw SqrailError(EXIT_OUTPUT, "OUTPUT_DIRECTORY", "output path must not be empty");
+			}
+			std::error_code path_error;
+			options.output = fs::absolute(fs::path(raw_output), path_error);
+			if (path_error) {
+				throw SqrailError(EXIT_OUTPUT, "OUTPUT_DIRECTORY",
+				                  "cannot resolve output path: " + raw_output + ": " + path_error.message());
+			}
 			options.has_output = true;
 		} else if (!positional_only && argument == "--memory") {
 			if (has_memory) {
@@ -289,7 +382,16 @@ RunOptions ParseRun(int argc, char **argv, const bool check_only) {
 			if (has_spill) {
 				throw SqrailError(EXIT_USAGE, "DUPLICATE_OPTION", "--spill may only be specified once");
 			}
-			options.spill_directory = fs::absolute(RequireValue(index, argc, argv, argument));
+			const std::string raw_spill = RequireValue(index, argc, argv, argument);
+			if (raw_spill.empty()) {
+				throw SqrailError(EXIT_OUTPUT, "SPILL_DIRECTORY", "spill directory must not be empty");
+			}
+			std::error_code spill_error;
+			options.spill_directory = fs::absolute(fs::path(raw_spill), spill_error);
+			if (spill_error) {
+				throw SqrailError(EXIT_OUTPUT, "SPILL_DIRECTORY",
+				                  "cannot resolve spill directory: " + raw_spill + ": " + spill_error.message());
+			}
 			has_spill = true;
 		} else if (!positional_only && argument == "--max-spill") {
 			if (check_only) {
@@ -377,7 +479,10 @@ RunOptions ParseRun(int argc, char **argv, const bool check_only) {
 
 	if (options.has_output) {
 		std::error_code error;
-		if (fs::exists(options.output, error)) {
+		const auto leaf_status = fs::symlink_status(options.output, error);
+		if (leaf_status.type() == fs::file_type::not_found) {
+			error.clear();
+		} else if (fs::exists(leaf_status) || (!error && fs::exists(options.output, error))) {
 			throw SqrailError(EXIT_OUTPUT, "OUTPUT_EXISTS", "output already exists: " + options.output.string());
 		}
 		const fs::path parent = options.output.parent_path();
@@ -389,6 +494,23 @@ RunOptions ParseRun(int argc, char **argv, const bool check_only) {
 			throw SqrailError(EXIT_OUTPUT, "OUTPUT_DIRECTORY",
 			                  "cannot access output directory: " + parent.string() + ": " + error.message());
 		}
+		const fs::path filename = options.output.filename();
+		if (filename.empty() || filename == "." || filename == "..") {
+			throw SqrailError(EXIT_OUTPUT, "OUTPUT_DIRECTORY",
+			                  "output path must name a file: " + options.output.string());
+		}
+		const fs::path canonical_parent = fs::weakly_canonical(parent, error);
+		if (error) {
+			throw SqrailError(EXIT_OUTPUT, "OUTPUT_DIRECTORY",
+			                  "cannot resolve output directory: " + parent.string() + ": " + error.message());
+		}
+		const fs::path normalized_output = canonical_parent / filename;
+		std::error_code normalized_error;
+		const auto normalized_status = fs::symlink_status(normalized_output, normalized_error);
+		if (fs::exists(normalized_status)) {
+			throw SqrailError(EXIT_OUTPUT, "OUTPUT_EXISTS", "output already exists: " + normalized_output.string());
+		}
+		options.output = normalized_output;
 	}
 
 	return options;

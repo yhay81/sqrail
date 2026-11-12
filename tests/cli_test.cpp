@@ -3,9 +3,12 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include <chrono>
+#include <filesystem>
 #include <functional>
 #include <limits>
 #include <string>
+#include <system_error>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -230,5 +233,99 @@ TEST_CASE("exact byte limits truncate fractions and reject invalid or overflowin
 			Parse({"sqrail", "run", "--max-output-bytes", value, "SELECT 1"},
 			      [](const int argc, char **argv) { return sqrail::ParseRun(argc, argv, false); });
 		});
+	}
+}
+
+TEST_CASE("deterministic ASCII parsers enforce identifier, size, and timeout edge cases", "[cli]") {
+	const auto valid_binding = Parse({"sqrail", "run", "-t", "_sales_2=dir/a=b.csv", "--timeout", "0.001s", "SELECT 1"},
+	                                 [](const int argc, char **argv) { return sqrail::ParseRun(argc, argv, false); });
+	REQUIRE(valid_binding.tables.size() == 1);
+	CHECK(valid_binding.tables[0].name == "_sales_2");
+	CHECK(valid_binding.tables[0].source == "dir/a=b.csv");
+	CHECK(valid_binding.timeout == std::chrono::milliseconds(1));
+
+	const auto exact_timeout = Parse({"sqrail", "run", "--timeout", "1.005s", "SELECT 1"},
+	                                 [](const int argc, char **argv) { return sqrail::ParseRun(argc, argv, false); });
+	CHECK(exact_timeout.timeout == std::chrono::milliseconds(1005));
+
+	for (const auto &raw : {"1sales=a.csv", "my-sales=a.csv", "sales$=a.csv"}) {
+		CAPTURE(raw);
+		CheckError("INVALID_TABLE_NAME", [&]() {
+			Parse({"sqrail", "run", "-t", raw, "SELECT 1"},
+			      [](const int argc, char **argv) { return sqrail::ParseRun(argc, argv, false); });
+		});
+	}
+	for (const auto &raw : {"=a.csv", "sales=", "sales"}) {
+		CAPTURE(raw);
+		CheckError("INVALID_TABLE", [&]() {
+			Parse({"sqrail", "run", "-t", raw, "SELECT 1"},
+			      [](const int argc, char **argv) { return sqrail::ParseRun(argc, argv, false); });
+		});
+	}
+	for (const auto &raw : {"0M", "0.000GiB", ".5MB", "128.MB", "128MBx", "100000000000000000000B"}) {
+		CAPTURE(raw);
+		CheckError("INVALID_MEMORY", [&]() {
+			Parse({"sqrail", "run", "--memory", raw, "SELECT 1"},
+			      [](const int argc, char **argv) { return sqrail::ParseRun(argc, argv, false); });
+		});
+	}
+	for (const auto &raw : {"0.000999s", "10080.0000001m", ".5s", "5.s", "+5s"}) {
+		CAPTURE(raw);
+		CheckError("INVALID_TIMEOUT", [&]() {
+			Parse({"sqrail", "run", "--timeout", raw, "SELECT 1"},
+			      [](const int argc, char **argv) { return sqrail::ParseRun(argc, argv, false); });
+		});
+	}
+}
+
+TEST_CASE("output path validation rejects empty paths and dangling symlinks and normalizes parents", "[cli]") {
+	CheckError("OUTPUT_DIRECTORY", []() {
+		Parse({"sqrail", "run", "-o", "", "SELECT 1"},
+		      [](const int argc, char **argv) { return sqrail::ParseRun(argc, argv, false); });
+	});
+	CheckError("SPILL_DIRECTORY", []() {
+		Parse({"sqrail", "run", "--spill", "", "SELECT 1"},
+		      [](const int argc, char **argv) { return sqrail::ParseRun(argc, argv, false); });
+	});
+
+	const auto temp_root =
+	    std::filesystem::temp_directory_path() /
+	    ("sqrail-cli-test-" + std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()));
+	std::filesystem::create_directories(temp_root / "real" / "child");
+	struct Cleanup {
+		std::filesystem::path root;
+		~Cleanup() {
+			std::error_code ignored;
+			std::filesystem::remove_all(root, ignored);
+		}
+	} cleanup {temp_root};
+
+	const auto relative_parent = temp_root / "real" / "child" / ".." / "out.parquet";
+	const auto parsed_relative = Parse({"sqrail", "run", "-o", relative_parent.string(), "SELECT 1"},
+	                                   [](const int argc, char **argv) { return sqrail::ParseRun(argc, argv, false); });
+	CHECK(parsed_relative.output == std::filesystem::weakly_canonical(temp_root / "real") / "out.parquet");
+
+	std::error_code symlink_error;
+	const auto dangling = temp_root / "dangling.parquet";
+	std::filesystem::create_symlink(temp_root / "missing-target.parquet", dangling, symlink_error);
+	if (!symlink_error) {
+		try {
+			static_cast<void>(Parse({"sqrail", "run", "-o", dangling.string(), "SELECT 1"},
+			                        [](const int argc, char **argv) { return sqrail::ParseRun(argc, argv, false); }));
+			FAIL("expected SqrailError for dangling output symlink");
+		} catch (const sqrail::SqrailError &error) {
+			CHECK(error.exit_code == sqrail::EXIT_OUTPUT);
+			CHECK(error.code == "OUTPUT_EXISTS");
+		}
+	}
+
+	symlink_error.clear();
+	const auto symlink_parent = temp_root / "linked-dir";
+	std::filesystem::create_directory_symlink(temp_root / "real", symlink_parent, symlink_error);
+	if (!symlink_error) {
+		const auto parsed_symlink_parent =
+		    Parse({"sqrail", "run", "-o", (symlink_parent / "out.parquet").string(), "SELECT 1"},
+		          [](const int argc, char **argv) { return sqrail::ParseRun(argc, argv, false); });
+		CHECK(parsed_symlink_parent.output == std::filesystem::weakly_canonical(temp_root / "real") / "out.parquet");
 	}
 }

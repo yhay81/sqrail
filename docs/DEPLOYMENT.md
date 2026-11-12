@@ -41,8 +41,8 @@ npm run site:check
 
 This checks formatting, HTML structure and accessibility rules, JavaScript
 syntax, the public Agent Skill routes, and a Wrangler deployment dry run. The
-C++ CI build separately verifies that `site/help.txt` exactly matches
-`sqrail --help`.
+end-to-end and smoke test suites (`tests/cross_platform_test.py` and
+`tests/smoke.sh`) verify that `site/help.txt` exactly matches `sqrail --help`.
 
 ## Deploy
 

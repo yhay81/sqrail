@@ -942,8 +942,8 @@ def read_invocations(path: pathlib.Path) -> list[list[str]]:
     return invocations
 
 
-def is_help_invocation(arguments: list[str]) -> bool:
-    return len(arguments) == 1 and arguments[0] in {
+def is_help_invocation(arguments: list[str], arm: str | None = None) -> bool:
+    help_tokens = {
         "-h",
         "-help",
         "--help",
@@ -951,18 +951,27 @@ def is_help_invocation(arguments: list[str]) -> bool:
         "--version",
         "-version",
     }
+    if arm in {None, "sqrail"}:
+        help_tokens.add("help")
+    return (len(arguments) == 0 and arm == "sqrail") or (
+        len(arguments) == 1 and arguments[0] in help_tokens
+    )
 
 
-def starts_with_help(invocations: list[list[str]]) -> bool:
+def starts_with_help(
+    invocations: list[list[str]], arm: str | None = None
+) -> bool:
+    help_tokens = {
+        "-h",
+        "-help",
+        "--help",
+    }
+    if arm in {None, "sqrail"}:
+        help_tokens.add("help")
     return (
         bool(invocations)
         and len(invocations[0]) == 1
-        and invocations[0][0]
-        in {
-            "-h",
-            "-help",
-            "--help",
-        }
+        and invocations[0][0] in help_tokens
     )
 
 
@@ -1132,12 +1141,9 @@ def score_task(
             actual_reader = (
                 "read_json_auto" if task == "parquet_to_jsonl" else "read_parquet"
             )
-            actual_reader_call = actual_reader
-            if task == "parquet_to_jsonl":
-                actual_reader_call = "read_json_auto"
             actual = single_row(
                 duckdb_bin,
-                fingerprint_query(actual_reader_call, names["output"]),
+                fingerprint_query(actual_reader, names["output"]),
             )
             source_key = "fact_csv" if task == "csv_to_parquet" else "fact_parquet"
             source_reader = (
@@ -1565,6 +1571,8 @@ def validate_inputs(
     pathlib.Path,
     pathlib.Path,
     pathlib.Path,
+    pathlib.Path,
+    pathlib.Path,
 ]:
     if args.repetitions <= 0:
         raise EvaluationError("--repetitions must be positive")
@@ -1596,7 +1604,7 @@ def validate_inputs(
         raise EvaluationError("at least one task is required")
     if not contexts:
         raise EvaluationError("at least one context is required")
-    return sqrail_bin, duckdb_bin, codex_bin, claude_bin, agy_bin
+    return data_dir, sqrail_bin, duckdb_bin, codex_bin, claude_bin, agy_bin, agy_data_dir
 
 
 def comparable_environment(environment: dict[str, Any]) -> dict[str, Any]:
@@ -1655,9 +1663,15 @@ def main() -> int:
     arms = split_choices(args.arms, {"sqrail", "duckdb"}, "arms")
     tasks = split_choices(args.tasks, set(TASK_IDS), "tasks")
     contexts = split_choices(args.contexts, set(CONTEXT_PROFILES), "contexts")
-    sqrail_bin, duckdb_bin, codex_bin, claude_bin, agy_bin = validate_inputs(
-        args, agents, arms, tasks, contexts
-    )
+    (
+        data_dir,
+        sqrail_bin,
+        duckdb_bin,
+        codex_bin,
+        claude_bin,
+        agy_bin,
+        agy_data_dir,
+    ) = validate_inputs(args, agents, arms, tasks, contexts)
     sqrail_help_file = (
         args.sqrail_help_file.expanduser().resolve()
         if args.sqrail_help_file is not None
@@ -1772,12 +1786,12 @@ def main() -> int:
             else None
         },
         "dataset_manifest": json.loads(
-            (args.data_dir / "manifest.json").read_text(encoding="utf-8")
+            (data_dir / "manifest.json").read_text(encoding="utf-8")
         ),
         "dataset_files": {
             name: {
-                "bytes": (args.data_dir / name).stat().st_size,
-                "sha256": sha256_file(args.data_dir / name),
+                "bytes": (data_dir / name).stat().st_size,
+                "sha256": sha256_file(data_dir / name),
             }
             for name in ("fact.csv", "fact.parquet", "dim.parquet", "manifest.json")
         },
@@ -1884,7 +1898,7 @@ def main() -> int:
         arm = allocation[run["condition"]]
         token = stable_token(args.seed, run["run_id"], "filenames", size=10)
         names = stage_workspace(
-            data_dir=args.data_dir.resolve(),
+            data_dir=data_dir,
             workspace=workspace,
             task=run["task"],
             token=token,
@@ -1965,7 +1979,7 @@ def main() -> int:
         if run["agent"] == "gemini":
             (run_dir / "agent-stdout.txt").write_text(stdout, encoding="utf-8")
             transcript, agy_conversation_id = read_agy_transcript(
-                agy_log_path, args.agy_data_dir.expanduser().resolve()
+                agy_log_path, agy_data_dir
             )
             if agy_log_path.is_file():
                 agy_log_path.unlink()
@@ -2000,7 +2014,7 @@ def main() -> int:
             for forbidden in FORBIDDEN_DISCOVERY
             if forbidden in command_text.lower()
         }
-        if not starts_with_help(invocations):
+        if not starts_with_help(invocations, arm=arm):
             protocol_reason_set.add("missing_initial_help")
         protocol_reasons = sorted(protocol_reason_set)
         protocol_violation = bool(protocol_reasons)
@@ -2049,9 +2063,11 @@ def main() -> int:
             "usage": usage,
             "rail_calls": len(invocations),
             "data_tool_calls": sum(
-                not is_help_invocation(call) for call in invocations
+                not is_help_invocation(call, arm=arm) for call in invocations
             ),
-            "help_calls": sum(is_help_invocation(call) for call in invocations),
+            "help_calls": sum(
+                is_help_invocation(call, arm=arm) for call in invocations
+            ),
             "inputs_unchanged": inputs_unchanged,
             "context_unchanged": context_unchanged,
             "score": score_details,
@@ -2092,4 +2108,4 @@ if __name__ == "__main__":
         raise SystemExit(main())
     except EvaluationError as error:
         print(f"agent evaluation: {error}", file=sys.stderr)
-        raise SystemExit(2)
+        raise SystemExit(2) from error

@@ -1,8 +1,9 @@
 #include "cli.hpp"
+#include "error.hpp"
 
 #include <cstddef>
 #include <cstdint>
-#include <exception>
+#include <cstdlib>
 #include <string>
 #include <utility>
 #include <vector>
@@ -18,7 +19,10 @@ void Parse(std::vector<std::string> arguments, PARSE &&parse) {
 	}
 	try {
 		static_cast<void>(parse(static_cast<int>(argv.size()), argv.data()));
-	} catch (const std::exception &) {
+	} catch (const sqrail::SqrailError &error) {
+		if (error.exit_code <= 0 || error.code.empty()) {
+			std::abort();
+		}
 	}
 }
 

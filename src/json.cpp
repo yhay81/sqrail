@@ -19,7 +19,7 @@ bool IsContinuation(const unsigned char byte) {
 	return (byte & 0xC0U) == 0x80U;
 }
 
-bool DecodeUtf8(const std::string &input, const std::size_t offset, std::uint32_t &codepoint, std::size_t &length) {
+bool DecodeUtf8(const std::string_view input, const std::size_t offset, std::uint32_t &codepoint, std::size_t &length) {
 	const auto first = static_cast<unsigned char>(input[offset]);
 	const auto remaining = input.size() - offset;
 
@@ -71,7 +71,7 @@ bool IsValueBoundary(const char character) {
 	       character == '[' || character == ']' || character == '{' || character == '}';
 }
 
-bool IsBareTokenAt(const std::string &input, const std::size_t offset, const std::string_view token) {
+bool IsBareTokenAt(const std::string_view input, const std::size_t offset, const std::string_view token) {
 	if (offset + token.size() > input.size() || input.compare(offset, token.size(), token) != 0) {
 		return false;
 	}
@@ -83,7 +83,7 @@ bool IsBareTokenAt(const std::string &input, const std::size_t offset, const std
 
 } // namespace
 
-std::string JsonEscape(const std::string &input) {
+std::string JsonEscape(const std::string_view input) {
 	std::string output;
 	output.reserve(input.size());
 
@@ -142,11 +142,11 @@ std::string JsonEscape(const std::string &input) {
 	return output;
 }
 
-std::string StrictJson(std::string input) {
-	if (input.find("NaN") == std::string::npos && input.find("Infinity") == std::string::npos) {
-		return input;
-	}
+bool HasNonFiniteJsonToken(const std::string_view input) {
+	return input.find("NaN") != std::string_view::npos || input.find("Infinity") != std::string_view::npos;
+}
 
+std::string RewriteNonFiniteJson(const std::string_view input) {
 	std::string output;
 	output.reserve(input.size());
 	bool inside_string = false;
@@ -193,6 +193,13 @@ std::string StrictJson(std::string input) {
 		++index;
 	}
 	return output;
+}
+
+std::string StrictJson(std::string input) {
+	if (!HasNonFiniteJsonToken(input)) {
+		return input;
+	}
+	return RewriteNonFiniteJson(input);
 }
 
 } // namespace sqrail

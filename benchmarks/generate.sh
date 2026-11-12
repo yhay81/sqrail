@@ -107,7 +107,7 @@ dim_parquet=$(sql_quote "$data_dir/dim.parquet")
 evolution_a=$(sql_quote "$data_dir/schema-evolution/part-a.parquet")
 evolution_b=$(sql_quote "$data_dir/schema-evolution/part-b.parquet")
 
-"$duckdb_bin" -no-stdin -c "
+"$duckdb_bin" -no-init -no-stdin -c "
 SET preserve_insertion_order = false;
 COPY (
   SELECT

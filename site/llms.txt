@@ -44,6 +44,7 @@ https://sqrail.yhay81.com/help.txt
 - Quick start: https://sqrail.yhay81.com/docs/
 - Agent setup: https://sqrail.yhay81.com/docs/agents/
 - CLI contract: https://sqrail.yhay81.com/docs/reference/contract/
+- Recipes: https://sqrail.yhay81.com/docs/reference/recipes/
 - Agent integration: https://sqrail.yhay81.com/docs/reference/agents/
 - Performance baselines: https://sqrail.yhay81.com/docs/reference/performance/
 - Benchmark policy: https://sqrail.yhay81.com/docs/reference/benchmarks/
@@ -54,6 +55,7 @@ https://sqrail.yhay81.com/help.txt
 ## Agent-readable sources
 
 - CLI contract: https://github.com/yhay81/sqrail/blob/main/docs/CONTRACT.md
+- Recipes: https://github.com/yhay81/sqrail/blob/main/docs/RECIPES.md
 - Agent integration: https://github.com/yhay81/sqrail/blob/main/docs/AGENT_INTEGRATION.md
 - Agent Skill: https://github.com/yhay81/sqrail/tree/main/skills/sqrail
 - Security boundary: https://github.com/yhay81/sqrail/blob/main/SECURITY.md

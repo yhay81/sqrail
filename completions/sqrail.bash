@@ -54,18 +54,18 @@ _sqrail() {
 
   # The default COMP_WORDBREAKS splits "-t NAME=PATH" at "=", so PATH arrives
   # as its own word, or the current word is "=" when PATH is still empty.
-  if [[ $cur == "=" && ${COMP_WORDS[COMP_CWORD - 2]} == -t ]]; then
+  if ((COMP_CWORD >= 3)) && [[ $cur == "=" && (${COMP_WORDS[COMP_CWORD - 2]} == -t || ${COMP_WORDS[COMP_CWORD - 2]} == --table) ]]; then
     cur=""
     _sqrail_paths
     return 0
   fi
-  if [[ $prev == "=" && ${COMP_WORDS[COMP_CWORD - 3]} == -t ]]; then
+  if ((COMP_CWORD >= 4)) && [[ $prev == "=" && (${COMP_WORDS[COMP_CWORD - 3]} == -t || ${COMP_WORDS[COMP_CWORD - 3]} == --table) ]]; then
     _sqrail_paths
     return 0
   fi
 
   case $prev in
-    -o | *"<" | *">")
+    -o | --output | *"<" | *">")
       _sqrail_paths
       return 0
       ;;
@@ -73,7 +73,7 @@ _sqrail() {
       _sqrail_paths -d
       return 0
       ;;
-    -t | --memory | --threads | --max-spill | --timeout | --max-rows | \
+    -t | --table | --memory | --threads | --max-spill | --timeout | --max-rows | \
       --max-output-bytes | --max-input-files | --max-sql-bytes)
       return 0
       ;;

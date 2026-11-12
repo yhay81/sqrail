@@ -5,6 +5,14 @@ versions follow semantic versioning.
 
 ## [Unreleased]
 
+### Added
+
+- `docs/RECIPES.md` to the generated documentation site at
+  `/docs/reference/recipes/`, `site/sitemap.xml`, `site/llms.txt`, and installed
+  release documentation trees
+- Bash completion path support for the `--table` and `--output` long option
+  aliases
+
 ### Changed
 
 - the pinned documentation toolchain to Wrangler 4.157.0 and html-validate
@@ -15,6 +23,24 @@ versions follow semantic versioning.
   `mcr.microsoft.com/devcontainers/cpp:3-ubuntu24.04`
 - the DuckDB copyright notice in `THIRD_PARTY_NOTICES.md` to match the bundled
   DuckDB v2.0.0 license text
+- CLI option parsing to use deterministic, locale-independent ASCII parsers
+  without `std::regex` or `std::stod`
+
+### Fixed
+
+- unwritable JSON/JSONL and Parquet/CSV/TSV output files now fail with
+  `OUTPUT_WRITE` (exit 5) instead of `INTERNAL` (exit 70) or `QUERY_FAILED`
+  (exit 4), and create JSON/JSONL temporary outputs under the private `0077`
+  creation mask
+- `-o` now rejects empty paths and dangling symlinks upfront (`OUTPUT_EXISTS`,
+  exit 5) and canonicalizes existing parent directories so relative `..` and
+  symlinked parent paths match DuckDB's `allowed_paths` sandbox
+- DuckDB parse and input-resolution diagnostics now emit human-readable error
+  messages instead of serialized JSON payloads nested inside `"message"`
+- `site/index.html` now states the embedded DuckDB v2.0.0 version, and
+  `site/404.html` renders in a single-column layout with a styled primary CTA
+- blinded agent-evaluation `rail` launchers in `sqrail` mode now conceal bare
+  `./rail` and `./rail help` invocations without leaking unblinded help text
 
 ## [0.4.0] - 2026-10-29
 

@@ -2,8 +2,13 @@
 set -euo pipefail
 
 sqrail_bin=${1:?sqrail binary path is required}
+script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+repo_dir=$(cd "$script_dir/.." && pwd)
 test_dir=$(mktemp -d)
 trap 'chmod -R u+rwx "$test_dir" 2>/dev/null || true; rm -rf "$test_dir"' EXIT
+
+"$sqrail_bin" --help > "$test_dir/help.txt"
+cmp -s "$test_dir/help.txt" "$repo_dir/site/help.txt"
 
 expect_error() {
   expected_status=$1
@@ -80,6 +85,10 @@ test "$bounded_result" = '{"i":0}
 expect_error 4 RESULT_LIMIT "$test_dir/result-limit.json" \
   "$sqrail_bin" run --max-rows 2 \
   'SELECT i FROM range(3) AS rows(i) ORDER BY i'
+
+ln -s "$test_dir/missing-target.parquet" "$test_dir/dangling.parquet"
+expect_error 5 OUTPUT_EXISTS "$test_dir/dangling-error.json" \
+  "$sqrail_bin" run -o "$test_dir/dangling.parquet" 'SELECT 1 AS x'
 
 stats_result=$("$sqrail_bin" run --stats \
   'SELECT i FROM range(3) AS rows(i) ORDER BY i' 2>"$test_dir/stats.json")
@@ -364,6 +373,8 @@ expect_error 4 QUERY_FAILED "$test_dir/external-access.json" \
 mkdir "$test_dir/empty-dataset"
 expect_error 3 EMPTY_DATASET "$test_dir/empty-dataset.json" \
   "$sqrail_bin" schema "$test_dir/empty-dataset"
+expect_error 3 INPUT_NOT_FOUND "$test_dir/empty-schema-path.json" \
+  "$sqrail_bin" schema ""
 
 printf 'not really bzip2\n' > "$test_dir/data.csv.bz2"
 expect_error 3 UNSUPPORTED_COMPRESSION "$test_dir/compression.json" \

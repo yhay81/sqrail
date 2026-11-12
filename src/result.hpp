@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SQRAIL_RESULT_HPP
+#define SQRAIL_RESULT_HPP
 
 #include "duckdb.hpp"
 #include "engine.hpp"
@@ -26,3 +27,5 @@ uint64_t WriteJsonFile(duckdb::DuckDB &database, duckdb::Connection &connection,
                        const std::filesystem::path &temporary, const FileType &type, uint64_t max_rows);
 
 } // namespace sqrail
+
+#endif // SQRAIL_RESULT_HPP

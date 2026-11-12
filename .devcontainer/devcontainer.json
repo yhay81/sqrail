@@ -2,7 +2,7 @@
   "name": "sqrail LLVM 18",
   "build": {
     "dockerfile": "Dockerfile",
-    "context": ".."
+    "context": "."
   },
   "remoteUser": "vscode",
   "containerEnv": {

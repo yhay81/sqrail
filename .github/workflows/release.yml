@@ -106,6 +106,8 @@ jobs:
           test -x "dist/${PACKAGE_NAME}/share/doc/sqrail/benchmarks/agent-eval.py"
           test -x "dist/${PACKAGE_NAME}/share/doc/sqrail/benchmarks/agent-run.py"
           test -f "dist/${PACKAGE_NAME}/share/doc/sqrail/benchmarks/agent_oracle.py"
+          test -f "dist/${PACKAGE_NAME}/share/doc/sqrail/docs/README.md"
+          test -f "dist/${PACKAGE_NAME}/share/doc/sqrail/docs/RECIPES.md"
           test -f "dist/${PACKAGE_NAME}/share/doc/sqrail/docs/PLATFORMS.md"
           test -f "dist/${PACKAGE_NAME}/share/doc/sqrail/docs/V0.3_RELEASE.md"
           test -f "dist/${PACKAGE_NAME}/share/sqrail/skills/sqrail/SKILL.md"
@@ -215,6 +217,8 @@ jobs:
             "dist/$env:PACKAGE_NAME/share/doc/sqrail/benchmarks/agent-eval.py",
             "dist/$env:PACKAGE_NAME/share/doc/sqrail/benchmarks/agent-run.py",
             "dist/$env:PACKAGE_NAME/share/doc/sqrail/benchmarks/agent_oracle.py",
+            "dist/$env:PACKAGE_NAME/share/doc/sqrail/docs/README.md",
+            "dist/$env:PACKAGE_NAME/share/doc/sqrail/docs/RECIPES.md",
             "dist/$env:PACKAGE_NAME/share/doc/sqrail/docs/PLATFORMS.md",
             "dist/$env:PACKAGE_NAME/share/doc/sqrail/docs/V0.3_RELEASE.md",
             "dist/$env:PACKAGE_NAME/share/sqrail/skills/sqrail/SKILL.md",

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SQRAIL_ENGINE_HPP
+#define SQRAIL_ENGINE_HPP
 
 #include "cli.hpp"
 #include "control.hpp"
@@ -50,3 +51,5 @@ std::string ResultColumnsJson(duckdb::Connection &connection, const std::string 
 std::string InputBindingsJson(const std::vector<TableBinding> &tables);
 
 } // namespace sqrail
+
+#endif // SQRAIL_ENGINE_HPP

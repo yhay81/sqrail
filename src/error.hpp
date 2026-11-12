@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SQRAIL_ERROR_HPP
+#define SQRAIL_ERROR_HPP
 
 #include <stdexcept>
 #include <string>
@@ -23,3 +24,5 @@ struct SqrailError final : std::runtime_error {
 };
 
 } // namespace sqrail
+
+#endif // SQRAIL_ERROR_HPP

@@ -362,18 +362,17 @@ if(SQRAIL_ENABLE_CLANG_TIDY)
 endif()
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
-  if(CMAKE_BUILD_TYPE STREQUAL "Release")
-    if(APPLE)
-      target_link_options(sqrail PRIVATE -Wl,-dead_strip)
-    else()
-      target_link_options(sqrail PRIVATE -Wl,--gc-sections)
-    endif()
+  if(APPLE)
+    target_link_options(sqrail PRIVATE $<$<CONFIG:Release>:-Wl,-dead_strip>)
+  else()
+    target_link_options(sqrail PRIVATE $<$<CONFIG:Release>:-Wl,--gc-sections>)
   endif()
 endif()
 
 if(
   SQRAIL_STATIC_CPP_RUNTIME
   AND NOT SQRAIL_ENABLE_SANITIZERS
+  AND NOT SQRAIL_ENABLE_THREAD_SANITIZER
   AND UNIX
   AND NOT APPLE
   AND CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU"
@@ -401,7 +400,15 @@ if(UNIX)
   )
 endif()
 install(
-  FILES README.md LICENSE THIRD_PARTY_NOTICES.md CHANGELOG.md SECURITY.md
+  FILES
+    README.md
+    LICENSE
+    THIRD_PARTY_NOTICES.md
+    CHANGELOG.md
+    SECURITY.md
+    CONTRIBUTING.md
+    SUPPORT.md
+    CODE_OF_CONDUCT.md
   DESTINATION "${CMAKE_INSTALL_DOCDIR}"
   COMPONENT sqrail
 )
@@ -417,12 +424,18 @@ install(
 )
 install(
   FILES
+    docs/README.md
+    docs/RECIPES.md
+    docs/AGENT_INTEGRATION.md
     docs/CONCEPT.md
     docs/CONCEPT.ja.md
     docs/CONTRACT.md
     docs/BENCHMARKS.md
     docs/BASELINE.md
     docs/PLATFORMS.md
+    docs/TESTING.md
+    docs/DEPLOYMENT.md
+    docs/COMMUNITY_GROWTH.md
     docs/V0.3_RELEASE.md
   DESTINATION "${CMAKE_INSTALL_DOCDIR}/docs"
   COMPONENT sqrail

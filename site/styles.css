@@ -207,7 +207,8 @@ footer a:hover,
 }
 
 .github-repo,
-.nav-install {
+.nav-install,
+.button-primary {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -269,7 +270,8 @@ footer a:hover,
   animation: star-in 300ms ease both;
 }
 
-.nav-install {
+.nav-install,
+.button-primary {
   min-width: 78px;
   padding: 0 16px;
   border: 1px solid var(--acid);
@@ -284,13 +286,15 @@ footer a:hover,
     transform 160ms ease;
 }
 
-.nav-install:hover {
+.nav-install:hover,
+.button-primary:hover {
   border-color: var(--acid-soft);
   background: var(--acid-soft);
   transform: translateY(-1px);
 }
 
 .nav-install:active,
+.button-primary:active,
 .github-repo:active {
   transform: translateY(0);
 }
@@ -699,7 +703,6 @@ h1 {
   color: var(--acid);
 }
 
-.manifesto,
 .sequence,
 .boundary,
 .contract,
@@ -711,12 +714,6 @@ h1 {
   margin: 0 auto;
 }
 
-.manifesto {
-  padding: clamp(96px, 10vw, 150px) 8%;
-  text-align: center;
-}
-
-.manifesto h2,
 .sequence h2,
 .contract h2,
 .proof h2,
@@ -728,18 +725,6 @@ h1 {
   font-weight: 540;
   letter-spacing: -0.045em;
   line-height: 1.08;
-}
-
-.manifesto h2 span {
-  color: var(--acid);
-}
-
-.manifesto > p:last-child {
-  max-width: 680px;
-  margin: 36px auto 0;
-  color: #aeb1a9;
-  font-size: clamp(16px, 1.4vw, 18px);
-  line-height: 1.65;
 }
 
 .sequence {
@@ -1382,6 +1367,14 @@ footer > div {
 .docs-shell-reference {
   grid-template-columns: 210px minmax(0, 740px) 190px;
   gap: clamp(28px, 3vw, 48px);
+}
+
+.docs-shell-single {
+  grid-template-columns: minmax(0, 760px);
+}
+
+.docs-content .button-primary {
+  margin-top: 28px;
 }
 
 .docs-sidebar {
@@ -2041,12 +2034,6 @@ footer > div {
     font-size: 9px;
   }
 
-  .manifesto {
-    padding-right: 0;
-    padding-left: 0;
-  }
-
-  .manifesto h2,
   .sequence h2,
   .contract h2,
   .proof h2,

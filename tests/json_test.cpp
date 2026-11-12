@@ -27,8 +27,12 @@ TEST_CASE("strict JSON replaces non-finite numeric tokens", "[json]") {
 		const auto actual = sqrail::StrictJson(cases[index].first);
 		CAPTURE(index, cases[index].first);
 		CHECK(actual == cases[index].second);
+		CHECK(sqrail::RewriteNonFiniteJson(cases[index].first) == cases[index].second);
 		CHECK(sqrail::StrictJson(actual) == actual);
 	}
+	CHECK(!sqrail::HasNonFiniteJsonToken(R"({"id":1,"status":"ok"})"));
+	CHECK(sqrail::HasNonFiniteJsonToken(R"({"value":NaN})"));
+	CHECK(sqrail::HasNonFiniteJsonToken(R"({"value":-Infinity})"));
 }
 
 TEST_CASE("JSON escaping emits portable Unicode and replacements", "[json]") {

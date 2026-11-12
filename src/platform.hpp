@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SQRAIL_PLATFORM_HPP
+#define SQRAIL_PLATFORM_HPP
 
 #include <filesystem>
 
@@ -20,3 +21,5 @@ void ProtectPrivateDirectory(const std::filesystem::path &path);
 void CommitOutput(const std::filesystem::path &temporary, const std::filesystem::path &output);
 
 } // namespace sqrail
+
+#endif // SQRAIL_PLATFORM_HPP

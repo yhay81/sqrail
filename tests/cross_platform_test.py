@@ -209,6 +209,24 @@ class CrossPlatformTest(unittest.TestCase):
         self.assertNotEqual(corrupt.returncode, 0)
         self.assertIn(diagnostic(corrupt)["code"], {"SCHEMA_INFERENCE_FAILED", "QUERY_FAILED"})
 
+        bad_sql = invoke("run", "SELECT FROM")
+        self.assertEqual(bad_sql.returncode, 4)
+        bad_sql_payload = diagnostic(bad_sql)
+        self.assertEqual(bad_sql_payload["code"], "QUERY_FAILED")
+        self.assertFalse(bad_sql_payload["message"].lstrip().startswith("{"))
+
+    def test_help_matches_published_site_help(self) -> None:
+        site_help = (Path(__file__).resolve().parents[1] / "site" / "help.txt").read_text(
+            encoding="utf-8"
+        )
+        for flag in ("--help", "-h", "help"):
+            with self.subTest(flag=flag):
+                result = invoke(flag)
+                self.assertEqual(result.returncode, 0)
+                self.assertEqual(result.stderr, b"")
+                actual = result.stdout.decode("utf-8").replace("\r\n", "\n")
+                self.assertEqual(actual, site_help)
+
     def test_output_race_has_one_winner(self) -> None:
         output = self.root / "race.parquet"
         command = [
@@ -255,16 +273,26 @@ class CrossPlatformTest(unittest.TestCase):
     def test_unwritable_output_directory_leaves_no_artifacts(self) -> None:
         blocked = self.root / "blocked"
         blocked.mkdir()
-        blocked.chmod(0o500)
-        output = blocked / "result.parquet"
-        try:
-            result = invoke("run", "-o", str(output), "SELECT * FROM range(10000)")
-        finally:
-            blocked.chmod(0o700)
-        self.assertNotEqual(result.returncode, 0)
-        diagnostic(result)
-        self.assertFalse(output.exists())
-        self.assertEqual(list(blocked.glob("result.parquet.sqrail-tmp-*")), [])
+        for suffix in ("parquet", "jsonl"):
+            with self.subTest(suffix=suffix):
+                output = blocked / f"result.{suffix}"
+                blocked.chmod(0o500)
+                try:
+                    result = invoke("run", "-o", str(output), "SELECT * FROM range(100)")
+                finally:
+                    blocked.chmod(0o700)
+                self.assertEqual(result.returncode, 5)
+                payload = diagnostic(result)
+                self.assertEqual(payload["code"], "OUTPUT_WRITE")
+                self.assertFalse(payload["message"].lstrip().startswith("{"))
+                self.assertFalse(output.exists())
+                self.assertEqual(list(blocked.glob(f"result.{suffix}.sqrail-tmp-*")), [])
+
+        dangling = self.root / "dangling.parquet"
+        dangling.symlink_to(self.root / "missing-target.parquet")
+        dangling_result = invoke("run", "-o", str(dangling), "SELECT 1 AS value")
+        self.assertEqual(dangling_result.returncode, 5)
+        self.assertEqual(diagnostic(dangling_result)["code"], "OUTPUT_EXISTS")
 
     def test_interrupt_cleans_private_artifacts(self) -> None:
         output = self.root / "interrupted.parquet"

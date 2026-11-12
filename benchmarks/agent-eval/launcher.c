@@ -61,7 +61,10 @@ static void write_help(void) {
 			close(fd);
 			_exit(70);
 		}
-		write_all(STDOUT_FILENO, buffer, (size_t)count);
+		if (write_all(STDOUT_FILENO, buffer, (size_t)count) != 0) {
+			close(fd);
+			_exit(70);
+		}
 	}
 	close(fd);
 }
@@ -130,8 +133,25 @@ static int log_invocation(int argc, char **argv) {
 	return result;
 }
 
-static int is_option(int argc, char **argv, const char *short_name, const char *long_name) {
-	return argc == 2 && (strcmp(argv[1], short_name) == 0 || strcmp(argv[1], long_name) == 0);
+static int is_single_arg(int argc, char **argv, const char *value) {
+	return argc == 2 && strcmp(argv[1], value) == 0;
+}
+
+static int is_help_invocation(int argc, char **argv) {
+	if (is_single_arg(argc, argv, "-h") || is_single_arg(argc, argv, "--help") || is_single_arg(argc, argv, "-help")) {
+		return 1;
+	}
+#if RAIL_MODE == 0
+	if (is_single_arg(argc, argv, "help")) {
+		return 1;
+	}
+#endif
+	return 0;
+}
+
+static int is_version_invocation(int argc, char **argv) {
+	return is_single_arg(argc, argv, "-V") || is_single_arg(argc, argv, "--version") ||
+	       is_single_arg(argc, argv, "-version");
 }
 
 int main(int argc, char **argv) {
@@ -141,13 +161,21 @@ int main(int argc, char **argv) {
 		return 70;
 	}
 
-	if (is_option(argc, argv, "-h", "--help") || is_option(argc, argv, "-help", "-help")) {
+#if RAIL_MODE == 0
+	if (argc < 2) {
+		write_help();
+		return 2;
+	}
+#endif
+	if (is_help_invocation(argc, argv)) {
 		write_help();
 		return 0;
 	}
-	if (is_option(argc, argv, "-V", "--version") || is_option(argc, argv, "-version", "--version")) {
+	if (is_version_invocation(argc, argv)) {
 		static const char version[] = "rail 1.0\n";
-		write_all(STDOUT_FILENO, version, sizeof(version) - 1);
+		if (write_all(STDOUT_FILENO, version, sizeof(version) - 1) != 0) {
+			return 70;
+		}
 		return 0;
 	}
 
