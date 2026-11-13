@@ -5,6 +5,30 @@ versions follow semantic versioning.
 
 ## [Unreleased]
 
+## [0.4.3] - 2026-11-13
+
+### Fixed
+
+- `schema`, `check`, and `run` read the exact file named by a binding such as
+  `data[1].csv`, even when `data1.csv` also exists. Relative globs stay under
+  the working directory when its name contains wildcard characters.
+- Input paths with a directory symlink followed by `..` follow the link before
+  traversing to the parent. An empty bracket-named directory no longer hides
+  files matched by a character class such as `shard_[ab]/part.csv`.
+- `run` reports an unsupported output format before scanning inputs and reports
+  a missing `--spill` before reading SQL from stdin when `--max-spill` is set.
+  Compressed JSON output also checks its on-disk size after buffered writes
+  when `--max-output-bytes` is set.
+- Bash path completion continues after an option consumes `--` as its value.
+  The distribution check compares the entire CMake version with the plugin
+  version, including an optional fourth numeric component.
+
+### Changed
+
+- The documentation site adds Linux Arm64 install instructions, improves
+  mobile navigation, code copying, and high-contrast display, and aligns the
+  homepage help and benchmark figures with the published references.
+
 ## [0.4.2] - 2026-11-13
 
 ### Added
@@ -329,7 +353,8 @@ versions follow semantic versioning.
 - Linux and macOS release archives for x86-64 and Arm64
 - SHA-256 checksums and build-provenance attestations
 
-[Unreleased]: https://github.com/yhay81/sqrail/compare/v0.4.2...HEAD
+[Unreleased]: https://github.com/yhay81/sqrail/compare/v0.4.3...HEAD
+[0.4.3]: https://github.com/yhay81/sqrail/compare/v0.4.2...v0.4.3
 [0.4.2]: https://github.com/yhay81/sqrail/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/yhay81/sqrail/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/yhay81/sqrail/compare/v0.3.4...v0.4.0

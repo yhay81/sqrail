@@ -276,6 +276,16 @@ sqrail --version
             path.
           </p>
           <p>
+            Quote path patterns in the shell so sqrail receives them intact. An
+            existing file named <code>data[1].csv</code> is opened literally.
+            For a glob such as <code>shard_[ab]/part*.csv</code>, sqrail prefers
+            matches under a directory literally named <code>shard_[ab]</code>.
+            If it finds none there, it tries <code>shard_a</code> and
+            <code>shard_b</code>. On POSIX,
+            <code>link/../data.csv</code> follows the directory symlink before
+            resolving <code>..</code>.
+          </p>
+          <p>
             A multi-file binding is read by column name. Columns introduced or
             removed between files are included in the combined schema and
             missing values become <code>null</code>.
@@ -429,7 +439,7 @@ sqrail --version
             </span>
             <pre><code id="doc-code-2" class="language-json">{
   &quot;schema_version&quot;: 1,
-  &quot;sqrail_version&quot;: &quot;0.4.2&quot;,
+  &quot;sqrail_version&quot;: &quot;0.4.3&quot;,
   &quot;ok&quot;: true,
   &quot;command&quot;: &quot;run&quot;,
   &quot;rows&quot;: 3,
@@ -509,10 +519,12 @@ sqrail --version
               digits and is converted to an exact integer byte count by
               truncating any sub-byte remainder. JSONL stdout and uncompressed
               JSON/JSONL file outputs are checked synchronously before each
-              buffered write; compressed, CSV, TSV, and Parquet file outputs are
-              monitored during execution and verified before commit. File
-              destinations are never committed on <code>OUTPUT_LIMIT</code>;
-              stdout may already contain a valid prefix.
+              buffered write. For compressed JSON/JSONL, sqrail checks the
+              on-disk byte count after each buffered write and again before
+              committing the completed file. CSV, TSV, and Parquet file outputs
+              are monitored during execution and verified before commit. An
+              <code>OUTPUT_LIMIT</code> error discards the temporary file.
+              Streaming stdout may already contain a valid prefix.
             </li>
             <li>
               <code>--max-input-files N</code> accepts an integer from 1 through
@@ -583,7 +595,7 @@ sqrail --version
             </span>
             <pre><code id="doc-code-3" class="language-json">{
   &quot;schema_version&quot;: 1,
-  &quot;sqrail_version&quot;: &quot;0.4.2&quot;,
+  &quot;sqrail_version&quot;: &quot;0.4.3&quot;,
   &quot;ok&quot;: true,
   &quot;columns&quot;: [{ &quot;name&quot;: &quot;total&quot;, &quot;type&quot;: &quot;HUGEINT&quot;, &quot;nullable&quot;: true }],
   &quot;inputs&quot;: [{ &quot;table&quot;: &quot;sales&quot;, &quot;files&quot;: 1 }],
@@ -632,7 +644,7 @@ sqrail --version
             </span>
             <pre><code id="doc-code-4" class="language-json">{
   &quot;schema_version&quot;: 1,
-  &quot;sqrail_version&quot;: &quot;0.4.2&quot;,
+  &quot;sqrail_version&quot;: &quot;0.4.3&quot;,
   &quot;file&quot;: &quot;/absolute/data.csv&quot;,
   &quot;files&quot;: 1,
   &quot;columns&quot;: [{ &quot;name&quot;: &quot;id&quot;, &quot;type&quot;: &quot;BIGINT&quot;, &quot;nullable&quot;: true }]
@@ -686,7 +698,7 @@ sqrail --version
             </span>
             <pre><code id="doc-code-5" class="language-json">{
   &quot;schema_version&quot;: 1,
-  &quot;sqrail_version&quot;: &quot;0.4.2&quot;,
+  &quot;sqrail_version&quot;: &quot;0.4.3&quot;,
   &quot;ok&quot;: false,
   &quot;code&quot;: &quot;INPUT_NOT_FOUND&quot;,
   &quot;message&quot;: &quot;input file not found: missing.csv&quot;

@@ -34,21 +34,21 @@ no entry, fails with a nonzero exit status; do not extract the archive then.
 macOS, with the built-in `shasum`:
 
 ```sh
-archive=sqrail-v0.4.2-macos-arm64.tar.gz
+archive=sqrail-v0.4.3-macos-arm64.tar.gz
 awk -v name="./$archive" '$2 == name' SHA256SUMS | shasum -a 256 -c -
 ```
 
 Linux, with GNU coreutils `sha256sum`:
 
 ```sh
-archive=sqrail-v0.4.2-linux-x86_64.tar.gz
+archive=sqrail-v0.4.3-linux-x86_64.tar.gz
 awk -v name="./$archive" '$2 == name' SHA256SUMS | sha256sum -c -
 ```
 
 Windows PowerShell:
 
 ```powershell
-$archive = "sqrail-v0.4.2-windows-x86_64.zip"
+$archive = "sqrail-v0.4.3-windows-x86_64.zip"
 $entry = Get-Content SHA256SUMS | Where-Object { $_.EndsWith("  ./$archive") }
 $actual = (Get-FileHash $archive -Algorithm SHA256).Hash
 if ($entry -and $entry.Split(" ")[0] -eq $actual) { "OK $archive" } else { throw "SHA-256 mismatch: $archive" }
@@ -66,8 +66,8 @@ published as `sqrail-<version>-<target>.spdx.json`, and `SHA256SUMS` has its
 own provenance attestation. With GitHub CLI:
 
 ```sh
-gh attestation verify sqrail-v0.4.2-linux-x86_64.tar.gz --repo yhay81/sqrail
-gh attestation verify sqrail-v0.4.2-linux-x86_64.tar.gz --repo yhay81/sqrail \
+gh attestation verify sqrail-v0.4.3-linux-x86_64.tar.gz --repo yhay81/sqrail
+gh attestation verify sqrail-v0.4.3-linux-x86_64.tar.gz --repo yhay81/sqrail \
   --predicate-type https://spdx.dev/Document/v2.3
 ```
 
@@ -102,7 +102,10 @@ signed annotated tag then rebuilds and attests each archive.
 On Linux and macOS, `cmake --install` places a static Bash completion file at
 `share/bash-completion/completions/sqrail` under the installation prefix. It
 completes the three commands and their documented options, and paths after
-`schema`, `-t NAME=`, `-o`, and `--spill`. It never runs sqrail, opens data
+`schema`, `-t NAME=`, `-o`, and `--spill`. A standalone `--` ends option
+completion. For example, `sqrail schema --` still completes input paths,
+and `sqrail run --spill -- -o` completes the output path because the first
+`--` names the spill directory. Completion never runs sqrail, opens data
 files, or makes network calls.
 
 bash-completion 2 loads the file on demand when that directory is on its search
