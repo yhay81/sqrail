@@ -13,17 +13,20 @@ import time
 import unittest
 from pathlib import Path
 
-
 SQRAIL = Path(sys.argv[1]).resolve()
 sys.argv = [sys.argv[0]]
 
 
-def invoke(*arguments: str, stdin: bytes | None = None) -> subprocess.CompletedProcess[bytes]:
+def invoke(
+    *arguments: str,
+    stdin: bytes | None = None,
+    cwd: Path | None = None,
+) -> subprocess.CompletedProcess[bytes]:
     return subprocess.run(
         [str(SQRAIL), *arguments],
+        cwd=cwd,
         input=stdin,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        capture_output=True,
         check=False,
     )
 
@@ -420,6 +423,163 @@ class CrossPlatformTest(unittest.TestCase):
         sub_help = invoke("run", "--help")
         self.assertEqual(sub_help.returncode, 2)
         self.assertIn("(use 'sqrail --help')", str(diagnostic(sub_help)["message"]))
+
+    def test_glob_metacharacters_in_directories_and_filenames(self) -> None:
+        bracket_dir = self.root / "dir [1]"
+        (bracket_dir / "events").mkdir(parents=True)
+        (bracket_dir / "sales.csv").write_text("id,amount\n1,10\n", encoding="utf-8")
+        (bracket_dir / "item [2].csv").write_text("id,amount\n2,20\n", encoding="utf-8")
+        self.assertEqual(
+            invoke("run", "-o", str(bracket_dir / "events" / "part.parquet"), "SELECT 7 AS id").returncode, 0
+        )
+
+        # Relative literal file, Parquet directory, glob, and missing file when CWD contains '[1]'.
+        for relative_source, expected_rows in (
+            ("sales.csv", [{"id": 1, "amount": 10}]),
+            ("item [2].csv", [{"id": 2, "amount": 20}]),
+            ("events", [{"id": 7}]),
+            ("*.csv", [{"id": 1, "amount": 10}, {"id": 2, "amount": 20}]),
+        ):
+            with self.subTest(cwd_source=relative_source):
+                schema = invoke("schema", relative_source, cwd=bracket_dir)
+                self.assertEqual(schema.returncode, 0, schema.stderr)
+                check = invoke("check", "-t", f"data={relative_source}", "SELECT * FROM data", cwd=bracket_dir)
+                self.assertEqual(check.returncode, 0, check.stderr)
+                run_res = invoke(
+                    "run", "-t", f"data={relative_source}", "SELECT * FROM data ORDER BY id", cwd=bracket_dir
+                )
+                self.assertEqual(run_res.returncode, 0, run_res.stderr)
+                self.assertEqual([json.loads(line) for line in run_res.stdout.splitlines()], expected_rows)
+
+        missing_rel = invoke("schema", "missing.csv", cwd=bracket_dir)
+        self.assertEqual(missing_rel.returncode, 3)
+        self.assertEqual(diagnostic(missing_rel)["code"], "INPUT_NOT_FOUND")
+
+        # Explicit absolute paths under a parent directory containing '[1]'.
+        for explicit_source, expected_rows in (
+            (str(bracket_dir / "sales.csv"), [{"id": 1, "amount": 10}]),
+            (str(bracket_dir / "item [2].csv"), [{"id": 2, "amount": 20}]),
+            (str(bracket_dir / "events"), [{"id": 7}]),
+            (str(bracket_dir / "*.csv"), [{"id": 1, "amount": 10}, {"id": 2, "amount": 20}]),
+        ):
+            with self.subTest(explicit_source=explicit_source):
+                schema = invoke("schema", explicit_source)
+                self.assertEqual(schema.returncode, 0, schema.stderr)
+                run_res = invoke("run", "-t", f"data={explicit_source}", "SELECT * FROM data ORDER BY id")
+                self.assertEqual(run_res.returncode, 0, run_res.stderr)
+                self.assertEqual([json.loads(line) for line in run_res.stdout.splitlines()], expected_rows)
+
+        missing_abs = invoke("schema", str(bracket_dir / "missing.csv"))
+        self.assertEqual(missing_abs.returncode, 3)
+        self.assertEqual(diagnostic(missing_abs)["code"], "INPUT_NOT_FOUND")
+
+        # Real character-class globs continue to match non-literal directory patterns.
+        for suffix, val in (("a", 11), ("b", 22)):
+            shard = self.root / f"shard_{suffix}"
+            shard.mkdir()
+            self.assertEqual(invoke("run", "-o", str(shard / "part.parquet"), f"SELECT {val} AS v").returncode, 0)
+        char_glob = invoke("run", "-t", f"s={self.root / 'shard_[ab]' / '*.parquet'}", "SELECT v FROM s ORDER BY v")
+        self.assertEqual(char_glob.returncode, 0, char_glob.stderr)
+        self.assertEqual([json.loads(line) for line in char_glob.stdout.splitlines()], [{"v": 11}, {"v": 22}])
+
+    def test_bracketed_input_is_read_exactly_once(self) -> None:
+        (self.root / "item[1].csv").write_text("id\n10\n", encoding="utf-8")
+        (self.root / "item1.csv").write_text("id\n20\n", encoding="utf-8")
+
+        for bindings, expected in (
+            (("-t", "items=item[1].csv"), [{"id": 10}]),
+            (("-t", "items=item[1].csv", "-t", "other=item1.csv"), [{"id": 10}]),
+            (("-t", "items=item*.csv"), [{"id": 10}, {"id": 20}]),
+        ):
+            with self.subTest(bindings=bindings):
+                result = invoke("run", *bindings, "SELECT id FROM items ORDER BY id", cwd=self.root)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual([json.loads(line) for line in result.stdout.splitlines()], expected)
+
+    @unittest.skipIf(os.name == "nt", "POSIX path traversal semantics")
+    def test_parent_component_is_resolved_after_following_symlink(self) -> None:
+        target = self.root / "actual" / "sub"
+        target.mkdir(parents=True)
+        (self.root / "link").symlink_to(target, target_is_directory=True)
+        (target.parent / "data.csv").write_text("id\n10\n", encoding="utf-8")
+        (self.root / "data.csv").write_text("id\n20\n", encoding="utf-8")
+
+        for source in ("link/../data.csv", "link/../*.csv"):
+            with self.subTest(source=source):
+                result = invoke("run", "-t", f"data={source}", "SELECT id FROM data", cwd=self.root)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual([json.loads(line) for line in result.stdout.splitlines()], [{"id": 10}])
+
+        schema = invoke("schema", "link/../data.csv", cwd=self.root)
+        self.assertEqual(schema.returncode, 0, schema.stderr)
+        reported_file = Path(json.loads(schema.stdout)["file"])
+        self.assertTrue(reported_file.is_absolute())
+        self.assertTrue(reported_file.samefile(target.parent / "data.csv"))
+
+        missing = invoke("schema", "missing/../data.csv", cwd=self.root)
+        self.assertEqual(missing.returncode, 3, missing.stderr)
+        self.assertEqual(diagnostic(missing)["code"], "INPUT_NOT_FOUND")
+
+    def test_empty_literal_directory_does_not_hide_character_class_matches(self) -> None:
+        (self.root / "shard_[ab]").mkdir()
+        for name, value in (("shard_a", 10), ("shard_b", 20)):
+            shard = self.root / name
+            shard.mkdir()
+            (shard / "part.csv").write_text(f"id\n{value}\n", encoding="utf-8")
+
+        for source in ("shard_[ab]/part.csv", "shard_[ab]/*.csv"):
+            with self.subTest(source=source):
+                result = invoke("run", "-t", f"data={source}", "SELECT id FROM data ORDER BY id", cwd=self.root)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual([json.loads(line) for line in result.stdout.splitlines()], [{"id": 10}, {"id": 20}])
+
+    @unittest.skipIf(os.name == "nt", "literal wildcard characters are not valid in Windows directory names")
+    def test_relative_glob_only_matches_under_the_current_directory(self) -> None:
+        sibling = self.root / "job1"
+        sibling.mkdir()
+        (sibling / "other.csv").write_text("id\n20\n", encoding="utf-8")
+
+        for name, escaped_name in (("job?", "job[?]"), ("job*", "job[*]")):
+            with self.subTest(directory=name):
+                cwd = self.root / name
+                cwd.mkdir()
+                (cwd / "part.csv").write_text("id\n10\n", encoding="utf-8")
+                result = invoke("run", "-t", "data=*.csv", "SELECT id FROM data", cwd=cwd)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual([json.loads(line) for line in result.stdout.splitlines()], [{"id": 10}])
+
+                escaped_sibling = self.root / escaped_name
+                escaped_sibling.mkdir()
+                (escaped_sibling / "missing*.csv").write_text("id\n30\n", encoding="utf-8")
+                missing = invoke("schema", "missing*.csv", cwd=cwd)
+                self.assertEqual(missing.returncode, 3, missing.stderr)
+
+    def test_early_output_validation_and_compressed_json_byte_limit(self) -> None:
+        bad_ext = invoke("run", "-t", f"missing={self.root / 'missing.csv'}", "-o", str(self.root / "out.txt"), "SELECT 1")
+        self.assertEqual(bad_ext.returncode, 5)
+        self.assertEqual(diagnostic(bad_ext)["code"], "UNSUPPORTED_OUTPUT")
+
+        bad_comp = invoke(
+            "run", "-t", f"missing={self.root / 'missing.csv'}", "-o", str(self.root / "out.parquet.gz"), "SELECT 1"
+        )
+        self.assertEqual(bad_comp.returncode, 5)
+        self.assertEqual(diagnostic(bad_comp)["code"], "UNSUPPORTED_COMPRESSION")
+
+        gz_cap = self.root / "capped.jsonl.gz"
+        over_gz = invoke(
+            "run",
+            "--timeout",
+            "1h",
+            "--max-output-bytes",
+            "32B",
+            "-o",
+            str(gz_cap),
+            "SELECT i, md5(i::VARCHAR) AS digest FROM range(5000) AS rows(i)",
+        )
+        self.assertEqual(over_gz.returncode, 5)
+        self.assertEqual(diagnostic(over_gz)["code"], "OUTPUT_LIMIT")
+        self.assertFalse(gz_cap.exists())
+        self.assertEqual(list(self.root.glob("capped.jsonl.gz.sqrail-tmp-*")), [])
 
 
 if __name__ == "__main__":

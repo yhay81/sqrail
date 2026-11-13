@@ -213,8 +213,7 @@ def prepare_session(arguments: argparse.Namespace) -> int:
     selected = arguments.sqrail if arguments.arm == "sqrail" else arguments.duckdb
     help_result = subprocess.run(
         [str(selected.resolve()), "--help"],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        capture_output=True,
         check=False,
         timeout=30,
     )
@@ -466,8 +465,7 @@ def execute_candidate(arguments: argparse.Namespace) -> int:
                 cwd=workspace,
                 env=environment,
                 input=(invocation.get("stdin") or "").encode("utf-8"),
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                capture_output=True,
                 check=False,
                 timeout=command_timeout,
             )

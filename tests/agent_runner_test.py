@@ -10,7 +10,6 @@ import tempfile
 import unittest
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 RUNNER_PATH = ROOT / "benchmarks" / "agent-run.py"
 sys.path.insert(0, str(RUNNER_PATH.parent))
@@ -115,7 +114,7 @@ class AgentRunnerTest(unittest.TestCase):
         invoked_path = str(executable.resolve())
         raw = (
             f"\x1b[1mUsage: \x1b[32m{invoked_path}\x1b[0m [OPTIONS] FILENAME\n"
-        ).encode("utf-8")
+        ).encode()
         help_text = RUNNER.portable_tool_help(raw, executable, "duckdb")
         self.assertEqual(help_text, "Usage: duckdb [OPTIONS] FILENAME\n")
         self.assertNotIn(invoked_path, help_text)

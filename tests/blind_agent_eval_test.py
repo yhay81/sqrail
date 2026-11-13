@@ -10,7 +10,6 @@ import types
 import unittest
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 RUNNER_PATH = ROOT / "benchmarks" / "agent-eval" / "run.py"
 SPEC = importlib.util.spec_from_file_location("sqrail_blind_agent_eval", RUNNER_PATH)

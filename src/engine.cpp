@@ -8,8 +8,6 @@
 #include "json.hpp"
 #include "platform.hpp"
 
-#include <algorithm>
-#include <cctype>
 #include <chrono>
 #include <filesystem>
 #include <random>
@@ -24,45 +22,98 @@ namespace fs = std::filesystem;
 namespace sqrail {
 namespace {
 
-std::string Lower(std::string value) {
-	std::transform(value.begin(), value.end(), value.begin(),
-	               [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
-	return value;
-}
-
 bool EndsWith(const std::string &value, const std::string &suffix) {
 	return value.size() >= suffix.size() && value.compare(value.size() - suffix.size(), suffix.size(), suffix) == 0;
 }
 
-std::string SqlPathList(const std::vector<fs::path> &paths) {
+std::string EscapeGlobDirectory(const fs::path &directory) {
+	const auto literal = directory.relative_path().string();
+	std::string escaped = directory.root_path().string();
+	escaped.reserve(escaped.size() + literal.size());
+	for (const char ch : literal) {
+		if (ch == '[' || ch == '*' || ch == '?') {
+			escaped.push_back('[');
+			escaped.push_back(ch);
+			escaped.push_back(']');
+		} else {
+			escaped.push_back(ch);
+		}
+	}
+	return escaped;
+}
+
+duckdb::unique_ptr<duckdb::MultiFileList> MatchInputGlob(duckdb::FileSystem &file_system, const fs::path &source,
+                                                         ExecutionControl &control) {
+	// Keep the implicit working directory literal. Resolve the prefix on disk before
+	// DuckDB can simplify a symlink followed by ".." in the glob string.
+	const auto relative = source.relative_path();
+	fs::path prefix = source.root_path();
+	std::vector<fs::path> patterns;
+	for (auto part = relative.begin(); part != relative.end(); ++part) {
+		const auto segment = part->string();
+		if (duckdb::FileSystem::HasGlob(segment)) {
+			std::error_code error;
+			const auto directory = fs::canonical(prefix.empty() ? fs::path(".") : prefix, error);
+			if (error || !fs::is_directory(directory, error)) {
+				break;
+			}
+			fs::path pattern = EscapeGlobDirectory(directory);
+			for (auto suffix = part; suffix != relative.end(); ++suffix) {
+				pattern /= *suffix;
+			}
+			patterns.push_back(std::move(pattern));
+			if (segment.find_first_of("*?") != std::string::npos || !fs::is_directory(prefix / *part, error)) {
+				break;
+			}
+		}
+		prefix /= *part;
+	}
+
+	// Prefer matches under an existing bracket-named directory. If it has no
+	// matches, retry with that component interpreted as a character class.
+	for (auto pattern = patterns.rbegin(); pattern != patterns.rend(); ++pattern) {
+		control.Checkpoint("input resolution exceeded --timeout");
+		auto matches = file_system.GlobFileList(pattern->string(), duckdb::FileGlobOptions::ALLOW_EMPTY);
+		// DuckDB also tries a failed pattern as a literal filename. Only the
+		// original source may select a literal file, never an escaped pattern.
+		if (!matches->IsEmpty() && fs::path(matches->GetFirstFile().path) != *pattern) {
+			return matches;
+		}
+	}
+	std::error_code error;
+	if (!duckdb::FileSystem::HasGlob(source.filename().string()) && fs::is_directory(source.parent_path(), error)) {
+		throw SqrailError(EXIT_INPUT, "INPUT_NOT_FOUND", "input file not found: " + source.string());
+	}
+	throw SqrailError(EXIT_INPUT, "DATASET_GLOB_FAILED", "input dataset matched no files: " + source.string());
+}
+
+std::string SqlPathList(const std::vector<fs::path> &paths, const bool literal_files = false) {
 	std::string result = "[";
 	for (std::size_t index = 0; index < paths.size(); ++index) {
 		if (index != 0) {
 			result.push_back(',');
 		}
-		result += SqlString(paths[index].string());
+		const auto path = SqlString(paths[index].string());
+		// DuckDB opens a file struct literally. A plain string is expanded as a glob.
+		result += literal_files ? "{'filename':" + path + "}" : path;
 	}
 	result.push_back(']');
 	return result;
 }
 
-std::string SqlPathArgument(const std::vector<fs::path> &paths) {
-	return paths.size() == 1 ? SqlString(paths.front().string()) : SqlPathList(paths);
-}
-
-fs::path ExistingInput(const std::string &raw_path) {
+fs::path ExistingInput(const fs::path &candidate, const std::string &display_path) {
 	std::error_code error;
-	fs::path path = fs::absolute(fs::path(raw_path), error);
+	fs::path path = candidate.is_absolute() ? candidate : fs::absolute(candidate, error);
 	const auto status = error ? fs::file_status() : fs::status(path, error);
 	if (fs::status_known(status) && !fs::is_regular_file(status)) {
-		throw SqrailError(EXIT_INPUT, "INPUT_NOT_FOUND", "input file not found: " + raw_path);
+		throw SqrailError(EXIT_INPUT, "INPUT_NOT_FOUND", "input file not found: " + display_path);
 	}
 	if (!error) {
 		path = fs::weakly_canonical(path, error);
 	}
 	if (error) {
 		throw SqrailError(EXIT_INPUT, "INPUT_NOT_FOUND",
-		                  "cannot access input file: " + raw_path + ": " + error.message());
+		                  "cannot access input file: " + display_path + ": " + error.message());
 	}
 	return path;
 }
@@ -110,7 +161,7 @@ std::string BuildReaderExpression(const std::vector<fs::path> &paths, const Read
 	if (paths.empty()) {
 		throw SqrailError(EXIT_INPUT, "EMPTY_DATASET", "input dataset has no files");
 	}
-	const std::string argument = SqlPathArgument(paths);
+	const std::string argument = SqlPathList(paths, true);
 	const auto type = DetectFileType(paths.front(), EXIT_INPUT, "UNSUPPORTED_FORMAT");
 	const std::string union_option = paths.size() > 1 && !options.strict_schema ? ", union_by_name=true" : "";
 	const std::string hive_option = options.disable_hive_partitioning ? ", hive_partitioning=false" : "";
@@ -192,7 +243,7 @@ std::string SqlIdentifier(const std::string &input) {
 }
 
 FileType DetectFileType(const fs::path &path, const int exit_code, const std::string &unsupported_code) {
-	std::string filename = Lower(path.filename().string());
+	std::string filename = LowerAscii(path.filename().string());
 	std::string compression;
 
 	if (EndsWith(filename, ".gz")) {
@@ -228,21 +279,25 @@ std::vector<fs::path> ResolveInputSet(duckdb::DuckDB &database, const std::strin
 		throw SqrailError(EXIT_INPUT, "INPUT_NOT_FOUND", "input path must not be empty");
 	}
 	std::error_code error;
-	const fs::path absolute = fs::absolute(fs::path(source), error).lexically_normal();
+	const fs::path source_path(source);
+	const fs::path absolute = fs::absolute(source_path, error);
 	if (error) {
 		throw SqrailError(EXIT_INPUT, "INPUT_NOT_FOUND", "cannot resolve input path: " + source);
 	}
 
-	std::vector<fs::path> paths;
 	std::set<fs::path> unique_paths;
-	const auto add_path = [&](const std::string &path) {
-		auto canonical = ExistingInput(path);
-		if (unique_paths.insert(canonical).second) {
-			paths.push_back(std::move(canonical));
-			CheckInputFileLimit(previously_resolved + paths.size(), max_input_files);
+	const auto add_path = [&](const fs::path &candidate, const std::string &display_path) {
+		auto canonical = ExistingInput(candidate, display_path);
+		if (unique_paths.insert(std::move(canonical)).second) {
+			CheckInputFileLimit(previously_resolved + unique_paths.size(), max_input_files);
 		}
 	};
-	if (!duckdb::FileSystem::HasGlob(absolute.string())) {
+
+	std::error_code status_error;
+	const auto literal_status = fs::symlink_status(absolute, status_error);
+	const bool is_literal_path = !duckdb::FileSystem::HasGlob(source) || fs::exists(literal_status);
+
+	if (is_literal_path) {
 		if (fs::is_directory(absolute, error)) {
 			const auto options = fs::directory_options::none;
 			fs::recursive_directory_iterator iterator(absolute, options, error);
@@ -251,8 +306,8 @@ std::vector<fs::path> ResolveInputSet(duckdb::DuckDB &database, const std::strin
 				control.Checkpoint("input resolution exceeded --timeout");
 				std::error_code entry_error;
 				if (iterator->is_regular_file(entry_error) &&
-				    EndsWith(Lower(iterator->path().filename().string()), ".parquet")) {
-					add_path(iterator->path().string());
+				    EndsWith(LowerAscii(iterator->path().filename().string()), ".parquet")) {
+					add_path(iterator->path(), iterator->path().string());
 				}
 				iterator.increment(error);
 			}
@@ -261,15 +316,15 @@ std::vector<fs::path> ResolveInputSet(duckdb::DuckDB &database, const std::strin
 				                  "cannot enumerate Parquet dataset: " + source + ": " + error.message());
 			}
 		} else {
-			add_path(source);
+			add_path(absolute, source);
 		}
 	} else {
 		try {
 			control.Checkpoint("input resolution exceeded --timeout");
-			auto matches = database.instance->GetFileSystem().GlobFileList(absolute.string());
+			auto matches = MatchInputGlob(database.instance->GetFileSystem(), source_path, control);
 			for (const auto &match : matches->Files()) {
 				control.Checkpoint("input resolution exceeded --timeout");
-				add_path(match.path);
+				add_path(fs::path(match.path), match.path);
 			}
 		} catch (const SqrailError &) {
 			throw;
@@ -279,7 +334,7 @@ std::vector<fs::path> ResolveInputSet(duckdb::DuckDB &database, const std::strin
 		}
 	}
 
-	std::sort(paths.begin(), paths.end());
+	std::vector<fs::path> paths(unique_paths.begin(), unique_paths.end());
 	CheckInputFileLimit(previously_resolved + paths.size(), max_input_files);
 	ValidateInputSet(paths, source);
 	control.Checkpoint("input resolution exceeded --timeout");
@@ -379,16 +434,16 @@ void Configure(duckdb::Connection &connection, const RunOptions &options, const 
 	}
 	if (!options.spill_directory.empty()) {
 		std::error_code error;
-		fs::create_directories(options.spill_directory, error);
-		if (error) {
+		const fs::path canonical_spill = fs::weakly_canonical(options.spill_directory, error);
+		if (error || !fs::is_directory(canonical_spill, error)) {
 			throw SqrailError(EXIT_OUTPUT, "SPILL_DIRECTORY",
-			                  "cannot create spill directory: " + options.spill_directory.string());
+			                  "cannot resolve spill directory: " + options.spill_directory.string());
 		}
-		CheckResult(connection.Query("SET temp_directory = " + SqlString(options.spill_directory.string())));
+		CheckResult(connection.Query("SET temp_directory = " + SqlString(canonical_spill.string())));
 		if (!options.max_spill.empty()) {
 			CheckResult(connection.Query("SET max_temp_directory_size = " + SqlString(options.max_spill)));
 		}
-		const std::vector<fs::path> allowed_directories {fs::weakly_canonical(options.spill_directory)};
+		const std::vector<fs::path> allowed_directories {canonical_spill};
 		CheckResult(connection.Query("SET allowed_directories = " + SqlPathList(allowed_directories)));
 	} else {
 		CheckResult(connection.Query("SET temp_directory = ''"));

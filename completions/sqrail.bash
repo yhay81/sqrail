@@ -24,9 +24,9 @@ _sqrail_paths() {
 
 _sqrail() {
   local cur=${COMP_WORDS[COMP_CWORD]}
-  local prev=${COMP_WORDS[COMP_CWORD - 1]}
   local command=${COMP_WORDS[1]}
-  local options index
+  local options index word value_for=""
+  local positional_only=false redirect_target=false
   COMPREPLY=()
 
   if ((COMP_CWORD == 1)); then
@@ -52,20 +52,49 @@ _sqrail() {
       ;;
   esac
 
-  # The default COMP_WORDBREAKS splits "-t NAME=PATH" at "=", so PATH arrives
-  # as its own word, or the current word is "=" when PATH is still empty.
-  if ((COMP_CWORD >= 3)) && [[ $cur == "=" && (${COMP_WORDS[COMP_CWORD - 2]} == -t || ${COMP_WORDS[COMP_CWORD - 2]} == --table) ]]; then
-    cur=""
+  for ((index = 2; index < COMP_CWORD; index++)); do
+    word=${COMP_WORDS[index]}
+    if [[ $redirect_target == true ]]; then
+      redirect_target=false
+    elif [[ $word == *"<" || $word == *">" ]]; then
+      redirect_target=true
+    elif [[ -n $value_for ]]; then
+      # Bash splits NAME=PATH into three words with its default COMP_WORDBREAKS.
+      if [[ ($value_for == -t || $value_for == --table) && ${COMP_WORDS[index + 1]} == "=" ]]; then
+        value_for=table_path
+        ((index += 1))
+      else
+        value_for=""
+      fi
+    elif [[ $positional_only == false ]]; then
+      case $word in
+        --) positional_only=true ;;
+        -o | --output | --spill | -t | --table | --memory | --threads | --max-spill | \
+          --timeout | --max-rows | --max-output-bytes | --max-input-files | --max-sql-bytes)
+          value_for=$word
+          ;;
+      esac
+    fi
+  done
+
+  if [[ $redirect_target == true ]]; then
     _sqrail_paths
     return 0
   fi
-  if ((COMP_CWORD >= 4)) && [[ $prev == "=" && (${COMP_WORDS[COMP_CWORD - 3]} == -t || ${COMP_WORDS[COMP_CWORD - 3]} == --table) ]]; then
-    _sqrail_paths
+  if [[ $positional_only == true ]]; then
+    if [[ $command == schema ]]; then
+      _sqrail_paths
+    fi
     return 0
   fi
 
-  case $prev in
-    -o | --output | *"<" | *">")
+  case $value_for in
+    table_path)
+      if [[ $cur == "=" ]]; then cur=""; fi
+      _sqrail_paths
+      return 0
+      ;;
+    -o | --output)
       _sqrail_paths
       return 0
       ;;
@@ -73,20 +102,10 @@ _sqrail() {
       _sqrail_paths -d
       return 0
       ;;
-    -t | --table | --memory | --threads | --max-spill | --timeout | --max-rows | \
-      --max-output-bytes | --max-input-files | --max-sql-bytes)
+    ?*)
       return 0
       ;;
   esac
-
-  for ((index = 2; index < COMP_CWORD; index++)); do
-    if [[ ${COMP_WORDS[index]} == "--" ]]; then
-      if [[ $command == schema ]]; then
-        _sqrail_paths
-      fi
-      return 0
-    fi
-  done
 
   if [[ $cur == -* ]]; then
     _sqrail_reply -W "$options --" -- "$cur"

@@ -66,11 +66,20 @@ assert.match(metadata, /short_description: ".{25,64}"/);
 
 const plugin = JSON.parse(pluginText);
 const packageManifest = JSON.parse(packageText);
+const cmakeVersion = cmake.match(
+  /project\(\s*sqrail\s+VERSION\s+([^\s)]+)/,
+)?.[1];
+assert(cmakeVersion, "CMakeLists.txt must declare project(sqrail VERSION ...)");
 assert.equal(plugin.name, "sqrail");
 assert.equal(
   plugin.version,
   packageManifest.version,
   "AGY plugin and project versions must match",
+);
+assert.equal(
+  cmakeVersion,
+  plugin.version,
+  "CMake project version and AGY plugin version must match",
 );
 assert.equal(plugin.repository, "https://github.com/yhay81/sqrail");
 

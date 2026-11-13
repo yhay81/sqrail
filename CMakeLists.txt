@@ -356,7 +356,7 @@ if(SQRAIL_ENABLE_CLANG_TIDY)
       "${CMAKE_CURRENT_SOURCE_DIR}/tests/static-analysis.sh"
       "${CMAKE_BINARY_DIR}"
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-    COMMENT "Running Clang-Tidy over every non-fuzz sqrail translation unit"
+    COMMENT "Running Clang-Tidy over every configured sqrail translation unit"
     VERBATIM
   )
 endif()

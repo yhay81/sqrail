@@ -10,18 +10,16 @@ import tempfile
 import unittest
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 BENCHMARKS = ROOT / "benchmarks"
 sys.path.insert(0, str(BENCHMARKS))
 
-from agent_oracle import (  # noqa: E402
+from agent_oracle import (
     OracleError,
     duration_seconds,
     requested_timeout,
     verify_attempt,
 )
-
 
 TASKS_PATH = BENCHMARKS / "agent-tasks-v0.3.json"
 EVALUATOR = BENCHMARKS / "agent-eval.py"
@@ -210,8 +208,7 @@ class AgentOracleTest(unittest.TestCase):
                 "1",
                 "--report-only",
             ],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            capture_output=True,
             text=True,
             check=False,
         )

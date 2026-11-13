@@ -6,6 +6,7 @@
 #include <chrono>
 #include <filesystem>
 #include <functional>
+#include <iostream>
 #include <limits>
 #include <string>
 #include <system_error>
@@ -89,8 +90,8 @@ TEST_CASE("schema options preserve paths after the option terminator", "[cli]") 
 	CHECK(schema.resources.memory_limit == "32MB");
 	CHECK(schema.resources.threads == 1);
 	CHECK(schema.resources.timeout == std::chrono::seconds(2));
-	CHECK(schema.strict_schema);
-	CHECK(schema.all_varchar);
+	CHECK(schema.resources.strict_schema);
+	CHECK(schema.resources.all_varchar);
 	REQUIRE(schema.sources.size() == 1);
 	CHECK(schema.sources[0] == "--data.csv");
 	CHECK(schema.resources.max_input_files == 9);
@@ -156,6 +157,19 @@ TEST_CASE("invalid and conflicting options have stable error codes", "[cli]") {
 	}
 	CheckError("EMPTY_SQL", []() { static_cast<void>(sqrail::NormalizeQuery(" ; \n")); });
 	CheckError("EMPTY_SQL", []() { static_cast<void>(sqrail::NormalizeQuery(" ; \r\n")); });
+
+	const auto saved_cin_state = std::cin.rdstate();
+	std::cin.setstate(std::ios::badbit);
+	try {
+		CheckError("MAX_SPILL_REQUIRES_SPILL", []() {
+			Parse({"sqrail", "run", "--max-spill", "64MiB", "-"},
+			      [](const int argc, char **argv) { return sqrail::ParseRun(argc, argv, false); });
+		});
+	} catch (...) {
+		std::cin.clear(saved_cin_state);
+		throw;
+	}
+	std::cin.clear(saved_cin_state);
 }
 
 TEST_CASE("CRLF query text normalizes like LF", "[cli]") {

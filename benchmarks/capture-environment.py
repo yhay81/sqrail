@@ -111,7 +111,7 @@ def main() -> int:
     except json.JSONDecodeError as error:
         raise ValueError(f"--parameters-json is invalid: {error}") from error
     if not isinstance(parameters, dict):
-        raise ValueError("--parameters-json must be a JSON object")
+        raise TypeError("--parameters-json must be a JSON object")
 
     arguments.output.parent.mkdir(parents=True, exist_ok=True)
     storage = shutil.disk_usage(arguments.output.parent)
@@ -175,6 +175,6 @@ def main() -> int:
 if __name__ == "__main__":
     try:
         sys.exit(main())
-    except (OSError, ValueError) as error:
+    except (OSError, TypeError, ValueError) as error:
         print(f"capture-environment: {error}", file=sys.stderr)
         sys.exit(2)

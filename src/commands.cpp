@@ -9,7 +9,6 @@
 #include "platform.hpp"
 #include "result.hpp"
 
-#include <cctype>
 #include <chrono>
 #include <cstdint>
 #include <cstdio>
@@ -26,14 +25,6 @@ namespace sqrail {
 
 namespace {
 
-bool IsUncompressedJsonPath(const fs::path &path) {
-	std::string ext = path.extension().string();
-	for (char &ch : ext) {
-		ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
-	}
-	return ext == ".json" || ext == ".jsonl" || ext == ".ndjson";
-}
-
 void FlushStdout(const char *message) {
 	std::cout.flush();
 	if (!std::cout) {
@@ -46,15 +37,15 @@ void FlushStdout(const char *message) {
 int Execute(int argc, char **argv, const bool check_only) {
 	const auto started = std::chrono::steady_clock::now();
 	RunOptions options = ParseRun(argc, argv, check_only);
+	const FileType output_type = options.has_output ? ValidateOutputFileType(options.output) : FileType {};
 	SpillWorkspace spill_workspace(options.spill_directory);
 	options.spill_directory = spill_workspace.Path();
 	duckdb::DuckDB database(nullptr);
 	duckdb::Connection connection(database);
 	const fs::path temporary_output = options.has_output ? TemporaryOutputPath(options.output) : fs::path();
+	const bool is_uncompressed_json = IsJsonOutput(output_type) && output_type.compression.empty();
 	const fs::path monitored_output =
-	    (options.has_output && options.max_output_bytes != 0 && !IsUncompressedJsonPath(options.output))
-	        ? temporary_output
-	        : fs::path();
+	    (options.has_output && options.max_output_bytes != 0 && !is_uncompressed_json) ? temporary_output : fs::path();
 	ExecutionControl control(connection, started, options.timeout, monitored_output, options.max_output_bytes);
 	bool committed_output = false;
 	try {
@@ -110,12 +101,11 @@ int Execute(int argc, char **argv, const bool check_only) {
 		uint64_t rows = 0;
 		uint64_t bytes = 0;
 		if (options.has_output) {
-			const auto type = DetectFileType(options.output, EXIT_OUTPUT, "UNSUPPORTED_OUTPUT");
-			if (IsJsonOutput(type)) {
-				rows = WriteJsonFile(database, connection, execution_sql, temporary_output, type, options.max_rows,
-				                     options.max_output_bytes);
+			if (IsJsonOutput(output_type)) {
+				rows = WriteJsonFile(database, connection, execution_sql, temporary_output, output_type,
+				                     options.max_rows, options.max_output_bytes);
 			} else {
-				rows = CopyToFile(connection, execution_sql, temporary_output, options.output);
+				rows = CopyToFile(connection, execution_sql, temporary_output, output_type, options.output);
 				CheckRowLimit(rows, options.max_rows);
 			}
 			control.Checkpoint("query exceeded --timeout");
@@ -164,14 +154,22 @@ int Execute(int argc, char **argv, const bool check_only) {
 		control.Stop();
 	} catch (...) {
 		control.Stop();
-		if (options.has_output) {
-			std::error_code ignored;
-			fs::remove(temporary_output, ignored);
-			if (committed_output) {
-				fs::remove(options.output, ignored);
+		const auto remove_outputs = [&]() {
+			if (options.has_output) {
+				std::error_code ignored;
+				fs::remove(temporary_output, ignored);
+				if (committed_output) {
+					fs::remove(options.output, ignored);
+				}
 			}
+		};
+		try {
+			control.Checkpoint("query exceeded --timeout");
+		} catch (...) {
+			remove_outputs();
+			throw;
 		}
-		control.Checkpoint("query exceeded --timeout");
+		remove_outputs();
 		throw;
 	}
 	return 0;
@@ -184,7 +182,8 @@ int Schema(int argc, char **argv) {
 	duckdb::Connection connection(database);
 	ExecutionControl control(connection, started, options.resources.timeout);
 	struct SchemaInput {
-		std::string source;
+		std::string raw_source;
+		std::string absolute_file;
 		std::vector<fs::path> paths;
 	};
 	std::vector<SchemaInput> inputs;
@@ -197,32 +196,29 @@ int Schema(int argc, char **argv) {
 				throw SqrailError(EXIT_INPUT, "INPUT_NOT_FOUND", "input path must not be empty");
 			}
 			std::error_code source_error;
-			const auto source = fs::absolute(fs::path(raw_source), source_error).lexically_normal().string();
+			const auto absolute_file = fs::absolute(fs::path(raw_source), source_error).string();
 			if (source_error) {
 				throw SqrailError(EXIT_INPUT, "INPUT_NOT_FOUND",
 				                  "cannot resolve input path: " + raw_source + ": " + source_error.message());
 			}
 			auto paths =
-			    ResolveInputSet(database, source, control, allowed_paths.size(), options.resources.max_input_files);
+			    ResolveInputSet(database, raw_source, control, allowed_paths.size(), options.resources.max_input_files);
 			allowed_paths.insert(allowed_paths.end(), paths.begin(), paths.end());
-			inputs.push_back({source, std::move(paths)});
+			inputs.push_back({raw_source, absolute_file, std::move(paths)});
 		}
 		control.Checkpoint("input resolution exceeded --timeout");
 		Configure(connection, options.resources, allowed_paths);
 		control.Checkpoint("schema configuration exceeded --timeout");
 
-		for (std::size_t index = 0; index < inputs.size(); ++index) {
+		for (const auto &input : inputs) {
 			control.Checkpoint("schema inference exceeded --timeout");
-			const auto &input = inputs[index];
-			if (options.strict_schema) {
-				ValidateStrictSchemas(connection, input.paths, input.source, control, options.all_varchar);
+			if (options.resources.strict_schema) {
+				ValidateStrictSchemas(connection, input.paths, input.raw_source, control,
+				                      options.resources.all_varchar);
 			}
-			const std::string view_name = "__sqrail_schema_" + std::to_string(index);
-			const std::string bind_sql = "CREATE TEMP VIEW " + SqlIdentifier(view_name) + " AS SELECT * FROM " +
-			                             ReaderExpression(input.paths, options.strict_schema, options.all_varchar);
-			CheckResult(connection.Query(bind_sql), "SCHEMA_INFERENCE_FAILED");
-
-			auto result = connection.Query("DESCRIBE SELECT * FROM " + SqlIdentifier(view_name));
+			auto result = connection.Query("DESCRIBE SELECT * FROM " + ReaderExpression(input.paths,
+			                                                                            options.resources.strict_schema,
+			                                                                            options.resources.all_varchar));
 			CheckResult(result, "SCHEMA_INFERENCE_FAILED");
 
 			std::string output;
@@ -230,7 +226,7 @@ int Schema(int argc, char **argv) {
 			output += "{\"schema_version\":1,\"sqrail_version\":\"";
 			output += SQRAIL_VERSION;
 			output += "\",\"file\":\"";
-			output += JsonEscape(input.source);
+			output += JsonEscape(input.absolute_file);
 			output += "\",\"files\":";
 			output += std::to_string(input.paths.size());
 			output += ",\"columns\":[";

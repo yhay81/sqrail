@@ -15,31 +15,23 @@
 #include <iostream>
 #include <string>
 #include <string_view>
+#include <system_error>
 
 namespace fs = std::filesystem;
 
 namespace sqrail {
 namespace {
 
-std::string CopyOptionsFor(const fs::path &path) {
-	const auto type = DetectFileType(path, EXIT_OUTPUT, "UNSUPPORTED_OUTPUT");
+std::string CopyOptionsFor(const FileType &type, const fs::path &path) {
 	std::string options;
 
 	if (type.extension == ".parquet") {
-		if (!type.compression.empty()) {
-			throw SqrailError(EXIT_OUTPUT, "UNSUPPORTED_COMPRESSION",
-			                  "externally compressed Parquet is not supported: " + path.string());
-		}
 		return "FORMAT PARQUET";
 	}
 	if (type.extension == ".csv") {
 		options = "FORMAT CSV, HEADER true";
 	} else if (type.extension == ".tsv" || type.extension == ".tab") {
 		options = "FORMAT CSV, HEADER true, DELIMITER '\t'";
-	} else if (type.extension == ".json") {
-		options = "FORMAT JSON, ARRAY true";
-	} else if (type.extension == ".jsonl" || type.extension == ".ndjson") {
-		options = "FORMAT JSON, ARRAY false";
 	} else {
 		throw SqrailError(EXIT_OUTPUT, "UNSUPPORTED_OUTPUT",
 		                  "unsupported output extension: " + path.string() +
@@ -64,6 +56,23 @@ duckdb::FileCompressionType CompressionTypeFor(const FileType &type) {
 
 } // namespace
 
+FileType ValidateOutputFileType(const fs::path &path) {
+	const auto type = DetectFileType(path, EXIT_OUTPUT, "UNSUPPORTED_OUTPUT");
+	if (type.extension == ".parquet") {
+		if (!type.compression.empty()) {
+			throw SqrailError(EXIT_OUTPUT, "UNSUPPORTED_COMPRESSION",
+			                  "externally compressed Parquet is not supported: " + path.string());
+		}
+		return type;
+	}
+	if (type.extension == ".csv" || type.extension == ".tsv" || type.extension == ".tab" || IsJsonOutput(type)) {
+		return type;
+	}
+	throw SqrailError(EXIT_OUTPUT, "UNSUPPORTED_OUTPUT",
+	                  "unsupported output extension: " + path.string() +
+	                      " (expected csv, tsv, json, jsonl, ndjson, or parquet)");
+}
+
 fs::path TemporaryOutputPath(const fs::path &output) {
 	fs::path temporary = output;
 	temporary += ".sqrail-tmp-" + UniqueToken();
@@ -84,10 +93,10 @@ void CheckRowLimit(const uint64_t rows, const uint64_t max_rows) {
 }
 
 uint64_t CopyToFile(duckdb::Connection &connection, const std::string &sql, const fs::path &temporary,
-                    const fs::path &output) {
+                    const FileType &type, const fs::path &output) {
 	PrivateCreationMask private_creation;
 	const std::string copy_sql =
-	    "COPY (" + sql + ") TO " + SqlString(temporary.string()) + " (" + CopyOptionsFor(output) + ")";
+	    "COPY (" + sql + ") TO " + SqlString(temporary.string()) + " (" + CopyOptionsFor(type, output) + ")";
 	auto result = connection.Query(copy_sql);
 	if (result->HasError()) {
 		const auto error_type = result->GetErrorType();
@@ -215,6 +224,7 @@ uint64_t WriteJsonFile(duckdb::DuckDB &database, duckdb::Connection &connection,
 		throw SqrailError(EXIT_OUTPUT, "OUTPUT_WRITE", duckdb::ErrorData(error).Message());
 	}
 	const bool enforce_exact_bytes = type.compression.empty() && max_output_bytes != 0;
+	const bool enforce_compressed_bytes = !type.compression.empty() && max_output_bytes != 0;
 	uint64_t written_bytes = 0;
 	const ResultWriter write = [&](const char *data, const std::size_t size) {
 		if (enforce_exact_bytes && (written_bytes > max_output_bytes || size > max_output_bytes - written_bytes)) {
@@ -227,6 +237,14 @@ uint64_t WriteJsonFile(duckdb::DuckDB &database, duckdb::Connection &connection,
 			throw SqrailError(EXIT_OUTPUT, "OUTPUT_WRITE", duckdb::ErrorData(error).Message());
 		}
 		written_bytes += size;
+		if (enforce_compressed_bytes) {
+			std::error_code size_error;
+			const auto on_disk = fs::file_size(temporary, size_error);
+			if (!size_error && on_disk > max_output_bytes) {
+				throw SqrailError(EXIT_OUTPUT, "OUTPUT_LIMIT",
+				                  "output exceeded --max-output-bytes " + std::to_string(max_output_bytes));
+			}
+		}
 	};
 	const auto rows = StreamJson(connection, sql, type.extension == ".json", max_rows, write);
 	try {

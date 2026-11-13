@@ -163,7 +163,13 @@ validation=$(
 rows=$(printf '%s\n' "$validation" | jq -er '.rows')
 checksum=$(printf '%s\n' "$validation" | jq -er '.checksum')
 elapsed_seconds=$(
-  awk -v start="$start_ns" -v end="$end_ns" 'BEGIN { printf "%.6f", (end - start) / 1000000000 }'
+  python3 - "$start_ns" "$end_ns" <<'PY'
+import sys
+
+start_ns = int(sys.argv[1])
+end_ns = int(sys.argv[2])
+print(f"{(end_ns - start_ns) / 1_000_000_000:.6f}")
+PY
 )
 
 jq -n \
