@@ -41,24 +41,26 @@ def normalized_mode(path: Path) -> int:
 
 
 def create_tar(root: Path, output: Path, epoch: int) -> None:
-    with output.open("wb") as raw:
-        with gzip.GzipFile(filename="", mode="wb", fileobj=raw, mtime=epoch) as compressed:
-            with tarfile.open(fileobj=compressed, mode="w", format=tarfile.PAX_FORMAT) as archive:
-                for path in paths(root):
-                    relative = Path(root.name) if path == root else Path(root.name) / path.relative_to(root)
-                    info = archive.gettarinfo(str(path), arcname=relative.as_posix())
-                    info.uid = 0
-                    info.gid = 0
-                    info.uname = "root"
-                    info.gname = "root"
-                    info.mtime = epoch
-                    info.mode = normalized_mode(path)
-                    info.pax_headers = {}
-                    if path.is_file():
-                        with path.open("rb") as handle:
-                            archive.addfile(info, handle)
-                    else:
-                        archive.addfile(info)
+    with (
+        output.open("wb") as raw,
+        gzip.GzipFile(filename="", mode="wb", fileobj=raw, mtime=epoch) as compressed,
+        tarfile.open(fileobj=compressed, mode="w", format=tarfile.PAX_FORMAT) as archive,
+    ):
+        for path in paths(root):
+            relative = Path(root.name) if path == root else Path(root.name) / path.relative_to(root)
+            info = archive.gettarinfo(str(path), arcname=relative.as_posix())
+            info.uid = 0
+            info.gid = 0
+            info.uname = "root"
+            info.gname = "root"
+            info.mtime = epoch
+            info.mode = normalized_mode(path)
+            info.pax_headers = {}
+            if path.is_file():
+                with path.open("rb") as handle:
+                    archive.addfile(info, handle)
+            else:
+                archive.addfile(info)
 
 
 def create_zip(root: Path, output: Path, epoch: int) -> None:

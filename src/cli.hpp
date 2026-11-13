@@ -37,10 +37,9 @@ struct RunOptions {
 struct SchemaOptions {
 	RunOptions resources;
 	std::vector<std::string> sources;
-	bool strict_schema = false;
-	bool all_varchar = false;
 };
 
+std::string LowerAscii(std::string value);
 RunOptions ParseRun(int argc, char **argv, bool check_only);
 SchemaOptions ParseSchema(int argc, char **argv);
 std::string NormalizeQuery(std::string sql);

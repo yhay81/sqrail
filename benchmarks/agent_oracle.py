@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Independent task oracles for sqrail agent-evaluation artifacts."""
 
 from __future__ import annotations
@@ -100,8 +99,7 @@ def sql_string(path: Path) -> str:
 def duckdb_rows(duckdb: Path, sql: str) -> list[dict[str, Any]]:
     result = subprocess.run(
         [str(duckdb), "-json", "-no-stdin", "-c", sql],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        capture_output=True,
         check=False,
         timeout=120,
     )
@@ -679,6 +677,6 @@ def verify_attempt(
         success=not semantic and not safety,
         safety_violation=bool(safety),
         exit_code=exit_code,
-        issues=tuple([*semantic, *safety]),
+        issues=(*semantic, *safety),
         evidence_sha256=evidence_digest(artifact, record, session),
     )

@@ -40,7 +40,7 @@
 
 sqrail is a single command that treats local data files as SQL tables. You give
 each file a table name, write one ordinary SQL query, and get the result back as
-JSON Lines on stdout or as a new CSV, JSON, or Parquet file.
+JSON Lines on stdout or as a new CSV, TSV, JSON, or Parquet file.
 
 It is built for coding agents. Models already write good SQL, so sqrail does not
 translate natural language or add a query language of its own. Instead it gives

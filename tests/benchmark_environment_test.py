@@ -9,7 +9,6 @@ import tempfile
 import unittest
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 CAPTURE = ROOT / "benchmarks" / "capture-environment.py"
 
@@ -40,8 +39,7 @@ class BenchmarkEnvironmentTest(unittest.TestCase):
                     "--parameters-json",
                     '{"runs":5,"warmup":1}',
                 ],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                capture_output=True,
                 text=True,
                 check=False,
             )
@@ -70,8 +68,7 @@ class BenchmarkEnvironmentTest(unittest.TestCase):
                     "--cache-state",
                     "cold-controlled",
                 ],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                capture_output=True,
                 text=True,
                 check=False,
             )

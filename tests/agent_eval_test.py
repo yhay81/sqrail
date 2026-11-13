@@ -9,7 +9,6 @@ import tempfile
 import unittest
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 EVALUATOR = ROOT / "benchmarks" / "agent-eval.py"
 TASKS = ROOT / "benchmarks" / "agent-tasks-v0.3.json"
@@ -75,8 +74,7 @@ class AgentEvaluationTest(unittest.TestCase):
                     *extra,
                 ],
                 text=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                capture_output=True,
                 check=False,
             )
 

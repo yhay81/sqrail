@@ -16,13 +16,14 @@
 namespace fs = std::filesystem;
 
 namespace sqrail {
-namespace {
 
-std::string Lower(std::string value) {
+std::string LowerAscii(std::string value) {
 	std::transform(value.begin(), value.end(), value.begin(),
 	               [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
 	return value;
 }
+
+namespace {
 
 bool IsAsciiDigit(const char ch) {
 	return ch >= '0' && ch <= '9';
@@ -121,47 +122,6 @@ std::string ReadStdin(const uint64_t max_bytes) {
 	return result;
 }
 
-std::string NormalizeQueryInternal(std::string sql) {
-	while (!sql.empty() && std::isspace(static_cast<unsigned char>(sql.back()))) {
-		sql.pop_back();
-	}
-	while (!sql.empty() && sql.back() == ';') {
-		sql.pop_back();
-		while (!sql.empty() && std::isspace(static_cast<unsigned char>(sql.back()))) {
-			sql.pop_back();
-		}
-	}
-	if (sql.empty()) {
-		throw SqrailError(EXIT_USAGE, "EMPTY_SQL", "SQL query is empty");
-	}
-	return sql;
-}
-
-uint64_t ParseThreads(const std::string &raw) {
-	uint64_t value = 0;
-	const auto parsed = std::from_chars(raw.data(), raw.data() + raw.size(), value);
-	if (raw.empty() || parsed.ec != std::errc() || parsed.ptr != raw.data() + raw.size()) {
-		throw SqrailError(EXIT_USAGE, "INVALID_THREADS", "--threads must be an integer");
-	}
-	if (value == 0 || value > 1024) {
-		throw SqrailError(EXIT_USAGE, "INVALID_THREADS", "--threads must be between 1 and 1024");
-	}
-	return value;
-}
-
-uint64_t ParseMaxRows(const std::string &raw) {
-	uint64_t value = 0;
-	const auto parsed = std::from_chars(raw.data(), raw.data() + raw.size(), value);
-	if (raw.empty() || parsed.ec != std::errc() || parsed.ptr != raw.data() + raw.size()) {
-		throw SqrailError(EXIT_USAGE, "INVALID_MAX_ROWS", "--max-rows must be an integer");
-	}
-	constexpr uint64_t maximum = static_cast<uint64_t>(std::numeric_limits<int64_t>::max()) - 1U;
-	if (value == 0 || value > maximum) {
-		throw SqrailError(EXIT_USAGE, "INVALID_MAX_ROWS", "--max-rows must be between 1 and 9223372036854775806");
-	}
-	return value;
-}
-
 uint64_t ParsePositiveInteger(const std::string &raw, const std::string &option, const std::string &code,
                               const uint64_t maximum) {
 	uint64_t value = 0;
@@ -180,7 +140,7 @@ std::string ParseSize(const std::string &raw, const std::string &option, const s
 	if (!number.valid) {
 		throw SqrailError(EXIT_USAGE, code, option + " must be a size such as 512M, 512MB, or 2GiB");
 	}
-	const std::string unit = Lower(std::string(number.unit));
+	const std::string unit = LowerAscii(std::string(number.unit));
 	const bool valid_unit = unit == "b" || unit == "k" || unit == "m" || unit == "g" || unit == "t" || unit == "kb" ||
 	                        unit == "mb" || unit == "gb" || unit == "tb" || unit == "kib" || unit == "mib" ||
 	                        unit == "gib" || unit == "tib";
@@ -204,7 +164,7 @@ uint64_t ParseByteSize(const std::string &raw, const std::string &option, const 
 		                  option + " must be a size such as 512M, 1MiB, or 2.5GB (at most six decimals)");
 	}
 
-	const std::string unit = Lower(std::string(number.unit));
+	const std::string unit = LowerAscii(std::string(number.unit));
 	uint64_t multiplier = 0;
 	if (unit == "b") {
 		multiplier = 1U;
@@ -267,7 +227,7 @@ std::chrono::milliseconds ParseTimeout(const std::string &raw) {
 	if (!number.valid) {
 		throw SqrailError(EXIT_USAGE, "INVALID_TIMEOUT", "--timeout must be a duration such as 250ms, 30s, 10m, or 2h");
 	}
-	const std::string unit = Lower(std::string(number.unit));
+	const std::string unit = LowerAscii(std::string(number.unit));
 	uint64_t unit_ms = 0;
 	if (unit == "ms") {
 		unit_ms = 1U;
@@ -330,10 +290,23 @@ bool IsHelpOption(const std::string_view argument) {
 } // namespace
 
 std::string NormalizeQuery(std::string sql) {
-	return NormalizeQueryInternal(std::move(sql));
+	while (!sql.empty() && std::isspace(static_cast<unsigned char>(sql.back()))) {
+		sql.pop_back();
+	}
+	while (!sql.empty() && sql.back() == ';') {
+		sql.pop_back();
+		while (!sql.empty() && std::isspace(static_cast<unsigned char>(sql.back()))) {
+			sql.pop_back();
+		}
+	}
+	if (sql.empty()) {
+		throw SqrailError(EXIT_USAGE, "EMPTY_SQL", "SQL query is empty");
+	}
+	return sql;
 }
 
 RunOptions ParseRun(int argc, char **argv, const bool check_only) {
+	constexpr uint64_t max_rows_limit = static_cast<uint64_t>(std::numeric_limits<int64_t>::max()) - 1U;
 	RunOptions options;
 	std::vector<std::string> positional;
 	std::unordered_set<std::string> table_names;
@@ -357,7 +330,7 @@ RunOptions ParseRun(int argc, char **argv, const bool check_only) {
 			positional_only = true;
 		} else if (!positional_only && (argument == "-t" || argument == "--table")) {
 			auto table = ParseBinding(RequireValue(index, argc, argv, argument));
-			if (!table_names.insert(Lower(table.name)).second) {
+			if (!table_names.insert(LowerAscii(table.name)).second) {
 				throw SqrailError(EXIT_USAGE, "DUPLICATE_TABLE", "table name is bound more than once: " + table.name);
 			}
 			options.tables.push_back(std::move(table));
@@ -389,7 +362,8 @@ RunOptions ParseRun(int argc, char **argv, const bool check_only) {
 			if (has_threads) {
 				throw SqrailError(EXIT_USAGE, "DUPLICATE_OPTION", "--threads may only be specified once");
 			}
-			options.threads = ParseThreads(RequireValue(index, argc, argv, argument));
+			options.threads =
+			    ParsePositiveInteger(RequireValue(index, argc, argv, argument), "--threads", "INVALID_THREADS", 1024U);
 			has_threads = true;
 		} else if (!positional_only && argument == "--spill") {
 			if (check_only) {
@@ -429,7 +403,8 @@ RunOptions ParseRun(int argc, char **argv, const bool check_only) {
 			if (has_max_rows) {
 				throw SqrailError(EXIT_USAGE, "DUPLICATE_OPTION", "--max-rows may only be specified once");
 			}
-			options.max_rows = ParseMaxRows(RequireValue(index, argc, argv, argument));
+			options.max_rows = ParsePositiveInteger(RequireValue(index, argc, argv, argument), "--max-rows",
+			                                        "INVALID_MAX_ROWS", max_rows_limit);
 			has_max_rows = true;
 		} else if (!positional_only && argument == "--max-output-bytes") {
 			if (check_only) {
@@ -488,16 +463,16 @@ RunOptions ParseRun(int argc, char **argv, const bool check_only) {
 		                  std::string(check_only ? "check" : "run") +
 		                      " expects exactly one SQL argument or '-' for stdin");
 	}
+	if (has_max_spill && !has_spill) {
+		throw SqrailError(EXIT_USAGE, "MAX_SPILL_REQUIRES_SPILL", "--max-spill requires --spill DIR");
+	}
+
 	options.sql = positional.front() == "-" ? ReadStdin(options.max_sql_bytes) : positional.front();
 	if (options.max_sql_bytes != 0 && options.sql.size() > options.max_sql_bytes) {
 		throw SqrailError(EXIT_USAGE, "SQL_LIMIT",
 		                  "SQL input exceeded --max-sql-bytes " + std::to_string(options.max_sql_bytes));
 	}
 	options.sql = NormalizeQuery(std::move(options.sql));
-
-	if (has_max_spill && !has_spill) {
-		throw SqrailError(EXIT_USAGE, "MAX_SPILL_REQUIRES_SPILL", "--max-spill requires --spill DIR");
-	}
 
 	if (options.has_output) {
 		std::error_code error;
@@ -563,7 +538,8 @@ SchemaOptions ParseSchema(int argc, char **argv) {
 			if (has_threads) {
 				throw SqrailError(EXIT_USAGE, "DUPLICATE_OPTION", "--threads may only be specified once");
 			}
-			options.resources.threads = ParseThreads(RequireValue(index, argc, argv, argument));
+			options.resources.threads =
+			    ParsePositiveInteger(RequireValue(index, argc, argv, argument), "--threads", "INVALID_THREADS", 1024U);
 			has_threads = true;
 		} else if (!positional_only && argument == "--timeout") {
 			if (has_timeout) {
@@ -582,13 +558,13 @@ SchemaOptions ParseSchema(int argc, char **argv) {
 			if (has_strict_schema) {
 				throw SqrailError(EXIT_USAGE, "DUPLICATE_OPTION", "--strict-schema may only be specified once");
 			}
-			options.strict_schema = true;
+			options.resources.strict_schema = true;
 			has_strict_schema = true;
 		} else if (!positional_only && argument == "--all-varchar") {
 			if (has_all_varchar) {
 				throw SqrailError(EXIT_USAGE, "DUPLICATE_OPTION", "--all-varchar may only be specified once");
 			}
-			options.all_varchar = true;
+			options.resources.all_varchar = true;
 			has_all_varchar = true;
 		} else if (positional_only || argument.empty() || argument == "-" || argument.front() != '-') {
 			options.sources.push_back(argument);

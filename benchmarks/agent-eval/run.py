@@ -29,7 +29,6 @@ import threading
 import time
 from typing import Any
 
-
 TASK_IDS = (
     "schema_discovery",
     "selective_jsonl",
@@ -297,8 +296,7 @@ def checked_output(command: list[str], *, cwd: pathlib.Path | None = None) -> st
         command,
         cwd=cwd,
         stdin=subprocess.DEVNULL,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        capture_output=True,
         text=True,
         check=False,
     )

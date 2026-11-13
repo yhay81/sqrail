@@ -1,11 +1,11 @@
 {
   "name": "sqrail",
   "version": "0.4.2",
-  "description": "Bounded SQL over local CSV, JSON, and Parquet for coding agents.",
+  "description": "Bounded SQL over local CSV, TSV, JSON, and Parquet for coding agents.",
   "author": {
     "name": "yhay81"
   },
   "repository": "https://github.com/yhay81/sqrail",
   "license": "MIT",
-  "keywords": ["sql", "csv", "json", "parquet", "agent-skills"]
+  "keywords": ["sql", "csv", "tsv", "json", "parquet", "agent-skills"]
 }
