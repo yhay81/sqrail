@@ -4,7 +4,8 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const read = (relative) => readFile(path.join(root, relative), "utf8");
+const read = async (relative) =>
+  (await readFile(path.join(root, relative), "utf8")).replaceAll("\r\n", "\n");
 
 const [
   skill,

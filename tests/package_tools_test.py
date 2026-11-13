@@ -47,7 +47,12 @@ class PackageToolsTest(unittest.TestCase):
             for path in ("README.md", "plugin.json", "package.json", "CMakeLists.txt", checker):
                 shutil.copyfile(ROOT / path, root / path)
             command = ["node", str(root / checker)]
-            subprocess.run(command, check=True, capture_output=True)
+            # Exercise a Windows checkout even when the test runs on Unix.
+            for relative in ("skills/sqrail/SKILL.md", "site/help.txt"):
+                path = root / relative
+                path.write_bytes(path.read_text(encoding="utf-8").replace("\n", "\r\n").encode())
+            valid = subprocess.run(command, capture_output=True, text=True, check=False)
+            self.assertEqual(valid.returncode, 0, valid.stderr)
 
             cmake = root / "CMakeLists.txt"
             original = cmake.read_text(encoding="utf-8")
