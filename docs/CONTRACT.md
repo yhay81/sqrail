@@ -32,6 +32,13 @@ Parquet dataset. Directory traversal is recursive and ignores non-Parquet
 files. Matches are canonicalized, sorted, deduplicated, and must be non-empty.
 The first `=` separates a table name from its path.
 
+Quote path patterns in the shell so sqrail receives them intact. An existing
+file named `data[1].csv` is opened literally. For a glob such as
+`shard_[ab]/part*.csv`, sqrail prefers matches under a directory literally
+named `shard_[ab]`. If it finds none there, it tries `shard_a` and `shard_b`.
+On POSIX, `link/../data.csv` follows the directory symlink before resolving
+`..`.
+
 A multi-file binding is read by column name. Columns introduced or removed
 between files are included in the combined schema and missing values become
 `null`. `--strict-schema` instead requires every matched file to have identical
@@ -95,7 +102,7 @@ stderr after the result is complete:
 ```json
 {
   "schema_version": 1,
-  "sqrail_version": "0.4.2",
+  "sqrail_version": "0.4.3",
   "ok": true,
   "command": "run",
   "rows": 3,
@@ -140,9 +147,11 @@ already been emitted, stdout may contain a valid partial JSONL prefix. Use
   and fails when the output exceeds the cap. Its decimal part may have at most
   six digits and is converted to an exact integer byte count by truncating any
   sub-byte remainder. JSONL stdout and uncompressed JSON/JSONL file outputs are
-  checked synchronously before each buffered write; compressed, CSV, TSV, and
-  Parquet file outputs are monitored during execution and verified before
-  commit. File destinations are never committed on `OUTPUT_LIMIT`; stdout may
+  checked synchronously before each buffered write. For compressed JSON/JSONL,
+  sqrail checks the on-disk byte count after each buffered write and again
+  before committing the completed file. CSV, TSV, and Parquet file outputs
+  are monitored during execution and verified before commit. An
+  `OUTPUT_LIMIT` error discards the temporary file. Streaming stdout may
   already contain a valid prefix.
 - `--max-input-files N` accepts an integer from 1 through 1000000000 and stops
   processing when the cumulative count exceeds the cap. Files are canonicalized
@@ -171,7 +180,7 @@ executing the query:
 ```json
 {
   "schema_version": 1,
-  "sqrail_version": "0.4.2",
+  "sqrail_version": "0.4.3",
   "ok": true,
   "columns": [{ "name": "total", "type": "HUGEINT", "nullable": true }],
   "inputs": [{ "table": "sales", "files": 1 }],
@@ -189,7 +198,7 @@ that execution would use.
 ```json
 {
   "schema_version": 1,
-  "sqrail_version": "0.4.2",
+  "sqrail_version": "0.4.3",
   "file": "/absolute/data.csv",
   "files": 1,
   "columns": [{ "name": "id", "type": "BIGINT", "nullable": true }]
@@ -208,7 +217,7 @@ with `(use 'sqrail --help')` in `message`:
 ```json
 {
   "schema_version": 1,
-  "sqrail_version": "0.4.2",
+  "sqrail_version": "0.4.3",
   "ok": false,
   "code": "INPUT_NOT_FOUND",
   "message": "input file not found: missing.csv"
