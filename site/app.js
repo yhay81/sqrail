@@ -225,10 +225,15 @@ if (docsSectionNav && docsSectionLinks.length) {
   }
 }
 
+const MIN_VISIBLE_GITHUB_STARS = 50;
 const githubStarNodes = [...document.querySelectorAll("[data-github-stars]")];
+const githubStarPills = [
+  ...document.querySelectorAll("[data-github-stars-pill]"),
+];
 const githubRepoLinks = [...document.querySelectorAll("[data-github-repo]")];
 if (githubStarNodes.length) {
   const renderGithubStars = (count) => {
+    if (count < MIN_VISIBLE_GITHUB_STARS) return;
     const formatted =
       count >= 1000
         ? new Intl.NumberFormat("en", {
@@ -239,10 +244,13 @@ if (githubStarNodes.length) {
     githubStarNodes.forEach((node) => {
       node.textContent = formatted;
     });
+    githubStarPills.forEach((pill) => {
+      pill.hidden = false;
+    });
     githubRepoLinks.forEach((link) => {
       link.setAttribute(
         "aria-label",
-        `View yhay81/sqrail on GitHub — ${new Intl.NumberFormat("en").format(count)} ${count === 1 ? "star" : "stars"}`,
+        `GitHub (yhay81/sqrail, ${new Intl.NumberFormat("en").format(count)} stars)`,
       );
       link.classList.remove("is-live");
       window.requestAnimationFrame(() => link.classList.add("is-live"));

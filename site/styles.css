@@ -379,7 +379,7 @@ footer a:hover,
   fill: currentColor;
 }
 
-.github-stars {
+.github-stars:not([hidden]) {
   display: inline-flex;
   align-items: center;
   gap: 0.3125rem;
@@ -2419,11 +2419,12 @@ footer > div {
 
   .github-repo {
     gap: 0.4375rem;
+    min-inline-size: 2.25rem;
     min-block-size: 2.25rem;
     padding: 0 0.5625rem;
   }
 
-  .github-stars {
+  .github-stars:not([hidden]) {
     padding-inline-start: 0.4375rem;
   }
 
