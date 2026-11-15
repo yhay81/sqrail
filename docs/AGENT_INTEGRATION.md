@@ -18,6 +18,12 @@ The same release interface is available to HTTP-based agents at
 <https://sqrail.yhay81.com/help.txt>. The website discovery file is
 <https://sqrail.yhay81.com/llms.txt>.
 
+Unlike agent-oriented output modes in a general database shell, sqrail does not
+rely on environment-variable detection to switch formatting or leave arbitrary
+filesystem paths, extensions, and session commands reachable. Every run enforces
+the same `-t` input allowlist, read-only SQL gate, atomic no-overwrite `-o`
+commit, and stdout/stderr separation regardless of which agent invokes it.
+
 ## Install discovery
 
 The canonical public Agent Skill is

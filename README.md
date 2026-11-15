@@ -127,10 +127,12 @@ unknown, otherwise trust them; `run` once; stop when the exit code is `0`.
 ## Why not call DuckDB directly?
 
 You can. sqrail runs the same engine and does not claim to be faster than it.
-The difference is what one invocation is allowed to do. A database shell is
-designed to do anything you ask. sqrail is designed so that a command can do only
-one bounded thing, which is what you want when a model chooses the SQL and a
-program reads the result.
+The difference is what one invocation is allowed to do. Even with read-only
+flags or agent-oriented CLI output modes, a general database shell still
+exposes arbitrary path reads, session commands, and ambient environment
+heuristics unless the caller wraps and locks every invocation. sqrail is
+designed so that a command can do only one bounded thing, which is what you
+want when a model chooses the SQL and a program reads the result.
 
 | Question                    | sqrail's answer                                                                                                                              |
 | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
