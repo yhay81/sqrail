@@ -81,6 +81,19 @@ npm run docs:build
 npm run site:check
 ```
 
+For website interaction changes, install the pinned Chromium browser and run
+the Playwright suite (also run by pull request CI):
+
+```sh
+npx playwright install --with-deps chromium
+npm run site:test
+```
+
+The suite serves the local `site/` files, blocks external requests, and checks
+installer platform selection, keyboard navigation, exact clipboard contents,
+live copy feedback, and progressive enhancement at 390 px and 1280 px.
+Clipboard tests run serially because pages share the clipboard.
+
 Human-readable reference pages under `site/docs/` are generated from the
 repository Markdown by `tools/build-docs.mjs`; `site:check` fails when a
 generated page is stale. In addition to formatting, HTML, JavaScript, and

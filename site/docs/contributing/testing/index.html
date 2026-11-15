@@ -473,6 +473,54 @@ npm run site:check
 </code></pre>
           </div>
           <p>
+            For website interaction changes, install the pinned Chromium browser
+            and run the Playwright suite (also run by pull request CI):
+          </p>
+          <div class="code-block">
+            <span class="copy-control">
+              <button
+                class="copy-button"
+                type="button"
+                command="--copy"
+                commandfor="doc-code-5"
+                aria-label="Copy Website and Agent Skill sh code 2"
+              >
+                <svg
+                  class="copy-icon copy-icon-clipboard"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M5.5 1.5h7a1 1 0 0 1 1 1v8h-1.5v-7.5h-6.5V1.5Zm-3 3h7a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1Zm.5 1.5v7h6V6H3Z"
+                  />
+                </svg>
+                <svg
+                  class="copy-icon copy-icon-check"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"
+                  />
+                </svg>
+                Copy
+              </button>
+              <span class="copy-status" role="status"></span>
+            </span>
+            <pre><code id="doc-code-5" class="language-sh">npx playwright install --with-deps chromium
+npm run site:test
+</code></pre>
+          </div>
+          <p>
+            The suite serves the local <code>site/</code> files, blocks external
+            requests, and checks installer platform selection, keyboard
+            navigation, exact clipboard contents, live copy feedback, and
+            progressive enhancement at 390 px and 1280 px. Clipboard tests run
+            serially because pages share the clipboard.
+          </p>
+          <p>
             Human-readable reference pages under <code>site/docs/</code> are
             generated from the repository Markdown by
             <code>tools/build-docs.mjs</code>; <code>site:check</code> fails

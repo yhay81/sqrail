@@ -152,6 +152,7 @@
                   type="button"
                   role="tab"
                   aria-selected="true"
+                  aria-controls="install-panel-homebrew"
                   data-install-tab="homebrew"
                 >
                   Homebrew
@@ -161,6 +162,7 @@
                   type="button"
                   role="tab"
                   aria-selected="false"
+                  aria-controls="install-panel-linux"
                   data-install-tab="linux"
                   tabindex="-1"
                 >
@@ -171,6 +173,7 @@
                   type="button"
                   role="tab"
                   aria-selected="false"
+                  aria-controls="install-panel-linux-arm64"
                   data-install-tab="linux-arm64"
                   tabindex="-1"
                 >
@@ -181,16 +184,29 @@
                   type="button"
                   role="tab"
                   aria-selected="false"
+                  aria-controls="install-panel-windows"
                   data-install-tab="windows"
                   tabindex="-1"
                 >
                   Windows x64
                 </button>
                 <button
+                  id="install-tab-windows-arm64"
+                  type="button"
+                  role="tab"
+                  aria-selected="false"
+                  aria-controls="install-panel-windows-arm64"
+                  data-install-tab="windows-arm64"
+                  tabindex="-1"
+                >
+                  Windows Arm64
+                </button>
+                <button
                   id="install-tab-agent"
                   type="button"
                   role="tab"
                   aria-selected="false"
+                  aria-controls="install-panel-agent"
                   data-install-tab="agent"
                   tabindex="-1"
                 >
@@ -368,6 +384,56 @@
                       command="--copy"
                       commandfor="hero-install-windows"
                       aria-label="Copy Windows x64 download command"
+                    >
+                      <svg
+                        class="copy-icon copy-icon-clipboard"
+                        viewBox="0 0 16 16"
+                        aria-hidden="true"
+                        focusable="false"
+                      >
+                        <path
+                          d="M5.5 1.5h7a1 1 0 0 1 1 1v8h-1.5v-7.5h-6.5V1.5Zm-3 3h7a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1Zm.5 1.5v7h6V6H3Z"
+                        />
+                      </svg>
+                      <svg
+                        class="copy-icon copy-icon-check"
+                        viewBox="0 0 16 16"
+                        aria-hidden="true"
+                        focusable="false"
+                      >
+                        <path
+                          d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"
+                        />
+                      </svg>
+                      Copy
+                    </button>
+                    <span class="copy-status" role="status"></span>
+                  </span>
+                </div>
+              </div>
+              <div
+                class="quick-install-panel"
+                id="install-panel-windows-arm64"
+                role="tabpanel"
+                aria-labelledby="install-tab-windows-arm64"
+                data-install-panel="windows-arm64"
+                hidden="until-found"
+              >
+                <div class="quick-install-inner">
+                  <code
+                    id="hero-install-windows-arm64"
+                    data-prompt=">"
+                    data-copy-value="curl.exe -LO https://github.com/yhay81/sqrail/releases/download/v0.4.3/sqrail-v0.4.3-windows-arm64.zip"
+                    ><span>&gt;</span> curl.exe -LO
+                    https://github.com/yhay81/sqrail/releases/download/v0.4.3/sqrail-v0.4.3-windows-arm64.zip</code
+                  >
+                  <span class="copy-control quick-copy">
+                    <button
+                      class="copy-button"
+                      type="button"
+                      command="--copy"
+                      commandfor="hero-install-windows-arm64"
+                      aria-label="Copy Windows Arm64 download command"
                     >
                       <svg
                         class="copy-icon copy-icon-clipboard"

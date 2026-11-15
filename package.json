@@ -12,6 +12,7 @@
     "site:navigation": "node tools/check-site-navigation.mjs",
     "site:html": "html-validate \"site/**/*.html\"",
     "site:js": "node --check site/app.js",
+    "site:test": "playwright test --config tools/site-playwright.config.mjs",
     "site:check": "npm run format:check && npm run docs:check && npm run agent:check && npm run site:navigation && npm run site:html && npm run site:js && npm run cloudflare:check",
     "cloudflare:check": "wrangler deploy --dry-run",
     "deploy:cloudflare": "npm run docs:build && wrangler deploy"
@@ -25,6 +26,7 @@
     "workerd@1.20261103.1": true
   },
   "devDependencies": {
+    "@playwright/test": "1.65.1",
     "html-validate": "11.18.0",
     "markdown-it": "15.0.3",
     "prettier": "3.9.10",
