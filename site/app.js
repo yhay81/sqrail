@@ -392,13 +392,11 @@ if (activateInstall) {
   const platform =
     navigator.userAgentData?.platform ?? navigator.platform ?? "";
   const ua = navigator.userAgent ?? "";
+  const isArm64 = /\b(?:aarch64|arm64)\b/i.test(`${platform} ${ua}`);
   if (/win/i.test(platform)) {
-    activateInstall("windows");
+    activateInstall(isArm64 ? "windows-arm64" : "windows");
   } else if (/linux/i.test(platform) && !/android/i.test(ua)) {
-    const archHint = `${platform} ${ua}`;
-    activateInstall(
-      /\b(?:aarch64|arm64)\b/i.test(archHint) ? "linux-arm64" : "linux",
-    );
+    activateInstall(isArm64 ? "linux-arm64" : "linux");
   }
 }
 
@@ -464,12 +462,10 @@ const reportCopy = (button, ok) => {
 
 const copyTargetText = async (button, target) => {
   if (!button || !target) return;
-  const raw =
+  // data-copy-value omits decorative prompts; other code is copied verbatim.
+  const text =
     target.dataset.copyValue ??
-    (target.matches("input, textarea")
-      ? target.value
-      : target.innerText.replace(/^[$>]\s*/, ""));
-  const text = raw.trim();
+    (target.matches("input, textarea") ? target.value : target.textContent);
   if (!text) return;
 
   try {
@@ -498,4 +494,8 @@ if ("CommandEvent" in window) {
     const target = targetId ? document.getElementById(targetId) : null;
     if (target) copyTargetText(button, target);
   });
+}
+
+if (typeof navigator.clipboard?.writeText === "function") {
+  document.documentElement.dataset.copyReady = "";
 }

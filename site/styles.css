@@ -616,8 +616,9 @@ h1 {
 
 .install-tabs {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 1.125rem;
+  gap: 0 1.125rem;
   min-block-size: 2.4375rem;
   padding: 0 0.75rem;
   overflow-x: auto;
@@ -649,6 +650,7 @@ h1 {
 
 .install-tabs button {
   align-self: stretch;
+  min-block-size: 2.4375rem;
   scroll-snap-align: start;
 }
 
@@ -697,7 +699,7 @@ h1 {
   color: var(--acid);
 }
 
-.quick-copy {
+.quick-install-inner > .quick-copy {
   position: absolute;
   inset-block-start: 0.875rem;
   inset-inline-end: 0.875rem;
@@ -1258,6 +1260,10 @@ h1 {
   position: relative;
   display: inline-flex;
   align-items: center;
+}
+
+html:not([data-copy-ready]) .copy-control {
+  display: none;
 }
 
 .copy-control-inline {
@@ -1939,6 +1945,8 @@ footer > div {
 .code-block > .copy-control {
   display: flex;
   justify-content: flex-end;
+  inline-size: fit-content;
+  margin-inline-start: auto;
   padding: 0.5rem 0.625rem 0;
 }
 
