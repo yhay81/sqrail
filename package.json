@@ -27,9 +27,9 @@
   },
   "devDependencies": {
     "@playwright/test": "1.65.1",
-    "html-validate": "11.18.0",
+    "html-validate": "11.22.1",
     "markdown-it": "15.0.3",
-    "prettier": "3.9.10",
-    "wrangler": "4.157.0"
+    "prettier": "3.10.1",
+    "wrangler": "4.168.0"
   }
 }
